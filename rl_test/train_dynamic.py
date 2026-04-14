@@ -457,7 +457,17 @@ if __name__ == "__main__":
                 if pid == "blue_policy":
                     continue
                 policy_obj, obs_sp, act_sp, cfg = spec
-                if isinstance(policy_obj, type):
+                # Self-play: red_prev_policy uses same architecture as Blue; spec has policy_obj=None.
+                if policy_obj is None and pid == "red_prev_policy":
+                    blue_pol = algo.get_policy("blue_policy")
+                    algo.add_policy(
+                        pid,
+                        policy_cls=type(blue_pol),
+                        observation_space=obs_sp,
+                        action_space=act_sp,
+                        config=blue_pol.config,
+                    )
+                elif isinstance(policy_obj, type):
                     algo.add_policy(pid, policy_cls=policy_obj, observation_space=obs_sp, action_space=act_sp, config=cfg)
                 else:
                     algo.add_policy(pid, policy=policy_obj, observation_space=obs_sp, action_space=act_sp, config=cfg)

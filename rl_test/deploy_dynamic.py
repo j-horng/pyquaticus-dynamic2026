@@ -8,6 +8,7 @@ Usage:
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_500 --no-render
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_132 --red-heuristic --red-heuristic-mode easy
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_360 --red-dummy
+  python rl_test/deploy_dynamic.py ./ray_dynamic/iter_900 --red-from-checkpoint ./ray_dynamic/iter_600
 """
 
 import argparse
@@ -91,10 +92,12 @@ def main():
     parser.add_argument("--red-heuristic", action="store_true", help="Use easy/medium/hard heuristic for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty (default: easy)")
     parser.add_argument("--red-dummy", action="store_true", help="No Red opponents (Blue plays alone; same as training with --red-dummy)")
+    parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play deploy)")
     args = parser.parse_args()
 
-    if args.red_heuristic and args.red_dummy:
-        print("Error: Cannot use both --red-heuristic and --red-dummy.")
+    red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_from_checkpoint)])
+    if red_mode_count > 1:
+        print("Error: Use only one of --red-heuristic, --red-dummy, --red-from-checkpoint.")
         return
 
     # Resolve policy path
@@ -116,6 +119,7 @@ def main():
 
     # Red heuristic: need base env (DynamicPyQuaticusEnv) and raw obs for Red
     red_heuristics = None
+    red_prev_policy = None
     if args.red_dummy:
         print("Red team: dummy (no opponents; Blue plays alone).")
     elif args.red_heuristic:
@@ -126,6 +130,18 @@ def main():
             "agent_5": Heuristic_CTF_Agent("agent_5", base_env, mode=args.red_heuristic_mode),
         }
         print(f"Red team: heuristic (combined CTF, {args.red_heuristic_mode} mode).")
+    elif args.red_from_checkpoint:
+        red_path = os.path.abspath(args.red_from_checkpoint)
+        if os.path.isdir(red_path) and not red_path.endswith("blue_policy"):
+            red_policy_path = os.path.join(red_path, "policies", "blue_policy")
+        else:
+            red_policy_path = red_path
+        if not os.path.isdir(red_policy_path):
+            print(f"Error: Red policy not found at {red_policy_path}")
+            return
+        print(f"Loading red policy from: {red_policy_path}")
+        red_prev_policy = Policy.from_checkpoint(red_policy_path)
+        print("Red team: previous Blue checkpoint (self-play deploy).")
 
     obs, info = env.reset()
 
@@ -155,6 +171,13 @@ def main():
                         heuristic_info = {aid: {"global_state": global_state}}
                         action = red_heuristics[aid].compute_action(obs[aid], heuristic_info)
                         actions[aid] = int(action) if hasattr(action, "item") else int(action)
+                    elif red_prev_policy is not None:
+                        action = red_prev_policy.compute_single_action(obs[aid], explore=False)
+                        if isinstance(action, (list, tuple)):
+                            action = action[0]
+                        if hasattr(action, "item"):
+                            action = int(action.item())
+                        actions[aid] = action
                     else:
                         space = _get_action_space(env, aid)
                         samp = space.sample()
