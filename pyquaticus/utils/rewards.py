@@ -229,6 +229,10 @@ def caps_and_grabs(
     if num_oob > prev_num_oob:
         reward += -1.0
 
+    # Reward for tagging an opponent
+    if state["agent_made_tag"][agent_index] is not None:
+        reward += 0.25
+
     # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
     # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
     
@@ -244,14 +248,18 @@ def caps_and_grabs(
                 opp_pos = np.array(state["agent_position"][opp_index])
                 dist = np.linalg.norm(agent_pos - opp_pos)
                 if agent_on_own_side:
-                    reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size))
+                    defend_scale = 3.0 if state["agent_has_flag"][opp_index] else 1.0
+                    reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size)) * defend_scale
+                    prev_agent_pos = np.array(prev_state["agent_position"][agent_index])
+                    prev_dist = np.linalg.norm(prev_agent_pos - opp_pos)
+                    reward += 0.01 * (prev_dist - dist) / np.linalg.norm(env_size) * defend_scale
                 break
 
     #----------#
 
     #Check if agents lost flag
-    prev_has_flag = prev_state['agent_has_flag'][agents.index(agent_id)]
-    has_flag = state['agent_has_flag'][agents.index(agent_id)]
+    prev_has_flag = prev_state['agent_has_flag'][agent_index]
+    has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
         reward += -0.25
