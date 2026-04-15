@@ -89,13 +89,16 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             return self.agent_obs_normalizer.normalized(obs), obs
         return obs, None
 
-    def _set_initial_disabled(self, num_blue_active: int, num_red_active: int):
-        """Disable agents not in the active set."""
+    def _set_initial_disabled(self, active_blue_inds: list[int], active_red_inds: list[int]):
+        """Disable agents not in the active set.
+
+        Note: agent indices are 0..num_blue-1 for Blue and num_blue..num_agents-1 for Red.
+        """
         disabled = np.ones(self.num_agents, dtype=bool)
-        for i in range(num_blue_active):
-            disabled[i] = False
-        for i in range(self.num_blue, self.num_blue + num_red_active):
-            disabled[i] = False
+        for i in active_blue_inds:
+            disabled[int(i)] = False
+        for i in active_red_inds:
+            disabled[int(i)] = False
         self.state["disabled_agents"] = disabled
         for i, player in enumerate(self.players.values()):
             player.is_disabled = bool(disabled[i])
@@ -107,7 +110,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         min_size, max_size = self.team_size_range
         if self.red_dummy_mode:
-            self.num_blue_active = max_size  # 3 Blue agents
+            self.num_blue_active = max_size  # All Blue agents active
             self.num_red_active = 0  # No Red agents; Blue plays alone (capture the flag only)
         else:
             self.num_blue_active = random.randint(min_size, max_size)
@@ -115,9 +118,20 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         if "disabled_agents" not in self.state:
             self.state["disabled_agents"] = np.zeros(self.num_agents, dtype=bool)
-        self._set_initial_disabled(self.num_blue_active, self.num_red_active)
+
+        # Randomize *which* specific agents are active so we don't always activate the lowest indices.
+        # This prevents systematic bias like "active agents are always at the top of the list".
+        blue_pool = list(range(self.num_blue))
+        red_pool = list(range(self.num_blue, self.num_agents))
+        active_blue_inds = blue_pool if self.num_blue_active >= self.num_blue else random.sample(blue_pool, k=self.num_blue_active)
+        active_red_inds = [] if self.num_red_active <= 0 else (
+            red_pool if self.num_red_active >= self.num_red else random.sample(red_pool, k=self.num_red_active)
+        )
+        self._set_initial_disabled(active_blue_inds, active_red_inds)
         self.state["num_blue_active"] = self.num_blue_active
         self.state["num_red_active"] = self.num_red_active
+        self.state["active_blue_inds"] = np.array(active_blue_inds, dtype=np.int64)
+        self.state["active_red_inds"] = np.array(active_red_inds, dtype=np.int64)
 
         # In red_dummy_mode, all Red agents are disabled; place them in-bounds behind the Red flag
         # (to the right of the flag, same side) so they're out of the way
