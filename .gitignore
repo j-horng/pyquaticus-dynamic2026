@@ -14,4 +14,3 @@ _version.py
 *.mp4
 *.avi
 __mapcache__/
-ray_dynamic_v2/
