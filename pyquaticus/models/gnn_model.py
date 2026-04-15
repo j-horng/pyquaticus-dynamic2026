@@ -137,11 +137,16 @@ class GNNModel(TorchModelV2, nn.Module):
             dst_feat = torch.gather(x, 1, dst_idx.unsqueeze(-1).expand(-1, -1, H))
             msg = torch.relu(layer(torch.cat([src_feat, dst_feat], dim=-1)))
             agg = torch.zeros(B, MAX_AGENTS, H, device=device, dtype=x.dtype)
-            for b in range(B):
-                for n in range(MAX_AGENTS):
-                    sel = dst_idx[b] == n
-                    if sel.any():
-                        agg[b, n] = msg[b, sel].mean(dim=0)
+            dst_expand = dst_idx.unsqueeze(-1).expand(-1, -1, H)
+            agg.scatter_add_(1, dst_expand, msg)
+            count = torch.zeros(B, MAX_AGENTS, 1, device=device)
+            count.scatter_add_(
+                1,
+                dst_idx.unsqueeze(-1),
+                torch.ones(B, dst_idx.size(1), 1, device=device, dtype=x.dtype),
+            )
+            count = count.clamp(min=1)
+            agg = agg / count
             x = x + agg
 
         # Mask out disabled nodes (optional: zero their embedding)
