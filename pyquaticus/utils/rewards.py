@@ -201,6 +201,11 @@ def caps_and_grabs(
     
     agent_index = agents.index(agent_id)
 
+    # Inactive/disabled agents must not receive shaping or team-event credit (e.g. red_dummy 3v0).
+    disabled = state.get("disabled_agents")
+    if disabled is not None and len(disabled) > agent_index and bool(disabled[agent_index]):
+        return 0.0
+
     # agent_inds_of_team is keyed by Team enum, not int (0/1).
     opp_team = Team.RED_TEAM if int(team) == 0 else Team.BLUE_TEAM
 
@@ -229,15 +234,18 @@ def caps_and_grabs(
     
     #----------
     #added a reward when defending against agents on our side; opp_index = opponents index
-    agent_on_own_side = state["agent_on_sides"][agent_index]
-    for opp_index in agent_inds_of_team[opp_team]:
-        if not state["agent_on_sides"][opp_index]:
-            agent_pos = np.array(state["agent_position"][agent_index])
-            opp_pos = np.array(state["agent_position"][opp_index])
-            dist = np.linalg.norm(agent_pos - opp_pos)
-            if agent_on_own_side:
-                reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size))
-            break
+    if not agent_is_tagged:
+        agent_on_own_side = state["agent_on_sides"][agent_index]
+        for opp_index in agent_inds_of_team[opp_team]:
+            if disabled is not None and len(disabled) > opp_index and bool(disabled[opp_index]):
+                continue
+            if not state["agent_on_sides"][opp_index]:
+                agent_pos = np.array(state["agent_position"][agent_index])
+                opp_pos = np.array(state["agent_position"][opp_index])
+                dist = np.linalg.norm(agent_pos - opp_pos)
+                if agent_on_own_side:
+                    reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size))
+                break
 
     #----------#
 
@@ -249,7 +257,11 @@ def caps_and_grabs(
         reward += -0.25
     
     #Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)] the value at the index 0 corresponds to the number of grabs
-    team_scale = 1.0 / max(1, len(agent_inds_of_team[team]))
+    if disabled is not None:
+        active_count = sum(1 for i in agent_inds_of_team[team] if not (len(disabled) > i and bool(disabled[i])))
+    else:
+        active_count = len(agent_inds_of_team[team])
+    team_scale = 1.0 / max(1, active_count)
     for t in range(len(state['grabs'])):
         prev_num_grabs = prev_state['grabs'][t]
         num_grabs = state['grabs'][t]

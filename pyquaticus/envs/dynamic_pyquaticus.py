@@ -143,7 +143,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             if side_pos[0] >= float(self.env_size[0]):
                 side_pos[0] = float(self.env_size[0]) - margin
             side_pos[1] = np.clip(side_pos[1], margin, float(self.env_size[1]) - margin)
-            for red_agent_idx in [3, 4, 5]:
+            for red_agent_idx in range(self.num_blue, self.num_agents):
                 self.state["agent_position"][red_agent_idx] = side_pos.copy()
                 self.state["prev_agent_position"][red_agent_idx] = side_pos.copy()
                 self.players[self.agents[red_agent_idx]].pos = np.array(side_pos, dtype=np.float64)

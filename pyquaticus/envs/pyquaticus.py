@@ -1218,7 +1218,14 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         global_state = self._history_to_state() #common to all agents
 
         # Rewards
-        rewards = {agent_id: self.compute_rewards(agent_id, player.team) for agent_id, player in self.players.items()}
+        disabled = self.state.get("disabled_agents")
+        rewards = {}
+        for agent_id, player in self.players.items():
+            idx = self.agents.index(agent_id)
+            if disabled is not None and len(disabled) > idx and bool(disabled[idx]):
+                rewards[agent_id] = 0.0
+            else:
+                rewards[agent_id] = self.compute_rewards(agent_id, player.team)
 
         # Dones
         terminated = False
