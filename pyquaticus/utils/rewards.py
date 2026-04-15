@@ -158,7 +158,7 @@
 """
 
 import math
-import numpy
+import numpy as np
 
 from pyquaticus.structs import Team
 from pyquaticus.utils.utils import *
@@ -207,53 +207,37 @@ def caps_and_grabs(
     agent_is_tagged = state["agent_is_tagged"][agent_index] #[agent_0,agent_1,..]
     if not agent_is_tagged:
         agent_has_flag = state["agent_has_flag"][agent_index]
-        if agent_has_flag:
-            target = np.array(state["flag_home"][int(team)])
-        else:
-            # If not tagged and no flag: reward moving toward opponent flag (no control if tagged / carrying).
-            target = np.array(state["flag_position"][int(opp_team)])
-            prev_pos = np.array(prev_state["agent_position"][agent_index])
-            curr_pos = np.array(state["agent_position"][agent_index])
-        
-            field_diag = np.linalg.norm(env_size)
-            curr_dist = np.linalg.norm(curr_pos - target)
-            prev_dist = np.linalg.norm(prev_pos - target)
-            
-            reward += (0.01 * (prev_dist - curr_dist) / field_diag)
+        # If not tagged: dense shaping for progress toward objective.
+        # - If carrying: move toward own flag home.
+        # - Else: move toward opponent flag position.
+        target = np.array(state["flag_home"][int(team)]) if agent_has_flag else np.array(state["flag_position"][int(opp_team)])
+        prev_pos = np.array(prev_state["agent_position"][agent_index])
+        curr_pos = np.array(state["agent_position"][agent_index])
+
+        field_diag = np.linalg.norm(env_size)
+        curr_dist = np.linalg.norm(curr_pos - target)
+        prev_dist = np.linalg.norm(prev_pos - target)
+        reward += (0.01 * (prev_dist - curr_dist) / field_diag)
 
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
         reward += -1.0
 
-    #----------
-    #added a reward when you tag an opponent 
-
-    tagged_agent_index = state["agent_made_tag"][agent_index] #can return none if an agent isnt tagged, thats why we check if x != None
-    if tagged_agent_index != None: 
-        if state["agent_has_flag"][tagged_agent_index]:
-            reward += 0.5
-            
-    #----------
-    #(possibility, check with group if needed)additional penelty if the agent is tagged when it looses the flag
-
-    #----------
-    #added a reward when being on opponents side
-    agent_on_own_side = state["agent_on_sides"][agent_index]
-    agent_has_flag = state["agent_has_flag"][agent_index]
-    if (not agent_on_own_side) and (not agent_has_flag):
-        reward += 0.01
+    # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
+    # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
     
     #----------
     #added a reward when defending against agents on our side; opp_index = opponents index
-    opponent_on_our_side = False
+    agent_on_own_side = state["agent_on_sides"][agent_index]
     for opp_index in agent_inds_of_team[opp_team]:
         if not state["agent_on_sides"][opp_index]:
-            opponent_on_our_side = True
+            agent_pos = np.array(state["agent_position"][agent_index])
+            opp_pos = np.array(state["agent_position"][opp_index])
+            dist = np.linalg.norm(agent_pos - opp_pos)
+            if agent_on_own_side:
+                reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size))
             break
-
-    if agent_on_own_side and opponent_on_our_side:
-        reward += 0.01
 
     #----------#
 
@@ -265,16 +249,17 @@ def caps_and_grabs(
         reward += -0.25
     
     #Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)] the value at the index 0 corresponds to the number of grabs
+    team_scale = 1.0 / max(1, len(agent_inds_of_team[team]))
     for t in range(len(state['grabs'])):
         prev_num_grabs = prev_state['grabs'][t]
         num_grabs = state['grabs'][t]
         if num_grabs > prev_num_grabs:
-            reward += 0.25 if t == int(team) else -0.25
+            reward += (0.25 if t == int(team) else -0.25) * team_scale
 
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            reward += 1.0 if t == int(team) else -1.0
+            reward += (1.0 if t == int(team) else -1.0) * team_scale
 
     return reward
 
