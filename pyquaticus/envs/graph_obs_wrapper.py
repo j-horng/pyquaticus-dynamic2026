@@ -25,8 +25,8 @@ except ImportError:
     ParallelPettingZooEnv = None
 
 
-# Node feature dim: x, y, heading_norm, speed_norm, has_flag, is_tagged, on_side, team, is_disabled, cooldown_norm
-NODE_FEAT_DIM = 10
+# Node feature dim: x, y, heading_norm, speed_norm, has_flag, is_tagged, on_side, team, is_disabled, cooldown_norm, dist_own_flag, dist_opp_flag
+NODE_FEAT_DIM = 12
 MAX_AGENTS = 6
 
 
@@ -105,6 +105,19 @@ def _state_to_node_features(env, agent_id: str, global_state: dict, disabled: np
         else:
             # Already normalized, just clip to be safe
             features[i, 9] = np.clip(cooldown, -1.0, 1.0)
+
+        # Distance to own flag home (normalized to [-1, 1])
+        flag_home = global_state.get(("flag_home", int(player.team.value)), np.zeros(2))
+        flag_home = np.asarray(flag_home, dtype=np.float32)
+        dist_own_flag = np.linalg.norm(pos - flag_home) / np.linalg.norm(env_size)
+        features[i, 10] = np.clip(2.0 * dist_own_flag - 1.0, -1.0, 1.0)
+
+        # Distance to opponent flag position (normalized to [-1, 1])
+        opp_team_idx = 1 - int(player.team.value)
+        flag_opp = global_state.get(("flag_position", opp_team_idx), np.zeros(2))
+        flag_opp = np.asarray(flag_opp, dtype=np.float32)
+        dist_opp_flag = np.linalg.norm(pos - flag_opp) / np.linalg.norm(env_size)
+        features[i, 11] = np.clip(2.0 * dist_opp_flag - 1.0, -1.0, 1.0)
     
     features = np.asarray(features, dtype=np.float32)
     return np.clip(features, -1.0, 1.0)
