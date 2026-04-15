@@ -182,6 +182,8 @@ if __name__ == "__main__":
     parser.add_argument("--save-every", type=int, default=12, help="Save checkpoint every N iters")
     parser.add_argument("--out-dir", type=str, default="./ray_dynamic/", help="Output directory for checkpoints and train.log")
     parser.add_argument("--runners", type=int, default=8, help="Number of parallel env runners (8=stable default; increase if PC has headroom)")
+    parser.add_argument("--entropy-coeff", type=float, default=0.05,
+        help="PPO entropy coefficient (default 0.05 for Phase 1; use 0.01 for Phase 2+)")
     parser.add_argument("--speedup", type=int, default=8, help="Sim speedup factor (8=env steps 2x faster, minimal impact on learning)")
     parser.add_argument("--resume", type=str, default=None, metavar="PATH", help="Resume from checkpoint (e.g. ./ray_dynamic/iter_1250)")
     parser.add_argument("--no-log-file", action="store_true", help="Disable writing progress to out_dir/train.log")
@@ -416,7 +418,7 @@ if __name__ == "__main__":
             ).training(
                 model={"custom_model": "gnn_model", "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2}},
                 train_batch_size=500,
-                entropy_coeff=0.01, # allows it to explore early during the traiing process - tismailw
+                entropy_coeff=args.entropy_coeff, # allows it to explore early during the traiing process - tismailw
             )
             algo = ppo_config.build_algo()
             if args.red_from_checkpoint:
@@ -510,7 +512,7 @@ if __name__ == "__main__":
                 "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2},
             },
             train_batch_size=train_batch_size,
-            entropy_coeff=0.01, # allows it to explore early during the traiing process - tismailw
+            entropy_coeff=args.entropy_coeff, # allows it to explore early during the traiing process - tismailw
         )
         algo = ppo_config.build_algo()
         if args.red_from_checkpoint:
@@ -530,7 +532,13 @@ if __name__ == "__main__":
                     ep_rew_str = f"{float(ep_rew):.2f}"
                 # Print every 25 iters (and iter 0)
                 if i % 25 == 0 or i == 0:
-                    log(f"Iter {i}: return_mean={ep_rew_str}, time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters)")
+                    entropy = result.get("info", {}).get("learner", {}).get(
+                        "blue_policy", {}).get("learner_stats", {}).get("entropy", None)
+                    pol_loss = result.get("info", {}).get("learner", {}).get(
+                        "blue_policy", {}).get("learner_stats", {}).get("policy_loss", None)
+                    entropy_str = f"{entropy:.4f}" if entropy is not None else "n/a"
+                    pol_str = f"{pol_loss:.4f}" if pol_loss is not None else "n/a"
+                    log(f"Iter {i}: return_mean={ep_rew_str}, entropy={entropy_str}, policy_loss={pol_str}, time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters)")
                 if i > 0 and i % args.save_every == 0:
                     path = os.path.join(args.out_dir, f"iter_{i}")
                     algo.save(path)
