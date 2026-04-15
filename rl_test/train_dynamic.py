@@ -531,7 +531,7 @@ if __name__ == "__main__":
                 else:
                     ep_rew_str = f"{float(ep_rew):.2f}"
                 # Print every 25 iters (and iter 0)
-                if i % 25 == 0 or i == 0:
+                if i % args.save_every == 0 or i == 0:
                     entropy = result.get("info", {}).get("learner", {}).get(
                         "blue_policy", {}).get("learner_stats", {}).get("entropy", None)
                     pol_loss = result.get("info", {}).get("learner", {}).get(
