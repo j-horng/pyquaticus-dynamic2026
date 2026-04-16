@@ -1,0 +1,25 @@
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=2.8266, policy_loss=-0.0052, time=30.0s/iter (est. ~1502s per 50 iters)
+Iter 12: return_mean=-2.37, entropy=2.7798, policy_loss=-0.0110, time=35.3s/iter (est. ~1767s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_12
+Iter 24: return_mean=-0.79, entropy=2.7396, policy_loss=-0.0128, time=33.3s/iter (est. ~1667s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_24
+Iter 36: return_mean=1.43, entropy=2.7388, policy_loss=-0.0147, time=32.3s/iter (est. ~1614s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_36
+Iter 48: return_mean=1.15, entropy=2.7339, policy_loss=-0.0140, time=32.2s/iter (est. ~1611s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_48
+Iter 60: return_mean=1.81, entropy=2.7323, policy_loss=-0.0195, time=28.9s/iter (est. ~1445s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_60
+Iter 72: return_mean=1.24, entropy=2.6905, policy_loss=-0.0192, time=28.3s/iter (est. ~1413s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_72
+Iter 84: return_mean=0.37, entropy=2.6726, policy_loss=-0.0208, time=32.7s/iter (est. ~1633s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_84
+Iter 96: return_mean=0.40, entropy=2.7247, policy_loss=-0.0157, time=33.8s/iter (est. ~1690s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_96
+Iter 108: return_mean=1.09, entropy=2.6960, policy_loss=-0.0200, time=31.7s/iter (est. ~1584s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_108
+Iter 120: return_mean=-0.42, entropy=2.7034, policy_loss=-0.0204, time=30.9s/iter (est. ~1543s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_120
+Iter 132: return_mean=-0.37, entropy=2.6442, policy_loss=-0.0236, time=31.7s/iter (est. ~1586s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v3/iter_132
