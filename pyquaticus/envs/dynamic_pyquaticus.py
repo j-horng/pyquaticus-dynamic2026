@@ -14,6 +14,7 @@ from typing import Optional, Union
 
 import numpy as np
 
+from pyquaticus.config import ACTION_MAP
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv
 from pyquaticus.structs import Team
 
