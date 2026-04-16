@@ -210,19 +210,23 @@ def caps_and_grabs(
     opp_team = Team.RED_TEAM if int(team) == 0 else Team.BLUE_TEAM
 
     agent_is_tagged = state["agent_is_tagged"][agent_index] #[agent_0,agent_1,..]
+    agent_has_flag = state["agent_has_flag"][agent_index]
     if not agent_is_tagged:
-        agent_has_flag = state["agent_has_flag"][agent_index]
-        # If not tagged: dense shaping for progress toward objective.
-        # - If carrying: move toward own flag home.
-        # - Else: move toward opponent flag position.
-        target = np.array(state["flag_home"][int(team)]) if agent_has_flag else np.array(state["flag_position"][int(opp_team)])
         prev_pos = np.array(prev_state["agent_position"][agent_index])
         curr_pos = np.array(state["agent_position"][agent_index])
-
         field_diag = np.linalg.norm(env_size)
-        curr_dist = np.linalg.norm(curr_pos - target)
-        prev_dist = np.linalg.norm(prev_pos - target)
-        reward += (0.01 * (prev_dist - curr_dist) / field_diag)
+        if agent_has_flag:
+            # Carry shaping: reward moving toward own flag home when carrying
+            target = np.array(state["flag_home"][int(team)])
+            curr_dist = np.linalg.norm(curr_pos - target)
+            prev_dist = np.linalg.norm(prev_pos - target)
+            reward += (0.03 * (prev_dist - curr_dist) / field_diag)
+        else:
+            # Weak attack shaping: gentle nudge toward opponent flag
+            target = np.array(state["flag_position"][int(opp_team)])
+            curr_dist = np.linalg.norm(curr_pos - target)
+            prev_dist = np.linalg.norm(prev_pos - target)
+            reward += (0.005 * (prev_dist - curr_dist) / field_diag)
 
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
@@ -257,12 +261,15 @@ def caps_and_grabs(
 
     #----------#
 
-    #Check if agents lost flag
+    #Check if agents lost or gained flag
     prev_has_flag = prev_state['agent_has_flag'][agent_index]
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
         reward += -0.25
+    # Agent grabbed flag individually
+    if (has_flag > prev_has_flag):
+        reward += 0.5
     
     #Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)] the value at the index 0 corresponds to the number of grabs
     if disabled is not None:
@@ -279,7 +286,7 @@ def caps_and_grabs(
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            reward += (1.0 if t == int(team) else -1.0) * team_scale
+            reward += (2.0 if t == int(team) else -2.0) * team_scale
 
     return reward
 
