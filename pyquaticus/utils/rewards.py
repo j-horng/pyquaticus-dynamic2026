@@ -209,24 +209,12 @@ def caps_and_grabs(
     # agent_inds_of_team is keyed by Team enum, not int (0/1).
     opp_team = Team.RED_TEAM if int(team) == 0 else Team.BLUE_TEAM
 
-    agent_is_tagged = state["agent_is_tagged"][agent_index] #[agent_0,agent_1,..]
+    agent_is_tagged = state["agent_is_tagged"][agent_index]
     agent_has_flag = state["agent_has_flag"][agent_index]
     if not agent_is_tagged:
         prev_pos = np.array(prev_state["agent_position"][agent_index])
         curr_pos = np.array(state["agent_position"][agent_index])
         field_diag = np.linalg.norm(env_size)
-        if agent_has_flag:
-            # Carry shaping: reward moving toward own flag home when carrying
-            target = np.array(state["flag_home"][int(team)])
-            curr_dist = np.linalg.norm(curr_pos - target)
-            prev_dist = np.linalg.norm(prev_pos - target)
-            reward += (0.5 * (prev_dist - curr_dist) / field_diag)
-        else:
-            # Weak attack shaping: gentle nudge toward opponent flag
-            target = np.array(state["flag_position"][int(opp_team)])
-            curr_dist = np.linalg.norm(curr_pos - target)
-            prev_dist = np.linalg.norm(prev_pos - target)
-            reward += (0.005 * (prev_dist - curr_dist) / field_diag)
 
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
@@ -253,7 +241,6 @@ def caps_and_grabs(
                 dist = np.linalg.norm(agent_pos - opp_pos)
                 if agent_on_own_side:
                     defend_scale = 3.0 if state["agent_has_flag"][opp_index] else 1.0
-                    reward += 0.02 * (1.0 - dist / np.linalg.norm(env_size)) * defend_scale
                     prev_agent_pos = np.array(prev_state["agent_position"][agent_index])
                     prev_dist = np.linalg.norm(prev_agent_pos - opp_pos)
                     reward += 0.01 * (prev_dist - dist) / np.linalg.norm(env_size) * defend_scale
@@ -266,7 +253,7 @@ def caps_and_grabs(
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
-        reward += -0.25
+        reward += -0.75
     # Agent grabbed flag individually
     if (has_flag > prev_has_flag):
         reward += 0.5

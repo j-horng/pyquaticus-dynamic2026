@@ -1833,6 +1833,7 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
 
         # Game parameters
         self.max_score = config_dict.get("max_score", config_dict_std["max_score"])
+        self.score_ends_episode = config_dict.get("score_ends_episode", True)
         self.max_time = config_dict.get("max_time", config_dict_std["max_time"])
         self.max_cycles = ceil(self.max_time / (self.sim_speedup_factor * self.dt))
         self.tagging_cooldown = config_dict.get("tagging_cooldown", config_dict_std["tagging_cooldown"])
@@ -2339,22 +2340,18 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         red_scores = self.game_events[Team.RED_TEAM]['scores']
         final_score_msg = f"Final score: {blue_scores}\u2013{red_scores} (Blue\u2013Red). "
 
-        if (blue_scores == self.max_score) and (red_scores != self.max_score):
-            self.dones["blue"] = True
-            self.dones["__all__"] = True
-            self.message = "Blue Wins!"
+        if self.score_ends_episode:
+            if (blue_scores == self.max_score) and (red_scores != self.max_score):
+                self.dones["blue"] = True
+                self.dones["__all__"] = True
+                self.message = "Blue Wins!"
 
-        elif red_scores == self.max_score:
-            self.dones["red"] = True
-            self.dones["__all__"] = True
-            self.message = "Red Wins!"
+            elif red_scores == self.max_score:
+                self.dones["red"] = True
+                self.dones["__all__"] = True
+                self.message = "Red Wins!"
 
-        elif red_scores == self.max_score:
-            self.dones["red"] = True
-            self.dones["__all__"] = True
-            self.message = "Red Wins! Blue Loses"
-
-        elif self.current_time > self.max_time or np.isclose(self.current_time, self.max_time):
+        if not self.dones["__all__"] and (self.current_time > self.max_time or np.isclose(self.current_time, self.max_time)):
             self.dones["__all__"] = True
             if blue_scores > red_scores:
                 self.message = "Blue Wins!"

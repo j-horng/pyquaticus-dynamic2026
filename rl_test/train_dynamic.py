@@ -136,6 +136,7 @@ def make_env(
     red_dummy=False,
     max_time=600,
     max_score=3,
+    score_ends_episode=False,
     team_size_range=(1, 3),
     tag_removes_agent=False,
     reinforcement_interval=0,
@@ -145,6 +146,7 @@ def make_env(
     cfg = config_dict_std.copy()
     cfg["sim_speedup_factor"] = sim_speedup
     cfg["max_score"] = max_score
+    cfg["score_ends_episode"] = score_ends_episode
     cfg["max_time"] = max_time
     cfg["tagging_cooldown"] = 60
     cfg["tag_on_oob"] = True
@@ -193,6 +195,7 @@ if __name__ == "__main__":
     parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play vs previous iteration)")
     parser.add_argument("--max-time", type=float, default=600, help="Max episode time in seconds (default 600 = 10 min)")
     parser.add_argument("--max-score", type=int, default=3, help="Max score per team to end episode (default 3)")
+    parser.add_argument("--score-ends-episode", action="store_true", help="End episodes as soon as a team reaches --max-score (disabled by default for training)")
     parser.add_argument("--team-size-min", type=int, default=1, help="Min agents per team at episode start (default 1)")
     parser.add_argument("--team-size-max", type=int, default=3, help="Max agents per team at episode start (default 3)")
     parser.add_argument("--tag-removes-agent", action="store_true", help="When tagged, agent is disabled (removed) until reinforcement")
@@ -255,6 +258,7 @@ if __name__ == "__main__":
             red_dummy=args.red_dummy,
             max_time=args.max_time,
             max_score=args.max_score,
+            score_ends_episode=args.score_ends_episode,
             team_size_range=team_size_range,
             tag_removes_agent=args.tag_removes_agent,
             reinforcement_interval=reinf_interval,
@@ -270,6 +274,7 @@ if __name__ == "__main__":
         red_dummy=args.red_dummy,
         max_time=args.max_time,
         max_score=args.max_score,
+        score_ends_episode=args.score_ends_episode,
         team_size_range=team_size_range,
         tag_removes_agent=args.tag_removes_agent,
         reinforcement_interval=reinf_interval,
@@ -313,7 +318,8 @@ if __name__ == "__main__":
     spawn_mode = "spawn_line (fixed)" if args.fixed_spawn else "random_on_own_side"
     log(
         f"Dynamic env: team_size={team_min}-{team_max} per team, init={spawn_mode}, "
-        f"tag_removes_agent={args.tag_removes_agent}, reinforcement_interval={reinf_interval}, reinforcement_prob={reinf_prob}"
+        f"tag_removes_agent={args.tag_removes_agent}, reinforcement_interval={reinf_interval}, reinforcement_prob={reinf_prob}, "
+        f"score_ends_episode={args.score_ends_episode}"
     )
 
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
