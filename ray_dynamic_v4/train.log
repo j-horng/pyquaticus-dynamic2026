@@ -1,0 +1,38 @@
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5
+Red team using do-nothing policy (always no-op actions).
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2136, policy_loss=-0.0052, time=27.2s/iter (est. ~1359s per 50 iters)
+Iter 12: return_mean=-2.48, entropy=3.1528, policy_loss=-0.0139, time=26.5s/iter (est. ~1323s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_12
+Iter 24: return_mean=-0.28, entropy=3.1028, policy_loss=-0.0135, time=27.4s/iter (est. ~1369s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_24
+Iter 36: return_mean=0.31, entropy=3.1143, policy_loss=-0.0164, time=27.4s/iter (est. ~1371s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_36
+Iter 48: return_mean=0.67, entropy=3.0426, policy_loss=-0.0170, time=27.4s/iter (est. ~1368s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_48
+Iter 60: return_mean=1.30, entropy=2.9170, policy_loss=-0.0129, time=27.7s/iter (est. ~1387s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_60
+Iter 72: return_mean=4.85, entropy=2.9911, policy_loss=-0.0191, time=27.4s/iter (est. ~1368s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_72
+Iter 84: return_mean=7.40, entropy=2.9648, policy_loss=-0.0185, time=27.5s/iter (est. ~1373s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_84
+Iter 96: return_mean=7.39, entropy=2.9577, policy_loss=-0.0182, time=27.3s/iter (est. ~1367s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_96
+Iter 108: return_mean=7.39, entropy=2.9630, policy_loss=-0.0192, time=31.9s/iter (est. ~1593s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_108
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\ray_dynamic_v4\iter_108 (next iteration 109)
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 120: return_mean=7.43, entropy=2.9271, policy_loss=-0.0196, time=28.4s/iter (est. ~1420s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_120
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5
+Red team using built-in heuristic (combined CTF, hard mode).
+Resuming from C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\ray_dynamic_v4\iter_120 (next iteration 121)
+Red opponent: hard (current args). Blue weights restored from checkpoint.
+Iter 132: return_mean=19.05, entropy=3.0862, policy_loss=-0.0200, time=31.1s/iter (est. ~1554s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_132
+Iter 144: return_mean=20.27, entropy=3.0919, policy_loss=-0.0201, time=32.0s/iter (est. ~1599s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_144
+Iter 156: return_mean=22.69, entropy=3.0686, policy_loss=-0.0230, time=31.7s/iter (est. ~1583s per 50 iters)
+Saved checkpoint to ./ray_dynamic_v4/iter_156

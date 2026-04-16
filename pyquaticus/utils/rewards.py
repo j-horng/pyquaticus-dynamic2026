@@ -220,7 +220,7 @@ def caps_and_grabs(
             target = np.array(state["flag_home"][int(team)])
             curr_dist = np.linalg.norm(curr_pos - target)
             prev_dist = np.linalg.norm(prev_pos - target)
-            reward += (0.03 * (prev_dist - curr_dist) / field_diag)
+            reward += (0.5 * (prev_dist - curr_dist) / field_diag)
         else:
             # Weak attack shaping: gentle nudge toward opponent flag
             target = np.array(state["flag_position"][int(opp_team)])
