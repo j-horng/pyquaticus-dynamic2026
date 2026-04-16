@@ -174,7 +174,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
                 else:
-                    patched[player.id] = 16  # no-op in ACTION_MAP
+                    patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
 
         obs, rewards, terminated, truncated, info = super().step(patched)
         self._step_count += 1
