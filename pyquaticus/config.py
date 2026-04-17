@@ -62,6 +62,7 @@ config_dict_std = {
     "default_init":      True,  # Spawn agents programmatically, rather than randomly
     "on_sides_init":     True,  # Spawn agents on their own side of the field / scrimmage line
     "max_score":           20,  # maximum score per episode (until a winner is declared)
+    "score_ends_episode": True,  # if False: reaching max_score does not end the episode (useful for some training setups)
     "max_time":         600.0,  # maximum time (seconds) per episode
     "tagging_cooldown":  60.0,  # cooldown on an agent (seconds) after they tag another agent, to prevent consecutive tags
     "tag_on_collision": False,  # option for setting the agent to a tagged state upon collsion with an obstacle
@@ -190,7 +191,7 @@ LIDAR_DETECTION_CLASS_MAP = {class_name: i for i, class_name in enumerate(lidar_
 ### Action Map ###
 # maps discrete action id to (speed, heading)
 ACTION_MAP = []
-for spd in [1.0, 0.5]:
+for spd in [1.0, 0.5, 0.25]:
     for hdg in range(180, -180, -45):
         ACTION_MAP.append([spd, hdg])
 # add a none action

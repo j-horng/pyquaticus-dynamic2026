@@ -8,6 +8,8 @@ Usage:
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_500 --no-render
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_132 --red-heuristic --red-heuristic-mode easy
   python rl_test/deploy_dynamic.py ./ray_dynamic/iter_360 --red-dummy
+  python rl_test/deploy_dynamic.py ./ray_dynamic/iter_900 --red-from-checkpoint ./ray_dynamic/iter_600
+  # Match training: random 1–3 active agents per team each episode (default). Fixed 3v3: --team-size-min 3 --team-size-max 3
 """
 
 import argparse
@@ -52,7 +54,25 @@ def _get_action_space(env, agent_id):
     return _DEFAULT_ACTION_SPACE
 
 
-def make_env(render_mode="human", red_gets_raw_obs=False, red_dummy=False):
+def _get_dynamic_pyquaticus(wrapped_env):
+    """Unwrap ParallelPettingZooWrapper / GraphObsWrapper to DynamicPyQuaticusEnv."""
+    e = wrapped_env
+    for _ in range(6):
+        if isinstance(e, DynamicPyQuaticusEnv):
+            return e
+        nxt = getattr(e, "par_env", None)
+        if nxt is None:
+            break
+        e = nxt
+    raise RuntimeError("Could not unwrap to DynamicPyQuaticusEnv")
+
+
+def make_env(
+    render_mode="human",
+    red_gets_raw_obs=False,
+    red_dummy=False,
+    team_size_range=(1, 3),
+):
     cfg = config_dict_std.copy()
     cfg["sim_speedup_factor"] = 4
     cfg["max_score"] = 3
@@ -66,7 +86,7 @@ def make_env(render_mode="human", red_gets_raw_obs=False, red_dummy=False):
         "agent_3": rew.caps_and_grabs, "agent_4": rew.caps_and_grabs, "agent_5": rew.caps_and_grabs,
     }
     env = DynamicPyQuaticusEnv(
-        team_size_range=(3, 3),
+        team_size_range=team_size_range,
         tag_removes_agent=False,
         reinforcement_interval=0,
         config_dict=cfg,
@@ -91,10 +111,29 @@ def main():
     parser.add_argument("--red-heuristic", action="store_true", help="Use easy/medium/hard heuristic for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty (default: easy)")
     parser.add_argument("--red-dummy", action="store_true", help="No Red opponents (Blue plays alone; same as training with --red-dummy)")
+    parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play deploy)")
+    parser.add_argument(
+        "--team-size-min",
+        type=int,
+        default=1,
+        help="Min active agents per team at episode start (default 1; match train_dynamic)",
+    )
+    parser.add_argument(
+        "--team-size-max",
+        type=int,
+        default=3,
+        help="Max active agents per team at episode start (default 3; use 3/3 for fixed 3v3)",
+    )
     args = parser.parse_args()
 
-    if args.red_heuristic and args.red_dummy:
-        print("Error: Cannot use both --red-heuristic and --red-dummy.")
+    team_min, team_max = args.team_size_min, args.team_size_max
+    if team_min < 1 or team_max > 3 or team_min > team_max:
+        print("Error: Require 1 <= --team-size-min <= --team-size-max <= 3.")
+        return
+
+    red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_from_checkpoint)])
+    if red_mode_count > 1:
+        print("Error: Use only one of --red-heuristic, --red-dummy, --red-from-checkpoint.")
         return
 
     # Resolve policy path
@@ -112,20 +151,44 @@ def main():
     blue_policy = Policy.from_checkpoint(policy_path)
 
     render_mode = None if args.no_render else "human"
-    env = make_env(render_mode=render_mode, red_gets_raw_obs=args.red_heuristic, red_dummy=args.red_dummy)
+    team_size_range = (team_min, team_max)
+    env = make_env(
+        render_mode=render_mode,
+        red_gets_raw_obs=args.red_heuristic,
+        red_dummy=args.red_dummy,
+        team_size_range=team_size_range,
+    )
+    dynamic_env = _get_dynamic_pyquaticus(env)
+    if team_min == team_max:
+        print(f"Team sizes: fixed {team_min}v{team_min} (all episodes).")
+    else:
+        print(f"Team sizes: random {team_min}–{team_max} active per team each episode (like train_dynamic).")
 
     # Red heuristic: need base env (DynamicPyQuaticusEnv) and raw obs for Red
     red_heuristics = None
+    red_prev_policy = None
     if args.red_dummy:
         print("Red team: dummy (no opponents; Blue plays alone).")
     elif args.red_heuristic:
-        base_env = getattr(getattr(env, "par_env", env), "par_env", getattr(env, "par_env", env))
+        base_env = dynamic_env
         red_heuristics = {
             "agent_3": Heuristic_CTF_Agent("agent_3", base_env, mode=args.red_heuristic_mode),
             "agent_4": Heuristic_CTF_Agent("agent_4", base_env, mode=args.red_heuristic_mode),
             "agent_5": Heuristic_CTF_Agent("agent_5", base_env, mode=args.red_heuristic_mode),
         }
         print(f"Red team: heuristic (combined CTF, {args.red_heuristic_mode} mode).")
+    elif args.red_from_checkpoint:
+        red_path = os.path.abspath(args.red_from_checkpoint)
+        if os.path.isdir(red_path) and not red_path.endswith("blue_policy"):
+            red_policy_path = os.path.join(red_path, "policies", "blue_policy")
+        else:
+            red_policy_path = red_path
+        if not os.path.isdir(red_policy_path):
+            print(f"Error: Red policy not found at {red_policy_path}")
+            return
+        print(f"Loading red policy from: {red_policy_path}")
+        red_prev_policy = Policy.from_checkpoint(red_policy_path)
+        print("Red team: previous Blue checkpoint (self-play deploy).")
 
     obs, info = env.reset()
 
@@ -155,6 +218,13 @@ def main():
                         heuristic_info = {aid: {"global_state": global_state}}
                         action = red_heuristics[aid].compute_action(obs[aid], heuristic_info)
                         actions[aid] = int(action) if hasattr(action, "item") else int(action)
+                    elif red_prev_policy is not None:
+                        action = red_prev_policy.compute_single_action(obs[aid], explore=False)
+                        if isinstance(action, (list, tuple)):
+                            action = action[0]
+                        if hasattr(action, "item"):
+                            action = int(action.item())
+                        actions[aid] = action
                     else:
                         space = _get_action_space(env, aid)
                         samp = space.sample()
@@ -172,7 +242,12 @@ def main():
             done = any(term.values()) or any(trunc.values()) or step >= max_steps_per_episode
             if done:
                 episode += 1
-                print(f"Episode {episode} finished (steps={step})  Blue total: {ep_blue_reward:.1f}  Red total: {ep_red_reward:.1f}")
+                nb = dynamic_env.num_blue_active
+                nr = dynamic_env.num_red_active
+                print(
+                    f"Episode {episode} finished (steps={step})  {nb}v{nr}  "
+                    f"Blue total: {ep_blue_reward:.1f}  Red total: {ep_red_reward:.1f}"
+                )
                 if args.max_episodes and episode >= args.max_episodes:
                     break
                 obs, info = env.reset()

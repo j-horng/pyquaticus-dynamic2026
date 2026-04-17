@@ -25,8 +25,8 @@ except ImportError:
     ParallelPettingZooEnv = None
 
 
-# Node feature dim: x, y, heading_norm, speed_norm, has_flag, is_tagged, on_side, team, is_disabled, cooldown_norm
-NODE_FEAT_DIM = 10
+# Node feature dim: x, y, heading_norm, speed_norm, has_flag, is_tagged, on_side, team, is_disabled, cooldown_norm, dist_own_flag, dist_opp_flag
+NODE_FEAT_DIM = 12
 MAX_AGENTS = 6
 
 
@@ -105,6 +105,20 @@ def _state_to_node_features(env, agent_id: str, global_state: dict, disabled: np
         else:
             # Already normalized, just clip to be safe
             features[i, 9] = np.clip(cooldown, -1.0, 1.0)
+
+        # Distance to own flag home (normalized to [-1, 1])
+        team_name = "blue" if int(player.team.value) == 0 else "red"
+        flag_home = global_state.get(f"{team_name}_flag_home", np.zeros(2))
+        flag_home = np.asarray(flag_home, dtype=np.float32)
+        dist_own_flag = np.linalg.norm(pos - flag_home) / np.linalg.norm(env_size)
+        features[i, 10] = np.clip(2.0 * dist_own_flag - 1.0, -1.0, 1.0)
+
+        # Distance to opponent flag position (normalized to [-1, 1])
+        opp_name = "red" if int(player.team.value) == 0 else "blue"
+        flag_opp = global_state.get(f"{opp_name}_flag_pos", np.zeros(2))
+        flag_opp = np.asarray(flag_opp, dtype=np.float32)
+        dist_opp_flag = np.linalg.norm(pos - flag_opp) / np.linalg.norm(env_size)
+        features[i, 11] = np.clip(2.0 * dist_opp_flag - 1.0, -1.0, 1.0)
     
     features = np.asarray(features, dtype=np.float32)
     return np.clip(features, -1.0, 1.0)
@@ -135,6 +149,7 @@ class GraphObsWrapper(ParallelEnv):
             super().__init__()
         else:
             super().__init__()
+        self._edge_index = _build_edge_index()
         self.env = env
         self.flatten_for_fc = flatten_for_fc
         self.blue_agent_ids = list(blue_agent_ids) if blue_agent_ids is not None else ["agent_0", "agent_1", "agent_2"]
@@ -240,7 +255,7 @@ class GraphObsWrapper(ParallelEnv):
         env_size = getattr(env, "env_size", np.array([160, 80]))
         max_speed = max(getattr(env, "max_speeds", [2.0]))
         node_features = _state_to_node_features(env, agent_id, global_state, disabled, env_size, max_speed)
-        edge_index = _build_edge_index()
+        edge_index = self._edge_index
         mask = 1.0 - np.array([float(disabled[i]) if i < len(disabled) else 1.0 for i in range(MAX_AGENTS)], dtype=np.float32)
         # Index of the acting agent in the node list (agent_0 -> 0, agent_1 -> 1, ...)
         try:

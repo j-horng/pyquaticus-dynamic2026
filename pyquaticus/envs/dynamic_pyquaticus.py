@@ -14,6 +14,7 @@ from typing import Optional, Union
 
 import numpy as np
 
+from pyquaticus.config import ACTION_MAP
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv
 from pyquaticus.structs import Team
 
@@ -89,13 +90,16 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             return self.agent_obs_normalizer.normalized(obs), obs
         return obs, None
 
-    def _set_initial_disabled(self, num_blue_active: int, num_red_active: int):
-        """Disable agents not in the active set."""
+    def _set_initial_disabled(self, active_blue_inds: list[int], active_red_inds: list[int]):
+        """Disable agents not in the active set.
+
+        Note: agent indices are 0..num_blue-1 for Blue and num_blue..num_agents-1 for Red.
+        """
         disabled = np.ones(self.num_agents, dtype=bool)
-        for i in range(num_blue_active):
-            disabled[i] = False
-        for i in range(self.num_blue, self.num_blue + num_red_active):
-            disabled[i] = False
+        for i in active_blue_inds:
+            disabled[int(i)] = False
+        for i in active_red_inds:
+            disabled[int(i)] = False
         self.state["disabled_agents"] = disabled
         for i, player in enumerate(self.players.values()):
             player.is_disabled = bool(disabled[i])
@@ -107,7 +111,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         min_size, max_size = self.team_size_range
         if self.red_dummy_mode:
-            self.num_blue_active = max_size  # 3 Blue agents
+            self.num_blue_active = max_size  # All Blue agents active
             self.num_red_active = 0  # No Red agents; Blue plays alone (capture the flag only)
         else:
             self.num_blue_active = random.randint(min_size, max_size)
@@ -115,9 +119,20 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         if "disabled_agents" not in self.state:
             self.state["disabled_agents"] = np.zeros(self.num_agents, dtype=bool)
-        self._set_initial_disabled(self.num_blue_active, self.num_red_active)
+
+        # Randomize *which* specific agents are active so we don't always activate the lowest indices.
+        # This prevents systematic bias like "active agents are always at the top of the list".
+        blue_pool = list(range(self.num_blue))
+        red_pool = list(range(self.num_blue, self.num_agents))
+        active_blue_inds = blue_pool if self.num_blue_active >= self.num_blue else random.sample(blue_pool, k=self.num_blue_active)
+        active_red_inds = [] if self.num_red_active <= 0 else (
+            red_pool if self.num_red_active >= self.num_red else random.sample(red_pool, k=self.num_red_active)
+        )
+        self._set_initial_disabled(active_blue_inds, active_red_inds)
         self.state["num_blue_active"] = self.num_blue_active
         self.state["num_red_active"] = self.num_red_active
+        self.state["active_blue_inds"] = np.array(active_blue_inds, dtype=np.int64)
+        self.state["active_red_inds"] = np.array(active_red_inds, dtype=np.int64)
 
         # In red_dummy_mode, all Red agents are disabled; place them in-bounds behind the Red flag
         # (to the right of the flag, same side) so they're out of the way
@@ -129,7 +144,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             if side_pos[0] >= float(self.env_size[0]):
                 side_pos[0] = float(self.env_size[0]) - margin
             side_pos[1] = np.clip(side_pos[1], margin, float(self.env_size[1]) - margin)
-            for red_agent_idx in [3, 4, 5]:
+            for red_agent_idx in range(self.num_blue, self.num_agents):
                 self.state["agent_position"][red_agent_idx] = side_pos.copy()
                 self.state["prev_agent_position"][red_agent_idx] = side_pos.copy()
                 self.players[self.agents[red_agent_idx]].pos = np.array(side_pos, dtype=np.float64)
@@ -137,12 +152,15 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         obs = {aid: self._history_to_obs(aid, "obs_hist_buffer") for aid in self.players}
         global_state = self._history_to_state()
+        disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        num_blue_active = int(np.sum(~disabled_agents[: self.num_blue]))
+        num_red_active = int(np.sum(~disabled_agents[self.num_blue : self.num_agents]))
         info = {
             aid: {
                 "global_state": global_state,
-                "num_blue_active": self.num_blue_active,
-                "num_red_active": self.num_red_active,
-                "disabled_agents": self.state["disabled_agents"],
+                "num_blue_active": num_blue_active,
+                "num_red_active": num_red_active,
+                "disabled_agents": disabled_agents,
             }
             for aid in self.players
         }
@@ -160,7 +178,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
                 else:
-                    patched[player.id] = 16  # no-op in ACTION_MAP
+                    patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
 
         obs, rewards, terminated, truncated, info = super().step(patched)
         self._step_count += 1
@@ -183,10 +201,13 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             if self._step_count > 0 and random.random() < self.reinforcement_prob:
                 self._spawn_reinforcement()
 
+        disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        num_blue_active = int(np.sum(~disabled_agents[: self.num_blue]))
+        num_red_active = int(np.sum(~disabled_agents[self.num_blue : self.num_agents]))
         for aid in self.agents:
-            info[aid]["num_blue_active"] = self.state.get("num_blue_active", self.num_blue_active)
-            info[aid]["num_red_active"] = self.state.get("num_red_active", self.num_red_active)
-            info[aid]["disabled_agents"] = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+            info[aid]["num_blue_active"] = num_blue_active
+            info[aid]["num_red_active"] = num_red_active
+            info[aid]["disabled_agents"] = disabled_agents
 
         return obs, rewards, terminated, truncated, info
 
