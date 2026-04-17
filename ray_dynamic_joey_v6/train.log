@@ -1,0 +1,37 @@
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Blue weights restored from resume checkpoint.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Blue weights restored from resume checkpoint.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_384 (next iteration 385)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_384 (next iteration 385)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary (current args). Blue weights restored from checkpoint.
+Iter 396: return_mean=-0.31, entropy=2.8317, policy_loss=-0.0229, time=31.0s/iter (est. ~1551s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_396
+Iter 408: return_mean=-0.20, entropy=2.5451, policy_loss=-0.0267, time=32.8s/iter (est. ~1640s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_408
+Iter 420: return_mean=-0.80, entropy=2.4148, policy_loss=-0.0247, time=32.4s/iter (est. ~1618s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_420
+Iter 432: return_mean=-0.88, entropy=2.4534, policy_loss=-0.0332, time=33.7s/iter (est. ~1683s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_432
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v6\iter_432 (next iteration 433)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary (current args). Blue weights restored from checkpoint.
+Iter 444: return_mean=-0.88, entropy=2.4766, policy_loss=-0.0235, time=32.1s/iter (est. ~1604s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_444
+Iter 456: return_mean=-0.93, entropy=2.3289, policy_loss=-0.0277, time=33.0s/iter (est. ~1650s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v6\iter_456

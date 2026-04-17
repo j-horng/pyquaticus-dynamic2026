@@ -57,6 +57,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self.num_red_active = max_team_size
         self._step_count = 0
         self.red_dummy_mode = (config_dict or {}).get("red_dummy_mode", False)
+        self.stationary_red_mode = (config_dict or {}).get("stationary_red_mode", False)
+        # Optional: force a fixed number of Red agents active at reset (others disabled).
+        self.force_num_red_active = (config_dict or {}).get("force_num_red_active", None)
 
         for player in self.players.values():
             if not hasattr(player, "is_disabled"):
@@ -115,7 +118,10 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             self.num_red_active = 0  # No Red agents; Blue plays alone (capture the flag only)
         else:
             self.num_blue_active = random.randint(min_size, max_size)
-            self.num_red_active = random.randint(min_size, max_size)
+            if self.force_num_red_active is None:
+                self.num_red_active = random.randint(min_size, max_size)
+            else:
+                self.num_red_active = max(0, min(self.num_red, int(self.force_num_red_active)))
 
         if "disabled_agents" not in self.state:
             self.state["disabled_agents"] = np.zeros(self.num_agents, dtype=bool)
@@ -150,6 +156,15 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 self.players[self.agents[red_agent_idx]].pos = np.array(side_pos, dtype=np.float64)
                 self.players[self.agents[red_agent_idx]].prev_pos = np.array(side_pos, dtype=np.float64)
 
+        if self.stationary_red_mode:
+            red_inds = list(range(self.num_blue, self.num_agents))
+            active_red = [random.choice(red_inds)]
+            self._set_initial_disabled(active_blue_inds, active_red)
+            self.state["num_blue_active"] = int(len(active_blue_inds))
+            self.state["num_red_active"] = int(len(active_red))
+            self.state["active_blue_inds"] = np.array(active_blue_inds, dtype=np.int64)
+            self.state["active_red_inds"] = np.array(active_red, dtype=np.int64)
+
         obs = {aid: self._history_to_obs(aid, "obs_hist_buffer") for aid in self.players}
         global_state = self._history_to_state()
         disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
@@ -175,6 +190,16 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         patched = dict(raw_action_dict)
         for i, player in enumerate(self.players.values()):
             if getattr(player, "is_disabled", False):
+                if self.act_space_str.get(player.id, "discrete") == "continuous":
+                    patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
+                else:
+                    patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
+
+        if self.stationary_red_mode:
+            # Force Red to no-op so they stay in place (even if "active").
+            for player in self.players.values():
+                if int(player.team) != int(Team.RED_TEAM):
+                    continue
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
                 else:

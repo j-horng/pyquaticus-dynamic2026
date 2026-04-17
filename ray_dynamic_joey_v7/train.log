@@ -1,0 +1,120 @@
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from c:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: stationary (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using 1 hard attacker-only heuristic (other red slots disabled).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+ERROR at iteration 0: 'numpy.ndarray' object has no attribute 'items'
+Check Ray worker logs for more details (RolloutWorker pid=... or: ray logs)
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using 1 hard attacker-only heuristic (other red slots disabled).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2127, policy_loss=-0.0119, time=54.2s/iter (est. ~2711s per 50 iters)
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2143, policy_loss=-0.0055, time=53.8s/iter (est. ~2690s per 50 iters)
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=True
+Red team using 2 stationary agents (do-nothing, third disabled).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v6\iter_444 (next iteration 445)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: stationary (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v6\iter_444 (next iteration 445)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+ERROR: Resume path is not a directory: C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_388
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_384 (next iteration 385)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_384 (next iteration 385)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Training started (new run).
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2152, policy_loss=-0.0047, time=37.3s/iter (est. ~1867s per 50 iters)
+Iter 12: return_mean=-1.46, entropy=3.1642, policy_loss=-0.0101, time=30.4s/iter (est. ~1521s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_12
+Iter 24: return_mean=0.11, entropy=3.1599, policy_loss=-0.0151, time=28.0s/iter (est. ~1400s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_24
+Iter 36: return_mean=0.34, entropy=3.0913, policy_loss=-0.0164, time=34.3s/iter (est. ~1717s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_36
+Iter 48: return_mean=0.65, entropy=3.0569, policy_loss=-0.0175, time=33.8s/iter (est. ~1692s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_48
+Iter 60: return_mean=0.67, entropy=3.0232, policy_loss=-0.0171, time=28.5s/iter (est. ~1426s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_60
+Iter 72: return_mean=0.71, entropy=3.0048, policy_loss=-0.0159, time=28.8s/iter (est. ~1441s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_72
+Iter 84: return_mean=0.72, entropy=2.9578, policy_loss=-0.0158, time=30.1s/iter (est. ~1507s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_84
+Iter 96: return_mean=0.70, entropy=2.9364, policy_loss=-0.0205, time=29.1s/iter (est. ~1457s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_96
+Iter 108: return_mean=0.69, entropy=2.8844, policy_loss=-0.0176, time=28.6s/iter (est. ~1431s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_108
+Iter 120: return_mean=0.75, entropy=2.8639, policy_loss=-0.0156, time=28.7s/iter (est. ~1436s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_120
+Iter 132: return_mean=0.69, entropy=2.8747, policy_loss=-0.0232, time=28.2s/iter (est. ~1411s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_132
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v7\iter_132 (next iteration 133)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 144: return_mean=0.68, entropy=2.9083, policy_loss=-0.0220, time=31.3s/iter (est. ~1567s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v7\iter_144
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v7\iter_144 (next iteration 145)
+Blue weights restored from resume checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Iter 156: return_mean=0.96, entropy=3.1069, policy_loss=-0.0228, time=28.5s/iter (est. ~1424s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v7\iter_156

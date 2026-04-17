@@ -33,7 +33,6 @@ import logging
 import os
 import re
 import time
-from collections import Counter
 
 import numpy as np
 import ray
@@ -68,39 +67,6 @@ except Exception:
         from ray.rllib.agents.callbacks import DefaultCallbacks
     except Exception:
         DefaultCallbacks = object
-
-
-class TeamMatchupLoggingCallbacks(DefaultCallbacks):
-    """Counts episode-start team-size matchups (e.g., 1v3, 2v2) and exposes per-train-iter deltas."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._counts = Counter()
-        self._last_counts = Counter()
-
-    def on_episode_end(self, *, episode, **kwargs):
-        # Record once per episode (fast path): infos are reliably populated by episode end.
-        try:
-            info = episode.last_info_for("agent_0") or {}
-        except Exception:
-            info = {}
-        nb = info.get("num_blue_active")
-        nr = info.get("num_red_active")
-        if nb is None or nr is None:
-            return
-
-        key = f"{int(nb)}v{int(nr)}"
-        self._counts[key] += 1
-
-    def on_train_result(self, *, result, **kwargs):
-        # Attach both cumulative and per-iteration counts (deltas since last train_result callback).
-        delta = Counter(self._counts)
-        delta.subtract(self._last_counts)
-        delta = Counter({k: int(v) for k, v in delta.items() if v})
-        result["team_matchups_delta"] = dict(delta)
-        result["team_matchups_total"] = dict(self._counts)
-        self._last_counts = Counter(self._counts)
-
 
 class RandPolicy(Policy):
     """Random policy for opponent agents."""
@@ -175,6 +141,11 @@ def make_env(
     sim_speedup=4,
     red_gets_raw_obs=False,
     red_dummy=False,
+    stationary_red=False,
+    red_stationary=False,
+    red_attack_hard=False,
+    red_all_attack=False,
+    red_all_defend=False,
     max_time=600,
     max_score=3,
     score_ends_episode=False,
@@ -182,7 +153,7 @@ def make_env(
     tag_removes_agent=False,
     reinforcement_interval=0,
     reinforcement_prob=0.5,
-    fixed_spawn=False,
+    fixed_spawn=True,
 ):
     cfg = config_dict_std.copy()
     cfg["sim_speedup_factor"] = sim_speedup
@@ -197,6 +168,15 @@ def make_env(
     cfg["on_sides_init"] = True
     if red_dummy:
         cfg["red_dummy_mode"] = True
+    if stationary_red or red_stationary:
+        cfg["stationary_red_mode"] = True
+    if red_attack_hard:
+        # One hard attacker on Red, other Red slots disabled by forcing 1 active.
+        cfg["force_num_red_active"] = 1
+    if red_all_attack:
+        cfg["force_num_red_active"] = 3
+    if red_all_defend:
+        cfg["force_num_red_active"] = 3
 
     reward_config = {
         "agent_0": rew.caps_and_grabs, "agent_1": rew.caps_and_grabs, "agent_2": rew.caps_and_grabs,
@@ -233,6 +213,15 @@ if __name__ == "__main__":
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")
     parser.add_argument("--red-dummy", action="store_true", help="Use do-nothing policy for Red (always no-op)")
+    parser.add_argument("--red-stationary", action="store_true", help="Red uses 2 stationary active agents, third disabled")
+    parser.add_argument("--red-attack-hard", action="store_true", help="Red uses 1 hard attacker-only heuristic (other red slots disabled)")
+    parser.add_argument("--red-all-attack", action="store_true", help="All 3 red agents use AttackGen hard heuristic")
+    parser.add_argument("--red-all-defend", action="store_true", help="All 3 red agents use DefendGen hard heuristic")
+    parser.add_argument(
+        "--stationary-red",
+        action="store_true",
+        help="Environment mode: Red agents stay stationary; on reset 2 red slots are used and 1 is disabled (top/mid/bot randomized).",
+    )
     parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play vs previous iteration)")
     parser.add_argument("--max-time", type=float, default=600, help="Max episode time in seconds (default 600 = 10 min)")
     parser.add_argument("--max-score", type=int, default=3, help="Max score per team to end episode (default 3)")
@@ -243,19 +232,23 @@ if __name__ == "__main__":
     parser.add_argument("--reinforcement-interval", type=int, default=0, help="Steps between reinforcement spawn checks (0=off, e.g. 500)")
     parser.add_argument("--reinforcement-prob", type=float, default=0.5, help="Probability of spawning one reinforcement when interval hits (default 0.5)")
     parser.add_argument(
-        "--fixed-spawn",
+        "--random-spawn",
         action="store_true",
-        help="Deterministic spawn-line placement (default_init=True). Omit for random positions on own side each episode (training default).",
+        help="Random positions on own side each episode (default_init=False). Omit for deterministic spawn-line placement (training default).",
     )
     args = parser.parse_args()
+    # Backwards/alias support: treat --stationary-red as enabling --red-stationary behavior.
+    args.red_stationary = bool(getattr(args, "red_stationary", False) or getattr(args, "stationary_red", False))
+    # Default spawn behavior is fixed spawn-line; opt into random with --random-spawn.
+    args.fixed_spawn = not bool(getattr(args, "random_spawn", False))
 
     team_min, team_max = args.team_size_min, args.team_size_max
     if team_min < 1 or team_max > 3 or team_min > team_max:
         raise SystemExit("Require 1 <= --team-size-min <= --team-size-max <= 3.")
 
-    red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_from_checkpoint)])
+    red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_stationary), bool(args.red_attack_hard), bool(args.red_all_attack), bool(args.red_all_defend), bool(args.red_from_checkpoint)])
     if red_mode_count > 1:
-        raise SystemExit("Use only one of: --red-heuristic, --red-dummy, --red-from-checkpoint.")
+        raise SystemExit("Use only one of: --red-heuristic, --red-dummy, --red-stationary, --red-attack-hard, --red-all-attack, --red-all-defend, --red-from-checkpoint.")
 
     # Out-dir: use parent of resume path if resuming and out-dir not explicitly set
     if args.resume and args.out_dir == "./ray_dynamic/":
@@ -295,8 +288,13 @@ if __name__ == "__main__":
             cfg,
             render_mode=RENDER,
             sim_speedup=SPEEDUP,
-            red_gets_raw_obs=args.red_heuristic,
+            red_gets_raw_obs=(args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend),
             red_dummy=args.red_dummy,
+            stationary_red=args.stationary_red,
+            red_stationary=args.red_stationary,
+            red_attack_hard=args.red_attack_hard,
+            red_all_attack=args.red_all_attack,
+            red_all_defend=args.red_all_defend,
             max_time=args.max_time,
             max_score=args.max_score,
             score_ends_episode=args.score_ends_episode,
@@ -311,8 +309,13 @@ if __name__ == "__main__":
     env = make_env(
         render_mode=RENDER,
         sim_speedup=SPEEDUP,
-        red_gets_raw_obs=args.red_heuristic,
+        red_gets_raw_obs=(args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend),
         red_dummy=args.red_dummy,
+        stationary_red=args.stationary_red,
+        red_stationary=args.red_stationary,
+        red_attack_hard=args.red_attack_hard,
+        red_all_attack=args.red_all_attack,
+        red_all_defend=args.red_all_defend,
         max_time=args.max_time,
         max_score=args.max_score,
         score_ends_episode=args.score_ends_episode,
@@ -353,14 +356,18 @@ if __name__ == "__main__":
         else:
             act_space = par_env.action_spaces[agent_id_blue]
     # Base env (for heuristic Red) = innermost PyQuaticus env, before env.close()
-    base_env = getattr(getattr(env, "par_env", env), "par_env", getattr(env, "par_env", env)) if args.red_heuristic else None
+    base_env = (
+        getattr(getattr(env, "par_env", env), "par_env", getattr(env, "par_env", env))
+        if (args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend)
+        else None
+    )
     env.close()
 
     spawn_mode = "spawn_line (fixed)" if args.fixed_spawn else "random_on_own_side"
     log(
         f"Dynamic env: team_size={team_min}-{team_max} per team, init={spawn_mode}, "
         f"tag_removes_agent={args.tag_removes_agent}, reinforcement_interval={reinf_interval}, reinforcement_prob={reinf_prob}, "
-        f"score_ends_episode={args.score_ends_episode}"
+        f"score_ends_episode={args.score_ends_episode}, red_stationary={args.red_stationary}"
     )
 
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
@@ -368,7 +375,13 @@ if __name__ == "__main__":
             return "blue_policy"
         if args.red_heuristic:
             return "red_policy_3" if agent_id == "agent_3" else "red_policy_4" if agent_id == "agent_4" else "red_policy_5"
-        if args.red_dummy:
+        if args.red_all_attack:
+            return "red_attack_3" if agent_id == "agent_3" else "red_attack_4" if agent_id == "agent_4" else "red_attack_5"
+        if args.red_all_defend:
+            return "red_defend_3" if agent_id == "agent_3" else "red_defend_4" if agent_id == "agent_4" else "red_defend_5"
+        if args.red_attack_hard:
+            return "red_attack_policy" if agent_id == "agent_3" else "red_dummy_policy"
+        if args.red_dummy or args.red_stationary:
             return "red_dummy_policy"
         if args.red_from_checkpoint:
             return "red_prev_policy"
@@ -394,12 +407,54 @@ if __name__ == "__main__":
             "red_policy_5": (RedPolicy5, obs_space_red, act_space, {}),
         }
         log(f"Red team using built-in heuristic (combined CTF, {mode} mode).")
+    elif args.red_all_attack:
+        from pyquaticus.base_policies.base_policy_wrappers import AttackGen
+        RedA3 = AttackGen("agent_3", base_env, "hard")
+        RedA4 = AttackGen("agent_4", base_env, "hard")
+        RedA5 = AttackGen("agent_5", base_env, "hard")
+        policies = {
+            "blue_policy": (None, obs_space_blue, act_space, {}),
+            "red_attack_3": (RedA3, obs_space_red, act_space, {}),
+            "red_attack_4": (RedA4, obs_space_red, act_space, {}),
+            "red_attack_5": (RedA5, obs_space_red, act_space, {}),
+        }
+        log("Red team using all-attack heuristic (AttackGen hard, all 3 agents).")
+    elif args.red_all_defend:
+        from pyquaticus.base_policies.base_policy_wrappers import DefendGen
+        RedD3 = DefendGen("agent_3", base_env, "hard")
+        RedD4 = DefendGen("agent_4", base_env, "hard")
+        RedD5 = DefendGen("agent_5", base_env, "hard")
+        policies = {
+            "blue_policy": (None, obs_space_blue, act_space, {}),
+            "red_defend_3": (RedD3, obs_space_red, act_space, {}),
+            "red_defend_4": (RedD4, obs_space_red, act_space, {}),
+            "red_defend_5": (RedD5, obs_space_red, act_space, {}),
+        }
+        log("Red team using all-defend heuristic (DefendGen hard, all 3 agents).")
+    elif args.red_attack_hard:
+        from pyquaticus.base_policies.base_policy_wrappers import AttackGen
+        RedAttack = AttackGen("agent_3", base_env, "hard")
+        RedAttack.__name__ = "HeuristicRedAttackHard"
+        if POLICIES is not None:
+            POLICIES["HeuristicRedAttackHard"] = RedAttack
+        policies = {
+            "blue_policy": (None, obs_space_blue, act_space, {}),
+            "red_attack_policy": (RedAttack, obs_space_red, act_space, {}),
+            "red_dummy_policy": (DoNothingPolicy, obs_space_red, act_space, {}),
+        }
+        log("Red team using 1 hard attacker-only heuristic (other red slots disabled).")
     elif args.red_dummy:
         policies = {
             "blue_policy": (None, obs_space_blue, act_space, {}),
             "red_dummy_policy": (DoNothingPolicy, obs_space_blue, act_space, {}),
         }
         log("Red team using do-nothing policy (always no-op actions).")
+    elif args.red_stationary:
+        policies = {
+            "blue_policy": (None, obs_space_blue, act_space, {}),
+            "red_dummy_policy": (DoNothingPolicy, obs_space_blue, act_space, {}),
+        }
+        log("Red team using 2 stationary agents (do-nothing, third disabled).")
     elif args.red_from_checkpoint:
         policies = {
             "blue_policy": (None, obs_space_blue, act_space, {}),
@@ -462,7 +517,6 @@ if __name__ == "__main__":
                     policy_mapping_fn=policy_mapping_fn,
                     policies_to_train=["blue_policy"],
                 )
-                .callbacks(TeamMatchupLoggingCallbacks)
             ).training(
                 model={"custom_model": "gnn_model", "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2}},
                 train_batch_size=500,
@@ -499,7 +553,6 @@ if __name__ == "__main__":
                     policy_mapping_fn=policy_mapping_fn,
                     policies_to_train=["blue_policy"],
                 )
-                .callbacks(TeamMatchupLoggingCallbacks)
             ).training(
                 model={
                     "custom_model": "gnn_model",
@@ -525,6 +578,14 @@ if __name__ == "__main__":
             mode_str = getattr(args, "red_heuristic_mode", "easy")
         elif args.red_dummy:
             mode_str = "dummy"
+        elif args.red_stationary:
+            mode_str = "stationary"
+        elif args.red_attack_hard:
+            mode_str = "attack_hard"
+        elif args.red_all_attack:
+            mode_str = "all_attack"
+        elif args.red_all_defend:
+            mode_str = "all_defend"
         elif args.red_from_checkpoint:
             mode_str = "prev_checkpoint"
         else:
@@ -552,7 +613,6 @@ if __name__ == "__main__":
                 policy_mapping_fn=policy_mapping_fn,
                 policies_to_train=["blue_policy"],
             )
-            .callbacks(TeamMatchupLoggingCallbacks)
         ).training(
             model={
                 "custom_model": "gnn_model",
@@ -585,16 +645,9 @@ if __name__ == "__main__":
                         "blue_policy", {}).get("learner_stats", {}).get("policy_loss", None)
                     entropy_str = f"{entropy:.4f}" if entropy is not None else "n/a"
                     pol_str = f"{pol_loss:.4f}" if pol_loss is not None else "n/a"
-                    matchup_delta = result.get("team_matchups_delta") or {}
-                    if matchup_delta:
-                        keys = sorted(matchup_delta.keys(), key=lambda s: tuple(int(x) for x in s.split("v", 1)))
-                        matchup_str = ", ".join([f"{k}={int(matchup_delta[k])}" for k in keys])
-                        matchup_str = f", matchups={matchup_str}"
-                    else:
-                        matchup_str = ""
                     log(
                         f"Iter {i}: return_mean={ep_rew_str}, entropy={entropy_str}, policy_loss={pol_str}, "
-                        f"time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters){matchup_str}"
+                        f"time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters)"
                     )
                 if i > 0 and i % args.save_every == 0:
                     path = os.path.join(args.out_dir, f"iter_{i}")
