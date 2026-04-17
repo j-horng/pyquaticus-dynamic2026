@@ -1,0 +1,99 @@
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False
+Red team using do-nothing policy (always no-op actions).
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2113, policy_loss=-0.0090, time=29.1s/iter (est. ~1457s per 50 iters)
+Iter 12: return_mean=-2.14, entropy=3.0827, policy_loss=-0.0113, time=26.8s/iter (est. ~1338s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_12
+Iter 24: return_mean=-0.38, entropy=3.0715, policy_loss=-0.0170, time=29.6s/iter (est. ~1482s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_24
+Iter 36: return_mean=-0.23, entropy=3.0603, policy_loss=-0.0158, time=26.4s/iter (est. ~1322s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_36
+Iter 48: return_mean=-0.04, entropy=2.9770, policy_loss=-0.0214, time=26.6s/iter (est. ~1329s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_48
+Iter 60: return_mean=0.44, entropy=2.8319, policy_loss=-0.0232, time=26.7s/iter (est. ~1334s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_60
+Iter 72: return_mean=1.84, entropy=2.7878, policy_loss=-0.0240, time=26.8s/iter (est. ~1340s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_72
+Iter 84: return_mean=2.00, entropy=2.7522, policy_loss=-0.0213, time=26.8s/iter (est. ~1340s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_84
+Iter 96: return_mean=1.66, entropy=2.6392, policy_loss=-0.0225, time=26.7s/iter (est. ~1335s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_96
+Iter 108: return_mean=1.59, entropy=2.6062, policy_loss=-0.0215, time=27.0s/iter (est. ~1350s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_108
+Iter 120: return_mean=1.73, entropy=2.5491, policy_loss=-0.0252, time=26.8s/iter (est. ~1338s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_120
+Iter 132: return_mean=1.83, entropy=2.6606, policy_loss=-0.0324, time=26.8s/iter (est. ~1338s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_132
+Iter 144: return_mean=2.42, entropy=2.6706, policy_loss=-0.0237, time=26.5s/iter (est. ~1324s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_144
+Iter 156: return_mean=2.23, entropy=2.7395, policy_loss=-0.0260, time=26.9s/iter (est. ~1343s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_156
+Iter 168: return_mean=2.31, entropy=2.7138, policy_loss=-0.0241, time=26.9s/iter (est. ~1347s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_168
+Iter 180: return_mean=2.44, entropy=2.7001, policy_loss=-0.0304, time=27.0s/iter (est. ~1348s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_180
+Iter 192: return_mean=2.52, entropy=2.5795, policy_loss=-0.0279, time=26.9s/iter (est. ~1344s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_192
+Iter 204: return_mean=3.23, entropy=2.6241, policy_loss=-0.0297, time=26.6s/iter (est. ~1328s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_204
+Iter 216: return_mean=4.53, entropy=2.6352, policy_loss=-0.0305, time=26.8s/iter (est. ~1338s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_216
+Iter 228: return_mean=5.95, entropy=2.5773, policy_loss=-0.0273, time=26.7s/iter (est. ~1337s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_228
+Iter 240: return_mean=8.87, entropy=2.5034, policy_loss=-0.0312, time=26.5s/iter (est. ~1327s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_240
+Iter 252: return_mean=13.15, entropy=2.3817, policy_loss=-0.0310, time=26.5s/iter (est. ~1327s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_252
+Iter 264: return_mean=17.52, entropy=2.3184, policy_loss=-0.0320, time=26.6s/iter (est. ~1332s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_264
+Iter 276: return_mean=19.92, entropy=2.2326, policy_loss=-0.0378, time=26.8s/iter (est. ~1339s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_276
+Iter 288: return_mean=22.64, entropy=2.1111, policy_loss=-0.0293, time=30.1s/iter (est. ~1506s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_288
+Iter 300: return_mean=26.02, entropy=2.0825, policy_loss=-0.0294, time=33.2s/iter (est. ~1661s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_300
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_300 (next iteration 301)
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 312: return_mean=28.44, entropy=1.9064, policy_loss=-0.0204, time=37.1s/iter (est. ~1854s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_312
+Iter 324: return_mean=29.29, entropy=1.8168, policy_loss=-0.0188, time=36.9s/iter (est. ~1846s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_324
+Iter 336: return_mean=30.10, entropy=1.7613, policy_loss=-0.0214, time=33.5s/iter (est. ~1677s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_336
+Iter 348: return_mean=30.95, entropy=1.7588, policy_loss=-0.0181, time=32.1s/iter (est. ~1607s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_348
+Iter 360: return_mean=31.53, entropy=1.7055, policy_loss=-0.0176, time=31.1s/iter (est. ~1553s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_360
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_360 (next iteration 361)
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 372: return_mean=32.13, entropy=1.6717, policy_loss=-0.0193, time=28.5s/iter (est. ~1423s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_372
+Iter 384: return_mean=32.48, entropy=1.7037, policy_loss=-0.0194, time=28.7s/iter (est. ~1433s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_384
+Iter 396: return_mean=32.20, entropy=1.7286, policy_loss=-0.0228, time=31.5s/iter (est. ~1577s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396
+Dynamic env: team_size=1-3 per team, init=random_on_own_side, tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\ray_dynamic_joey_v5\iter_396 (next iteration 397)
+Red opponent: random (current args). Blue weights restored from checkpoint.
+Iter 408: return_mean=-3.11, entropy=2.3127, policy_loss=-0.0318, time=28.9s/iter (est. ~1443s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_408
+Iter 420: return_mean=-2.79, entropy=2.4260, policy_loss=-0.0354, time=26.9s/iter (est. ~1344s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_420
+Iter 432: return_mean=-2.75, entropy=2.2897, policy_loss=-0.0306, time=26.7s/iter (est. ~1333s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_432
+Iter 444: return_mean=-2.67, entropy=2.3303, policy_loss=-0.0336, time=27.1s/iter (est. ~1353s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_444
+Iter 456: return_mean=-3.02, entropy=2.4609, policy_loss=-0.0369, time=27.0s/iter (est. ~1349s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_456
+Iter 468: return_mean=-3.23, entropy=2.3987, policy_loss=-0.0358, time=27.0s/iter (est. ~1351s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_468
+Iter 480: return_mean=-2.99, entropy=2.3629, policy_loss=-0.0359, time=27.1s/iter (est. ~1356s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_480
+Iter 492: return_mean=-2.73, entropy=2.4971, policy_loss=-0.0342, time=35.7s/iter (est. ~1784s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_492
+Iter 504: return_mean=-3.08, entropy=2.4089, policy_loss=-0.0336, time=33.1s/iter (est. ~1657s per 50 iters)
+Saved checkpoint to ./ray_dynamic_joey_v5\iter_504

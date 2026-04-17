@@ -33,6 +33,7 @@ import logging
 import os
 import re
 import time
+from collections import Counter
 
 import numpy as np
 import ray
@@ -59,6 +60,46 @@ from pyquaticus.config import config_dict_std, ACTION_MAP
 from pyquaticus.envs.dynamic_pyquaticus import DynamicPyQuaticusEnv
 from pyquaticus.envs.graph_obs_wrapper import GraphObsWrapper
 from pyquaticus.envs.rllib_pettingzoo_wrapper import ParallelPettingZooWrapper
+
+try:
+    from ray.rllib.algorithms.callbacks import DefaultCallbacks
+except Exception:
+    try:
+        from ray.rllib.agents.callbacks import DefaultCallbacks
+    except Exception:
+        DefaultCallbacks = object
+
+
+class TeamMatchupLoggingCallbacks(DefaultCallbacks):
+    """Counts episode-start team-size matchups (e.g., 1v3, 2v2) and exposes per-train-iter deltas."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._counts = Counter()
+        self._last_counts = Counter()
+
+    def on_episode_end(self, *, episode, **kwargs):
+        # Record once per episode (fast path): infos are reliably populated by episode end.
+        try:
+            info = episode.last_info_for("agent_0") or {}
+        except Exception:
+            info = {}
+        nb = info.get("num_blue_active")
+        nr = info.get("num_red_active")
+        if nb is None or nr is None:
+            return
+
+        key = f"{int(nb)}v{int(nr)}"
+        self._counts[key] += 1
+
+    def on_train_result(self, *, result, **kwargs):
+        # Attach both cumulative and per-iteration counts (deltas since last train_result callback).
+        delta = Counter(self._counts)
+        delta.subtract(self._last_counts)
+        delta = Counter({k: int(v) for k, v in delta.items() if v})
+        result["team_matchups_delta"] = dict(delta)
+        result["team_matchups_total"] = dict(self._counts)
+        self._last_counts = Counter(self._counts)
 
 
 class RandPolicy(Policy):
@@ -421,6 +462,7 @@ if __name__ == "__main__":
                     policy_mapping_fn=policy_mapping_fn,
                     policies_to_train=["blue_policy"],
                 )
+                .callbacks(TeamMatchupLoggingCallbacks)
             ).training(
                 model={"custom_model": "gnn_model", "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2}},
                 train_batch_size=500,
@@ -444,41 +486,39 @@ if __name__ == "__main__":
                 else:
                     algo.restore(resume_path)
         else:
-            # Load only Blue so Red can use current args (e.g. --red-heuristic-mode).
-            try:
-                algo = PPO.from_checkpoint(
-                    resume_path,
-                    policy_ids=["blue_policy"],
+            # Build a fresh algo with current args (and callbacks), then load only Blue weights from checkpoint.
+            num_runners = args.runners
+            env_runner_kw = {"num_env_runners": num_runners, "num_cpus_per_env_runner": 0.25}
+            ppo_config = (
+                PPOConfig()
+                .api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False)
+                .environment(env="dynamic_pyquaticus")
+                .env_runners(**env_runner_kw)
+                .multi_agent(
+                    policies=policies,
                     policy_mapping_fn=policy_mapping_fn,
                     policies_to_train=["blue_policy"],
                 )
-            except AttributeError:
-                from ray.rllib.algorithms.algorithm import Algorithm
-                algo = Algorithm.from_checkpoint(
-                    resume_path,
-                    policy_ids=["blue_policy"],
-                    policy_mapping_fn=policy_mapping_fn,
-                    policies_to_train=["blue_policy"],
-                )
-            # Re-add Red policies from current args (heuristic mode or random).
-            for pid, spec in policies.items():
-                if pid == "blue_policy":
-                    continue
-                policy_obj, obs_sp, act_sp, cfg = spec
-                # Self-play: red_prev_policy uses same architecture as Blue; spec has policy_obj=None.
-                if policy_obj is None and pid == "red_prev_policy":
-                    blue_pol = algo.get_policy("blue_policy")
-                    algo.add_policy(
-                        pid,
-                        policy_cls=type(blue_pol),
-                        observation_space=obs_sp,
-                        action_space=act_sp,
-                        config=blue_pol.config,
-                    )
-                elif isinstance(policy_obj, type):
-                    algo.add_policy(pid, policy_cls=policy_obj, observation_space=obs_sp, action_space=act_sp, config=cfg)
-                else:
-                    algo.add_policy(pid, policy=policy_obj, observation_space=obs_sp, action_space=act_sp, config=cfg)
+                .callbacks(TeamMatchupLoggingCallbacks)
+            ).training(
+                model={
+                    "custom_model": "gnn_model",
+                    "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2},
+                },
+                train_batch_size=4000,
+                entropy_coeff=args.entropy_coeff,
+            )
+            algo = ppo_config.build_algo()
+
+            blue_path = _resolve_blue_policy_path(resume_path)
+            if not os.path.isdir(blue_path):
+                log(f"ERROR: Resume checkpoint has no blue_policy at {blue_path}")
+                ray.shutdown()
+                raise SystemExit(1)
+            blue_src = Policy.from_checkpoint(blue_path)
+            algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
+            log("Blue weights restored from resume checkpoint.")
+
             if args.red_from_checkpoint:
                 _load_red_prev_weights(algo, args.red_from_checkpoint)
         if args.red_heuristic:
@@ -512,6 +552,7 @@ if __name__ == "__main__":
                 policy_mapping_fn=policy_mapping_fn,
                 policies_to_train=["blue_policy"],
             )
+            .callbacks(TeamMatchupLoggingCallbacks)
         ).training(
             model={
                 "custom_model": "gnn_model",
@@ -544,7 +585,17 @@ if __name__ == "__main__":
                         "blue_policy", {}).get("learner_stats", {}).get("policy_loss", None)
                     entropy_str = f"{entropy:.4f}" if entropy is not None else "n/a"
                     pol_str = f"{pol_loss:.4f}" if pol_loss is not None else "n/a"
-                    log(f"Iter {i}: return_mean={ep_rew_str}, entropy={entropy_str}, policy_loss={pol_str}, time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters)")
+                    matchup_delta = result.get("team_matchups_delta") or {}
+                    if matchup_delta:
+                        keys = sorted(matchup_delta.keys(), key=lambda s: tuple(int(x) for x in s.split("v", 1)))
+                        matchup_str = ", ".join([f"{k}={int(matchup_delta[k])}" for k in keys])
+                        matchup_str = f", matchups={matchup_str}"
+                    else:
+                        matchup_str = ""
+                    log(
+                        f"Iter {i}: return_mean={ep_rew_str}, entropy={entropy_str}, policy_loss={pol_str}, "
+                        f"time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters){matchup_str}"
+                    )
                 if i > 0 and i % args.save_every == 0:
                     path = os.path.join(args.out_dir, f"iter_{i}")
                     algo.save(path)

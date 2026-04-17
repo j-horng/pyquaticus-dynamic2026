@@ -152,12 +152,15 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         obs = {aid: self._history_to_obs(aid, "obs_hist_buffer") for aid in self.players}
         global_state = self._history_to_state()
+        disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        num_blue_active = int(np.sum(~disabled_agents[: self.num_blue]))
+        num_red_active = int(np.sum(~disabled_agents[self.num_blue : self.num_agents]))
         info = {
             aid: {
                 "global_state": global_state,
-                "num_blue_active": self.num_blue_active,
-                "num_red_active": self.num_red_active,
-                "disabled_agents": self.state["disabled_agents"],
+                "num_blue_active": num_blue_active,
+                "num_red_active": num_red_active,
+                "disabled_agents": disabled_agents,
             }
             for aid in self.players
         }
@@ -198,10 +201,13 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             if self._step_count > 0 and random.random() < self.reinforcement_prob:
                 self._spawn_reinforcement()
 
+        disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        num_blue_active = int(np.sum(~disabled_agents[: self.num_blue]))
+        num_red_active = int(np.sum(~disabled_agents[self.num_blue : self.num_agents]))
         for aid in self.agents:
-            info[aid]["num_blue_active"] = self.state.get("num_blue_active", self.num_blue_active)
-            info[aid]["num_red_active"] = self.state.get("num_red_active", self.num_red_active)
-            info[aid]["disabled_agents"] = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+            info[aid]["num_blue_active"] = num_blue_active
+            info[aid]["num_red_active"] = num_red_active
+            info[aid]["disabled_agents"] = disabled_agents
 
         return obs, rewards, terminated, truncated, info
 
