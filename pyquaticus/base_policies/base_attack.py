@@ -404,11 +404,15 @@ class BaseAttacker(BaseAgentPolicy):
         self.opp_team_pos = []
         self.my_team_has_flag = False
         for id in self.teammate_ids:
+            if float(global_state.get((id, "is_disabled"), 0.0)) > 0.5:
+                continue
             if id != self.id:
                 self.my_team_has_flag = (
                     self.my_team_has_flag or global_state[(id, "has_flag")]
                 )
         for id in self.opponent_ids:
+            if float(global_state.get((id, "is_disabled"), 0.0)) > 0.5:
+                continue
             distance = dist(my_pos, global_state[(id, "pos")])
             bearing = angle180(
                 global_rect_to_abs_bearing(global_state[(id, "pos")] - my_pos)

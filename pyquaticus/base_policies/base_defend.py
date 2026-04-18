@@ -371,10 +371,13 @@ class BaseDefender(BaseAgentPolicy):
 
         # Copy the polar positions of each agent, separated by team and get their tag status
         self.opp_team_pos = []
+        self.my_team_pos = []
         self.opp_team_pos_dict = {}  # for labeling by agent_id
         self.opp_team_tag = []
         self.opp_team_has_flag = False
         for id in self.teammate_ids:
+            if float(global_state.get((id, "is_disabled"), 0.0)) > 0.5:
+                continue
             if id != self.id:
                 distance = dist(
                     global_state[(self.id, "pos")], global_state[(id, "pos")]
@@ -385,7 +388,10 @@ class BaseDefender(BaseAgentPolicy):
                     )
                     - global_state[(self.id, "heading")]
                 )
+                self.my_team_pos.append(np.array((distance, bearing)))
         for id in self.opponent_ids:
+            if float(global_state.get((id, "is_disabled"), 0.0)) > 0.5:
+                continue
             distance = dist(global_state[(self.id, "pos")], global_state[(id, "pos")])
             bearing = angle180(
                 global_rect_to_abs_bearing(

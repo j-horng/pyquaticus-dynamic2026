@@ -3,7 +3,7 @@
 Dynamic PyQuaticus Environment
 
 Extends PyQuaticusEnv to support:
-- Variable team sizes (1-3 per team) randomized at each reset
+- Variable team sizes (1–6 per team) randomized at each reset
 - Mid-game agent removal (captured/destroyed) via disabled_agents
 - Mid-game agent spawning (reinforcements)
 - disabled_agents state for tracking active agents
@@ -23,7 +23,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
     """
     PyQuaticus environment with dynamic team sizes and mid-game agent changes.
 
-    - team_size_range: (min, max) agents per team at reset (default (1, 3))
+    - team_size_range: (min, max) agents per team at reset (default (1, 6))
     - tag_removes_agent: if True, tagged agents are disabled (removed from game)
     - reinforcement_interval: steps between reinforcement spawns (0 = disabled)
     - reinforcement_prob: probability of spawning a reinforcement when interval hits
@@ -31,7 +31,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
     def __init__(
         self,
-        team_size_range: tuple[int, int] = (1, 3),
+        team_size_range: tuple[int, int] = (1, 6),
         tag_removes_agent: bool = False,
         reinforcement_interval: int = 0,
         reinforcement_prob: float = 0.5,
@@ -93,6 +93,15 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             return self.agent_obs_normalizer.normalized(obs), obs
         return obs, None
 
+    def state_to_global_state(self, normalize=True):
+        gs = super().state_to_global_state(normalize=False)
+        disabled = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        for i, aid in enumerate(self.agents):
+            gs[(aid, "is_disabled")] = float(disabled[i]) if i < len(disabled) else 0.0
+        if normalize:
+            return self.global_state_normalizer.normalized(gs)
+        return gs
+
     def _set_initial_disabled(self, active_blue_inds: list[int], active_red_inds: list[int]):
         """Disable agents not in the active set.
 
@@ -114,7 +123,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         min_size, max_size = self.team_size_range
         if self.red_dummy_mode:
-            self.num_blue_active = max_size  # All Blue agents active
+            self.num_blue_active = random.randint(min_size, max_size)  # match team_size_range; Red dummy stays 0
             self.num_red_active = 0  # No Red agents; Blue plays alone (capture the flag only)
         else:
             self.num_blue_active = random.randint(min_size, max_size)
@@ -165,6 +174,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             self.state["active_blue_inds"] = np.array(active_blue_inds, dtype=np.int64)
             self.state["active_red_inds"] = np.array(active_red, dtype=np.int64)
 
+        self.state["blue_oob_count"] = 0
+        self.state["red_oob_count"] = 0
+
         obs = {aid: self._history_to_obs(aid, "obs_hist_buffer") for aid in self.players}
         global_state = self._history_to_state()
         disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
@@ -205,8 +217,23 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 else:
                     patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
 
+        prev_oob = np.asarray(self.state["agent_oob"], dtype=bool).copy()
+        disabled_before = np.asarray(
+            self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool)), dtype=bool
+        )
+
         obs, rewards, terminated, truncated, info = super().step(patched)
         self._step_count += 1
+
+        new_oob = np.asarray(self.state["agent_oob"], dtype=bool)
+        for i in range(self.num_agents):
+            if bool(disabled_before[i]):
+                continue
+            if bool(new_oob[i]) and not bool(prev_oob[i]):
+                if i < self.num_blue:
+                    self.state["blue_oob_count"] += 1
+                else:
+                    self.state["red_oob_count"] += 1
 
         # Tag removes agent (disable)
         if self.tag_removes_agent:
@@ -261,8 +288,8 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         """Override so disabled agents cannot tag or be tagged."""
         disabled = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
         self.state["agent_made_tag"] = [None] * self.num_agents
-        for i, player in enumerate(self.players.values()):
-            if disabled[i]:
+        for player in self.players.values():
+            if disabled[player.idx]:
                 continue
             if not (
                 player.on_own_side and not player.oob and not player.is_tagged
@@ -270,8 +297,8 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 and not getattr(player, "is_disabled", False)
             ):
                 continue
-            for j, other_player in enumerate(self.players.values()):
-                if disabled[j]:
+            for other_player in self.players.values():
+                if disabled[other_player.idx]:
                     continue
                 if (
                     not other_player.on_own_side and not other_player.is_tagged
@@ -282,18 +309,18 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                         team_idx = int(player.team)
                         other_team_idx = int(other_player.team)
                         other_player.is_tagged = True
-                        self.state["agent_is_tagged"][j] = 1
-                        self.state["agent_made_tag"][i] = j
+                        self.state["agent_is_tagged"][other_player.idx] = 1
+                        self.state["agent_made_tag"][player.idx] = other_player.idx
                         self.state["tags"][team_idx] += 1
                         self.game_events[player.team]["tags"] += 1
                         if other_player.has_flag:
                             other_player.has_flag = False
-                            self.state["agent_has_flag"][j] = 0
+                            self.state["agent_has_flag"][other_player.idx] = 0
                             self.flags[team_idx].reset()
                             self.state["flag_position"][team_idx] = self.flags[team_idx].pos
                             self.state["flag_taken"][team_idx] = 0
                         player.tagging_cooldown = 0.0
-                        self.state["agent_tagging_cooldown"][i] = 0.0
+                        self.state["agent_tagging_cooldown"][player.idx] = 0.0
                         break
 
     def _spawn_reinforcement(self):

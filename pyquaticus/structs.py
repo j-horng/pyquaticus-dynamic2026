@@ -191,23 +191,18 @@ class RenderingPlayer(Player):
                 round(self.render_radius / 4),
             )
     def render_disabled(self):
-        if self.is_disabled:
-            bot_left_vertex = (0, 0)
-            bot_right_vertex = (0,self.render_radius*2)
-            
-            top_right_vertex = (self.render_radius*2, self.render_radius*2)
-            top_left_vertex = (self.render_radius*2, 0)
-            draw.line(self.pygame_agent,
-                (128, 128, 128),
-                top_left_vertex,
-                bot_right_vertex,
-                width=int(self.render_radius/2))
-            draw.line(self.pygame_agent,
-                (128, 128, 128),
-                top_right_vertex,
-                bot_left_vertex,
-                width=int(self.render_radius/2))
-            
+        """Red ring when disabled; same stroke width as tagged (green) / OOB (yellow) rings."""
+        if not self.is_disabled:
+            return
+        w = round(self.render_radius / 4)
+        draw.circle(
+            self.pygame_agent,
+            (255, 0, 0),
+            (self.render_radius, self.render_radius),
+            self.render_radius,
+            width=w,
+        )
+
 
 @dataclass
 class Flag:

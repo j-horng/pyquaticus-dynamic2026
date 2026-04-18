@@ -27,11 +27,12 @@ except ImportError:
 
 # Node feature dim: x, y, heading_norm, speed_norm, has_flag, is_tagged, on_side, team, is_disabled, cooldown_norm, dist_own_flag, dist_opp_flag
 NODE_FEAT_DIM = 12
-MAX_AGENTS = 6
+MAX_TEAM_SIZE = 6  # only this line changes for 4/5/6v6
+MAX_AGENTS = 2 * MAX_TEAM_SIZE
 
 
 def _state_to_node_features(env, agent_id: str, global_state: dict, disabled: np.ndarray, env_size, max_speed) -> np.ndarray:
-    """Build node features for all agents (max 6). All values normalized to [-1, 1]."""
+    """Build node features for all agents (max MAX_AGENTS). All values normalized to [-1, 1]."""
     features = np.zeros((MAX_AGENTS, NODE_FEAT_DIM), dtype=np.float32)
     env_size = np.asarray(env_size)
     max_speed = float(max_speed) if max_speed > 0 else 1.0
@@ -152,14 +153,14 @@ class GraphObsWrapper(ParallelEnv):
         self._edge_index = _build_edge_index()
         self.env = env
         self.flatten_for_fc = flatten_for_fc
-        self.blue_agent_ids = list(blue_agent_ids) if blue_agent_ids is not None else ["agent_0", "agent_1", "agent_2"]
+        self.blue_agent_ids = list(blue_agent_ids) if blue_agent_ids is not None else [f"agent_{i}" for i in range(MAX_AGENTS // 2)]
         self.red_gets_raw_obs = red_gets_raw_obs
         self.par_env = getattr(env, "par_env", env)
         # Get agents from wrapped env - try multiple ways
         self.possible_agents = getattr(env, "possible_agents", None)
         if self.possible_agents is None:
             # Try getting from par_env
-            self.possible_agents = getattr(self.par_env, "possible_agents", [f"agent_{i}" for i in range(6)])
+            self.possible_agents = getattr(self.par_env, "possible_agents", [f"agent_{i}" for i in range(MAX_AGENTS)])
         self.agents = getattr(env, "agents", None)
         if self.agents is None:
             self.agents = getattr(self.par_env, "agents", self.possible_agents.copy())
@@ -177,7 +178,7 @@ class GraphObsWrapper(ParallelEnv):
             "self_node_idx": self_node_space,
         })
         # Initialize spaces - use default agents if not available yet
-        default_agents = self.possible_agents if self.possible_agents else [f"agent_{i}" for i in range(6)]
+        default_agents = self.possible_agents if self.possible_agents else [f"agent_{i}" for i in range(MAX_AGENTS)]
         if flatten_for_fc:
             flat_dim = MAX_AGENTS * NODE_FEAT_DIM + MAX_AGENTS
             self.observation_spaces = {aid: Box(low=-1, high=1, shape=(flat_dim,), dtype=np.float32) for aid in default_agents}

@@ -6,14 +6,16 @@ Processes graph (node_features, edge_index, mask, self_node_idx) with message pa
 then uses the self node's embedding (after message passing) for action logits and value.
 
 Agent embedding flow:
-  1. Node embedding: raw node features (B, N, F) -> linear+ReLU+linear -> (B, N, H).
-  2. Message passing: for each edge (src,dst), message = ReLU(Linear([h_src, h_dst]));
-     each node aggregates incoming messages by mean; then residual: h_new = h_old + agg.
-  3. Mask: disabled nodes get embedding zeroed (h *= mask).
-  4. Self embedding: for the acting agent, take the node at self_node_idx -> vector (B, H).
-  5. Policy: self_emb -> MLP -> action logits. Value: self_emb -> MLP -> scalar.
-  So each agent's action is decided only from its own node's embedding (which already
-  encodes neighborhood info from message passing).
+  1. Apply mask to raw node features (zero disabled slots) before the node MLP.
+  2. Node embedding: (B, N, F) -> linear+ReLU+linear -> (B, N, H); zero disabled slots again (bias leak).
+  3. Message passing: each layer masks embeddings before gather; each message is multiplied by
+     mask[src] so disabled sources send no signal (ReLU+Linear bias would otherwise leak).
+     Mean aggregation; residual h = h + agg; then h *= mask again.
+  4. Self embedding: take the node at self_node_idx -> (B, H).
+  5. Policy / value heads from self_emb.
+
+  Masking before aggregation is required when many of N nodes are padding/disabled (e.g. 1v1 with
+  10 inactive slots of 12): otherwise inactive neighbors corrupt every node's embedding during MP.
 """
 
 import numpy as np
@@ -41,6 +43,17 @@ _FLAT_NODE = MAX_AGENTS * NODE_FEAT_DIM
 _FLAT_EDGE = 2 * _NUM_EDGES
 _FLAT_MASK = MAX_AGENTS
 _FLAT_SELF = 1
+
+
+def _fixed_all_to_all_src_dst():
+    """Same topology as graph_obs_wrapper._build_edge_index (fully connected, no self-loops)."""
+    src, dst = [], []
+    for i in range(MAX_AGENTS):
+        for j in range(MAX_AGENTS):
+            if i != j:
+                src.append(i)
+                dst.append(j)
+    return torch.tensor(src, dtype=torch.int64), torch.tensor(dst, dtype=torch.int64)
 
 
 class GNNModel(TorchModelV2, nn.Module):
@@ -78,6 +91,18 @@ class GNNModel(TorchModelV2, nn.Module):
             nn.Linear(hidden, 1),
         )
 
+        # Fixed all-to-all topology (matches GraphObsWrapper): avoids per-forward edge parsing and GPU H2D for edges.
+        fs, fd = _fixed_all_to_all_src_dst()
+        self.register_buffer("_fixed_src_idx", fs)
+        self.register_buffer("_fixed_dst_idx", fd)
+        # Each node has exactly (MAX_AGENTS - 1) incoming edges in the full graph; mean aggregation divisor is constant.
+        self.register_buffer("_inv_in_degree", torch.tensor(1.0 / float(MAX_AGENTS - 1)))
+
+        # Per-process (each Ray worker runs this once): Tensor Cores + cudnn autotune for steady batch shapes.
+        if torch is not None and torch.cuda.is_available():
+            torch.set_float32_matmul_precision("high")
+            torch.backends.cudnn.benchmark = True
+
     def _unflatten_obs(self, obs):
         """Unflatten preprocessor output: order is node_features, edge_index, mask, self_node_idx (Dict order)."""
         B = obs.shape[0]
@@ -97,21 +122,29 @@ class GNNModel(TorchModelV2, nn.Module):
     @override(TorchModelV2)
     def forward(self, input_dict, state_batches, seq_lens):
         obs = input_dict["obs"]
+        dev = next(self.parameters()).device
+        nb = dev.type == "cuda"
         if isinstance(obs, dict):
             node_features = obs["node_features"]
-            edge_index = obs["edge_index"]
             mask = obs["mask"]
             self_node_idx = obs["self_node_idx"]
             if isinstance(node_features, np.ndarray):
-                node_features = torch.from_numpy(node_features).float().to(next(self.parameters()).device)
-            if isinstance(edge_index, np.ndarray):
-                edge_index = torch.from_numpy(edge_index).long().to(node_features.device)
+                node_features = torch.as_tensor(node_features, dtype=torch.float32, device=dev, non_blocking=nb)
+            else:
+                node_features = node_features.to(device=dev, non_blocking=nb)
             if isinstance(mask, np.ndarray):
-                mask = torch.from_numpy(mask).float().to(node_features.device)
+                mask = torch.as_tensor(mask, dtype=torch.float32, device=dev, non_blocking=nb)
+            else:
+                mask = mask.to(device=dev, non_blocking=nb)
             if isinstance(self_node_idx, np.ndarray):
-                self_node_idx = torch.from_numpy(self_node_idx).long().to(node_features.device)
+                self_node_idx = torch.as_tensor(self_node_idx, dtype=torch.long, device=dev, non_blocking=nb)
+            else:
+                self_node_idx = self_node_idx.to(device=dev, non_blocking=nb)
         else:
-            node_features, edge_index, mask, self_node_idx = self._unflatten_obs(obs)
+            node_features, _edge_index, mask, self_node_idx = self._unflatten_obs(obs)
+            node_features = node_features.to(device=dev, non_blocking=nb)
+            mask = mask.to(device=dev, non_blocking=nb)
+            self_node_idx = self_node_idx.to(device=dev, non_blocking=nb)
 
         if node_features.dim() == 2:
             node_features = node_features.unsqueeze(0)
@@ -120,38 +153,34 @@ class GNNModel(TorchModelV2, nn.Module):
         B = node_features.shape[0]
         device = node_features.device
 
-        # Embed nodes: (B, N, F) -> (B, N, H)
+        # mask: 1 = active, 0 = disabled/padding — apply before embed so inactive nodes are not encoded
+        mask_exp = mask.unsqueeze(-1)  # (B, N, 1)
+        node_features = node_features * mask_exp
+
+        # Embed nodes: (B, N, F) -> (B, N, H); zero again in case Linear has bias
         x = self.node_embed(node_features)
         H = x.size(-1)
+        x = x * mask_exp
 
-        # Edge index: (2, E) or (B, 2, E); gather() requires int64 indices
-        if edge_index.dim() == 2:
-            edge_index = edge_index.unsqueeze(0).expand(B, -1, -1)
-        edge_index = edge_index.long()
-        src_idx = edge_index[:, 0, :]   # (B, E)
-        dst_idx = edge_index[:, 1, :]   # (B, E)
+        # Fixed all-to-all edges (same as env); avoids scatter-based degree counts every layer.
+        src_idx = self._fixed_src_idx.unsqueeze(0).expand(B, -1)
+        dst_idx = self._fixed_dst_idx.unsqueeze(0).expand(B, -1)
+        inv_deg = self._inv_in_degree.to(dtype=x.dtype)
+        mask_src = torch.gather(mask, 1, src_idx).unsqueeze(-1)  # (B, E, 1); reused each MP layer
+        dst_expand = dst_idx.unsqueeze(-1).expand(-1, -1, H)
 
         # Message passing (vectorized aggregation per batch item)
         for layer in self.message_layers:
+            x = x * mask_exp
             src_feat = torch.gather(x, 1, src_idx.unsqueeze(-1).expand(-1, -1, H))
             dst_feat = torch.gather(x, 1, dst_idx.unsqueeze(-1).expand(-1, -1, H))
             msg = torch.relu(layer(torch.cat([src_feat, dst_feat], dim=-1)))
+            msg = msg * mask_src
             agg = torch.zeros(B, MAX_AGENTS, H, device=device, dtype=x.dtype)
-            dst_expand = dst_idx.unsqueeze(-1).expand(-1, -1, H)
             agg.scatter_add_(1, dst_expand, msg)
-            count = torch.zeros(B, MAX_AGENTS, 1, device=device)
-            count.scatter_add_(
-                1,
-                dst_idx.unsqueeze(-1),
-                torch.ones(B, dst_idx.size(1), 1, device=device, dtype=x.dtype),
-            )
-            count = count.clamp(min=1)
-            agg = agg / count
+            agg = agg * inv_deg
             x = x + agg
-
-        # Mask out disabled nodes (optional: zero their embedding)
-        mask_exp = mask.unsqueeze(-1)
-        x = x * mask_exp
+            x = x * mask_exp
 
         # Self embedding: for each batch item, take node at self_node_idx (int64 for indexing)
         self_idx = self_node_idx.view(B).long()

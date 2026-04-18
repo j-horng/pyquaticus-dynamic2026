@@ -197,24 +197,12 @@ def caps_and_grabs(
     reward = 0.0
     
     #----------
-    #incremental reward for when the agent gets closer to the target 
-    
     agent_index = agents.index(agent_id)
 
     # Inactive/disabled agents must not receive shaping or team-event credit (e.g. red_dummy 3v0).
     disabled = state.get("disabled_agents")
     if disabled is not None and len(disabled) > agent_index and bool(disabled[agent_index]):
         return 0.0
-
-    # agent_inds_of_team is keyed by Team enum, not int (0/1).
-    opp_team = Team.RED_TEAM if int(team) == 0 else Team.BLUE_TEAM
-
-    agent_is_tagged = state["agent_is_tagged"][agent_index]
-    agent_has_flag = state["agent_has_flag"][agent_index]
-    if not agent_is_tagged:
-        prev_pos = np.array(prev_state["agent_position"][agent_index])
-        curr_pos = np.array(state["agent_position"][agent_index])
-        field_diag = np.linalg.norm(env_size)
 
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
@@ -227,53 +215,29 @@ def caps_and_grabs(
 
     # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
     # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
-    
-    #----------
-    #added a reward when defending against agents on our side; opp_index = opponents index
-    if not agent_is_tagged:
-        agent_on_own_side = state["agent_on_sides"][agent_index]
-        for opp_index in agent_inds_of_team[opp_team]:
-            if disabled is not None and len(disabled) > opp_index and bool(disabled[opp_index]):
-                continue
-            if not state["agent_on_sides"][opp_index]:
-                agent_pos = np.array(state["agent_position"][agent_index])
-                opp_pos = np.array(state["agent_position"][opp_index])
-                dist = np.linalg.norm(agent_pos - opp_pos)
-                if agent_on_own_side:
-                    defend_scale = 3.0 if state["agent_has_flag"][opp_index] else 1.0
-                    prev_agent_pos = np.array(prev_state["agent_position"][agent_index])
-                    prev_dist = np.linalg.norm(prev_agent_pos - opp_pos)
-                    reward += 0.01 * (prev_dist - dist) / np.linalg.norm(env_size) * defend_scale
-                break
-
-    #----------#
 
     #Check if agents lost or gained flag
     prev_has_flag = prev_state['agent_has_flag'][agent_index]
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
-        reward += -0.75
+        reward += -0.5
     # Agent grabbed flag individually
     if (has_flag > prev_has_flag):
         reward += 0.5
-    
-    #Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)] the value at the index 0 corresponds to the number of grabs
-    if disabled is not None:
-        active_count = sum(1 for i in agent_inds_of_team[team] if not (len(disabled) > i and bool(disabled[i])))
-    else:
-        active_count = len(agent_inds_of_team[team])
-    team_scale = 1.0 / max(1, active_count)
+
+    # Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)].
+    # Full per-agent credit (no team_size scaling).
     for t in range(len(state['grabs'])):
         prev_num_grabs = prev_state['grabs'][t]
         num_grabs = state['grabs'][t]
         if num_grabs > prev_num_grabs:
-            reward += (0.25 if t == int(team) else -0.25) * team_scale
+            reward += 0.25 if t == int(team) else -0.25
 
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            reward += (2.0 if t == int(team) else -2.0) * team_scale
+            reward += 1.0 if t == int(team) else -1.0
 
     return reward
 

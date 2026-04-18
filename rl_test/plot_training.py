@@ -4,8 +4,8 @@ Plot training progress from train.log.
 
 Usage:
   python rl_test/plot_training.py
-  python rl_test/plot_training.py --log ray_dynamic/train.log
-  python rl_test/plot_training.py --log ray_dynamic/train.log --smooth 5
+  python rl_test/plot_training.py --log training/train.log
+  python rl_test/plot_training.py --log training/train.log --smooth 5
 """
 
 import argparse
@@ -52,7 +52,7 @@ def smooth(values, window):
 
 def main():
     parser = argparse.ArgumentParser(description="Plot training metrics from train.log")
-    parser.add_argument("--log", default="ray_dynamic/train.log", help="Path to train.log")
+    parser.add_argument("--log", default="training/train.log", help="Path to train.log")
     parser.add_argument("--smooth", type=int, default=3, help="Moving-average window for reward (default 3)")
     args = parser.parse_args()
 

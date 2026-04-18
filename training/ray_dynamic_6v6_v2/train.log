@@ -1,0 +1,70 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=16000 (0=auto: 16000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=-5.58, entropy=n/a, policy_loss=n/a, time=84.5s/iter (est. ~4225s per 50 iters)
+Iter 5: return_mean=-5.13, entropy=n/a, policy_loss=n/a, time=79.4s/iter (est. ~3971s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_v2\iter_5
+Iter 10: return_mean=-4.79, entropy=n/a, policy_loss=n/a, time=77.8s/iter (est. ~3892s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_v2\iter_10
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+ERROR: Resume path is not a directory: C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_N
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_10 (next iteration 11)
+Blue weights restored from resume checkpoint.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 11: return_mean=-6.25, entropy=n/a, policy_loss=n/a, time=84.2s/iter (est. ~4212s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_11
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_11 (next iteration 12)
+Blue weights restored from resume checkpoint.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 12: return_mean=-3.42, entropy=n/a, policy_loss=n/a, time=83.6s/iter (est. ~4181s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_12
+Iter 13: return_mean=-3.78, entropy=n/a, policy_loss=n/a, time=88.6s/iter (est. ~4429s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_13
+Iter 14: return_mean=-4.02, entropy=n/a, policy_loss=n/a, time=97.3s/iter (est. ~4865s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_14
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=False, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_14 (next iteration 15)
+Blue weights restored from resume checkpoint.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 15: return_mean=-5.25, entropy=n/a, policy_loss=n/a, time=87.3s/iter (est. ~4366s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_15
+Iter 16: return_mean=-4.33, entropy=n/a, policy_loss=n/a, time=96.8s/iter (est. ~4839s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_16
+Iter 17: return_mean=-5.02, entropy=n/a, policy_loss=n/a, time=91.8s/iter (est. ~4588s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_17
+Iter 18: return_mean=-5.30, entropy=n/a, policy_loss=n/a, time=97.5s/iter (est. ~4876s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_18
+Iter 19: return_mean=-5.21, entropy=n/a, policy_loss=n/a, time=102.0s/iter (est. ~5100s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_19
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=-0.33, entropy=3.2135, policy_loss=-0.0063, time=116.9s/iter (est. ~5843s per 50 iters)
+Iter 1: return_mean=-0.42, entropy=3.2032, policy_loss=-0.0114, time=122.9s/iter (est. ~6147s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_v2\iter_1
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_19 (next iteration 20)
+Blue weights restored from resume checkpoint.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 20: return_mean=n/a (no completed episodes yet), entropy=3.2120, policy_loss=-0.0075, time=119.3s/iter (est. ~5967s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_20
+Iter 25: return_mean=-3.00, entropy=3.1863, policy_loss=-0.0128, time=117.0s/iter (est. ~5852s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_25
+Iter 30: return_mean=-1.24, entropy=3.1485, policy_loss=-0.0167, time=121.4s/iter (est. ~6070s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_30
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_30 (next iteration 31)
+Blue weights restored from resume checkpoint.
+Red opponent: dummy (current args). Blue weights restored from checkpoint.
+Iter 35: return_mean=-0.83, entropy=3.1772, policy_loss=-0.0166, time=120.6s/iter (est. ~6029s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_6v6_v2\iter_35

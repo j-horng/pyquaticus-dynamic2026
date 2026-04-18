@@ -7,35 +7,48 @@ Uses graph observations and the custom GNN model (message passing, self-node emb
 Usage:
   python rl_test/train_dynamic.py
   python rl_test/train_dynamic.py --render
-  # Overnight: progress is logged to out_dir/train.log (disable with --no-log-file)
+  # Overnight: progress is logged to out_dir/train.log (disable with --no-log-file). Matchup lines go to stderr only.
   python rl_test/train_dynamic.py --speedup 8 --runners 16
   # Save more often so you can resume if you have to stop early (e.g. --save-every 100):
   python rl_test/train_dynamic.py --speedup 8 --runners 16 --save-every 100
   # Resume after a crash (continues from next iteration, saves to same out_dir).
   # You can change Red difficulty when resuming (e.g. --red-heuristic-mode medium); Blue is restored, Red is rebuilt from current args.
-  python rl_test/train_dynamic.py --resume ./ray_dynamic/iter_1250
-  # Train vs built-in heuristic (default: easy first, then resume with --red-heuristic-mode medium; save every 12):
+  python rl_test/train_dynamic.py --resume ./training/iter_1250
+  # Train vs built-in heuristic (default: easy first, then resume with --red-heuristic-mode medium):
   python rl_test/train_dynamic.py --red-heuristic
-  python rl_test/train_dynamic.py --resume ./ray_dynamic/iter_N --red-heuristic --red-heuristic-mode medium
+  python rl_test/train_dynamic.py --resume ./training/iter_N --red-heuristic --red-heuristic-mode medium
   # Self-play: Red uses Blue from a previous checkpoint (e.g. 12 iters behind):
-  python rl_test/train_dynamic.py --resume ./ray_dynamic/iter_700 --red-from-checkpoint ./ray_dynamic/iter_688
+  python rl_test/train_dynamic.py --resume ./training/iter_700 --red-from-checkpoint ./training/iter_688
   # Quick smoke test before a long run:
   python rl_test/train_dynamic.py --iters 100
 
+  # Watch / deploy without duplicating CLI: same env factory and flags as training (no PPO):
+  python rl_test/train_dynamic.py --watch --team-size-min 4 --team-size-max 4
+  python rl_test/train_dynamic.py --watch --resume ./training/iter_500 --team-size-min 4 --team-size-max 4
+  python rl_test/train_dynamic.py --watch --resume ./training/iter_500 --red-heuristic --team-size-min 4 --team-size-max 4
+
   # Save checkpoint right now (while training is running): create file SAVE_NOW in out_dir.
-  # E.g. from another terminal:  echo. > ray_dynamic/SAVE_NOW   (Windows)
-  #                             touch ray_dynamic/SAVE_NOW      (Linux/Mac)
+  # E.g. from another terminal:  echo. > training/SAVE_NOW   (Windows)
+  #                             touch training/SAVE_NOW      (Linux/Mac)
   # Next completed iteration will save to iter_N and delete SAVE_NOW.
 """
+
+# Default directory for checkpoints (iter_N/) and train.log (relative to cwd).
+TRAINING_OUT_DIR = "./training/"
+# When --train-batch-size 0 (headless): sized so workers usually finish before Ray sample_timeout (raise if stable).
+DEFAULT_HEADLESS_TRAIN_BATCH_SIZE = 4000
 
 import argparse
 import logging
 import os
 import re
+import sys
 import time
+from collections.abc import Mapping
 
 import numpy as np
 import ray
+from gymnasium.spaces import Discrete
 from ray.rllib.algorithms.ppo import PPO, PPOConfig
 from ray.rllib.policy.policy import Policy
 from ray.tune.registry import register_env
@@ -56,9 +69,20 @@ except Exception as e:
 
 import pyquaticus.utils.rewards as rew
 from pyquaticus.config import config_dict_std, ACTION_MAP
+from pyquaticus.base_policies.base_combined import Heuristic_CTF_Agent
 from pyquaticus.envs.dynamic_pyquaticus import DynamicPyQuaticusEnv
+from pyquaticus.structs import Team
 from pyquaticus.envs.graph_obs_wrapper import GraphObsWrapper
 from pyquaticus.envs.rllib_pettingzoo_wrapper import ParallelPettingZooWrapper
+
+# Max agents per team supported by graph obs (6v6 = 12). Must match graph_obs_wrapper.MAX_AGENTS // 2.
+MAX_TEAM_CAP = 6
+
+# Episode custom metrics like "3v3/win" are summarized as "3v3/win_mean" under env_runners on many Ray versions.
+_MATCHUP_PREFIX_RE = re.compile(r"^(\d+v\d+)/")
+
+# Fallback discrete action space if wrapped env does not expose per-agent spaces (watch / heuristics).
+_DEFAULT_ACTION_SPACE = Discrete(len(ACTION_MAP))
 
 try:
     from ray.rllib.algorithms.callbacks import DefaultCallbacks
@@ -67,6 +91,7 @@ except Exception:
         from ray.rllib.agents.callbacks import DefaultCallbacks
     except Exception:
         DefaultCallbacks = object
+
 
 class RandPolicy(Policy):
     """Random policy for opponent agents."""
@@ -130,9 +155,10 @@ class DoNothingPolicy(Policy):
         pass
 
 
-# Register so checkpoints can load red_policy (RandPolicy) when restoring
+# Register so checkpoints can load custom policies when restoring (durable names).
 if POLICIES is not None:
     POLICIES["RandPolicy"] = RandPolicy
+    POLICIES["DoNothingPolicy"] = DoNothingPolicy
 
 
 def make_env(
@@ -148,8 +174,8 @@ def make_env(
     red_all_defend=False,
     max_time=600,
     max_score=3,
-    score_ends_episode=False,
-    team_size_range=(1, 3),
+    score_ends_episode=True,
+    team_size_range=(1, 6),
     tag_removes_agent=False,
     reinforcement_interval=0,
     reinforcement_prob=0.5,
@@ -173,15 +199,13 @@ def make_env(
     if red_attack_hard:
         # One hard attacker on Red, other Red slots disabled by forcing 1 active.
         cfg["force_num_red_active"] = 1
+    max_team = team_size_range[1]
     if red_all_attack:
-        cfg["force_num_red_active"] = 3
+        cfg["force_num_red_active"] = max_team
     if red_all_defend:
-        cfg["force_num_red_active"] = 3
+        cfg["force_num_red_active"] = max_team
 
-    reward_config = {
-        "agent_0": rew.caps_and_grabs, "agent_1": rew.caps_and_grabs, "agent_2": rew.caps_and_grabs,
-        "agent_3": rew.caps_and_grabs, "agent_4": rew.caps_and_grabs, "agent_5": rew.caps_and_grabs,
-    }
+    reward_config = {f"agent_{i}": rew.caps_and_grabs for i in range(2 * max_team)}
 
     env = DynamicPyQuaticusEnv(
         team_size_range=team_size_range,
@@ -193,41 +217,647 @@ def make_env(
         render_mode=render_mode,
     )
     # Graph obs for Blue (GNN); optionally pass raw obs for Red (heuristic policies)
-    env = GraphObsWrapper(env, flatten_for_fc=False, red_gets_raw_obs=red_gets_raw_obs)
+    blue_ids = [f"agent_{i}" for i in range(max_team)]
+    env = GraphObsWrapper(
+        env, flatten_for_fc=False, red_gets_raw_obs=red_gets_raw_obs, blue_agent_ids=blue_ids
+    )
     env = ParallelPettingZooWrapper(env)
     return env
 
 
-if __name__ == "__main__":
+def _resolve_blue_policy_path(checkpoint_dir):
+    p = os.path.abspath(checkpoint_dir)
+    if os.path.isdir(p) and not p.endswith("blue_policy"):
+        return os.path.join(p, "policies", "blue_policy")
+    return p
+
+
+def _warn_ckpt_gnn_mismatch(blue_src, args, log_fn):
+    try:
+        ckpt_hidden = blue_src.model.config.get("custom_model_config", {}).get("gnn_hidden", 64)
+        if int(ckpt_hidden) != int(args.gnn_hidden):
+            log_fn(
+                f"WARNING: checkpoint gnn_hidden={ckpt_hidden} but --gnn-hidden={args.gnn_hidden}. "
+                f"Weight load will fail or silently mismatch. Pass --gnn-hidden {ckpt_hidden} to match."
+            )
+    except Exception:
+        pass
+
+
+def _get_action_space(env, agent_id):
+    """Get action space for an agent; works with ParallelPettingZooWrapper and GraphObsWrapper."""
+    if hasattr(env, "action_space") and callable(env.action_space):
+        try:
+            return env.action_space(agent_id)
+        except Exception:
+            pass
+    spaces = getattr(env, "action_spaces", None)
+    if spaces and isinstance(spaces, dict) and agent_id in spaces:
+        return spaces[agent_id]
+    par = getattr(env, "par_env", None)
+    if par is not None:
+        return _get_action_space(par, agent_id)
+    return _DEFAULT_ACTION_SPACE
+
+
+def _get_dynamic_pyquaticus(wrapped_env):
+    """Unwrap ParallelPettingZooWrapper / GraphObsWrapper to DynamicPyQuaticusEnv."""
+    e = wrapped_env
+    for _ in range(6):
+        if isinstance(e, DynamicPyQuaticusEnv):
+            return e
+        nxt = getattr(e, "par_env", None)
+        if nxt is None:
+            break
+        e = nxt
+    raise RuntimeError("Could not unwrap to DynamicPyQuaticusEnv")
+
+
+def _callback_candidate_envs(episode, env, base_env, env_index):
+    """Collect wrapped env objects RLlib may pass into callbacks."""
+    candidates = []
+    if env is not None:
+        candidates.append(env)
+    if base_env is not None:
+        try:
+            subs = base_env.get_sub_environments()
+            if subs is not None and isinstance(env_index, int) and 0 <= env_index < len(subs):
+                candidates.append(subs[env_index])
+        except Exception:
+            pass
+        try:
+            vec = getattr(base_env, "vector_env", None)
+            if vec is not None and getattr(vec, "envs", None):
+                if isinstance(env_index, int) and 0 <= env_index < len(vec.envs):
+                    candidates.append(vec.envs[env_index])
+        except Exception:
+            pass
+    return candidates
+
+
+def _callback_try_get_dynamic_pyquaticus(episode, env=None, base_env=None, env_index=0):
+    for e in _callback_candidate_envs(episode, env, base_env, env_index):
+        try:
+            return _get_dynamic_pyquaticus(e)
+        except Exception:
+            continue
+    return None
+
+
+def _callback_metrics_dict(result):
+    """Collect per-episode custom metrics from all places RLlib may put them (Ray version dependent)."""
+    out = {}
+    if not isinstance(result, Mapping):
+        return out
+    cm = result.get("custom_metrics")
+    if isinstance(cm, Mapping):
+        out.update(cm)
+    for block_name in ("env_runners", "sampler_results"):
+        block = result.get(block_name)
+        if not isinstance(block, Mapping):
+            continue
+        nested = block.get("custom_metrics")
+        if isinstance(nested, Mapping):
+            out.update(nested)
+        for k, v in block.items():
+            if k == "custom_metrics":
+                continue
+            if isinstance(k, str) and _MATCHUP_PREFIX_RE.match(k):
+                out[k] = v
+    return out
+
+
+def _callback_episode_length(episode):
+    for name in ("env_steps", "episode_length"):
+        v = getattr(episode, name, None)
+        if v is not None:
+            try:
+                return int(v)
+            except Exception:
+                pass
+    try:
+        return int(len(episode))
+    except Exception:
+        return 0
+
+
+def _callback_read_active_sizes_from_info(episode, dynamic):
+    """Prefer num_blue_active / num_red_active from env info (last step); fallback to env attributes."""
+    info_dict = None
+    if hasattr(episode, "get_infos"):
+        try:
+            last_infos = episode.get_infos(-1)
+            if isinstance(last_infos, dict):
+                for inf in last_infos.values():
+                    if isinstance(inf, dict) and "num_blue_active" in inf:
+                        info_dict = inf
+                        break
+        except Exception:
+            pass
+    if info_dict is None and hasattr(episode, "get_agents"):
+        try:
+            for aid in episode.get_agents():
+                try:
+                    inf = episode.last_info_for(aid)
+                except Exception:
+                    continue
+                if isinstance(inf, dict) and "num_blue_active" in inf:
+                    info_dict = inf
+                    break
+        except Exception:
+            pass
+    if info_dict is None and hasattr(episode, "last_info_for"):
+        try:
+            inf = episode.last_info_for("agent_0")
+            if isinstance(inf, dict) and "num_blue_active" in inf:
+                info_dict = inf
+        except Exception:
+            pass
+    if info_dict is not None:
+        return int(info_dict["num_blue_active"]), int(info_dict["num_red_active"])
+    return int(getattr(dynamic, "num_blue_active", 0)), int(getattr(dynamic, "num_red_active", 0))
+
+
+class DynamicPyQuaticusCallbacks(DefaultCallbacks):
+    def __init__(self):
+        super().__init__()
+
+    def on_episode_end(self, *, episode, env=None, base_env=None, env_index=0, **kwargs):
+        dynamic = None
+        if base_env is not None:
+            try:
+                subs = base_env.get_sub_environments()
+                if subs:
+                    idx = env_index if env_index < len(subs) else 0
+                    dynamic = _get_dynamic_pyquaticus(subs[idx])
+            except Exception:
+                pass
+        if dynamic is None:
+            dynamic = _callback_try_get_dynamic_pyquaticus(episode, env=env, base_env=base_env, env_index=env_index)
+        if dynamic is None:
+            return
+        try:
+            dynamic._set_game_events_from_state()
+        except Exception:
+            pass
+
+        nb, nr = _callback_read_active_sizes_from_info(episode, dynamic)
+        key = f"{nb}v{nr}"
+
+        b, r = Team.BLUE_TEAM, Team.RED_TEAM
+        ge = dynamic.game_events
+        tags_b = int(ge[b]["tags"])
+        tags_r = int(ge[r]["tags"])
+        grabs_b = int(ge[b]["grabs"])
+        grabs_r = int(ge[r]["grabs"])
+        caps_b = int(dynamic.state["captures"][int(b)])
+        caps_r = int(dynamic.state["captures"][int(r)])
+        ep_len = float(max(1, _callback_episode_length(episode)))
+
+        win = 1.0 if caps_b > caps_r else 0.0
+        blue_oob = float(dynamic.state.get("blue_oob_count", 0))
+        red_oob = float(dynamic.state.get("red_oob_count", 0))
+
+        cm = getattr(episode, "custom_metrics", None)
+        if cm is None:
+            episode.custom_metrics = {}
+            cm = episode.custom_metrics
+        cm[f"{key}/win"] = win
+        cm[f"{key}/ep_len"] = ep_len
+        cm[f"{key}/blue_caps"] = float(caps_b)
+        cm[f"{key}/red_caps"] = float(caps_r)
+        cm[f"{key}/blue_grabs"] = float(grabs_b)
+        cm[f"{key}/red_grabs"] = float(grabs_r)
+        cm[f"{key}/blue_drops"] = float(grabs_b - caps_b)
+        cm[f"{key}/red_drops"] = float(grabs_r - caps_r)
+        cm[f"{key}/blue_tags"] = float(tags_b)
+        cm[f"{key}/red_tags"] = float(tags_r)
+        cm[f"{key}/blue_oob"] = blue_oob
+        cm[f"{key}/red_oob"] = red_oob
+
+    def on_train_result(self, *, algorithm, metrics_logger=None, result=None, **kwargs):
+        if result is None:
+            return
+        cm = _callback_metrics_dict(result)
+        prefixes = set()
+        for k in cm:
+            if not isinstance(k, str) or not k.endswith("_mean"):
+                continue
+            m = _MATCHUP_PREFIX_RE.match(k)
+            if m:
+                prefixes.add(m.group(1))
+        total = len(prefixes)
+        result["matchup_distribution"] = {
+            k: float(cm.get(f"{k}/win_mean", 0.0)) for k in sorted(prefixes)
+        }
+        # Only print on checkpoint cadence (same as main loop: i>0 and i%save_every==0), or SAVE_NOW.
+        loop_i = getattr(algorithm, "_matchup_train_loop_i", None)
+        se = max(1, int(getattr(algorithm, "_matchup_save_every", 5) or 5))
+        force = bool(getattr(algorithm, "_matchup_force_print", False))
+        should_print = force or (
+            loop_i is not None and loop_i > 0 and loop_i % se == 0
+        )
+        if not should_print:
+            return
+        if prefixes:
+            parts = " ".join(
+                f"{k} win_frac={float(cm.get(f'{k}/win_mean', 0.0)):.2f}" for k in sorted(prefixes)
+            )
+            # Stderr only: train.log is fed by log() (stdout); avoid mixing matchup into stdout-only redirects.
+            print(
+                f"matchup stats this iter ({total} types; win_frac = mean 1[blue_caps>red_caps]): {parts}",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            print("matchup stats this iter (0 types)", file=sys.stderr, flush=True)
+
+def _int_action(action):
+    if isinstance(action, (list, tuple)):
+        action = action[0]
+    if hasattr(action, "item"):
+        return int(action.item())
+    return int(action)
+
+
+def _run_watch(args):
+    """Render loop: same kwargs as env_creator make_env; no PPO."""
+    logging.basicConfig(level=logging.ERROR)
+    ray.init(ignore_reinit_error=True)
+
+    team_max = int(args.team_size_max)
+    team_min = int(args.team_size_min)
+    team_size_range = (team_min, team_max)
+    SPEEDUP = max(1, int(args.speedup))
+    reinf_interval = max(0, int(args.reinforcement_interval))
+    reinf_prob = max(0.0, min(1.0, float(args.reinforcement_prob)))
+
+    env = None
+    try:
+        env = make_env(
+            None,
+            render_mode="human",
+            sim_speedup=SPEEDUP,
+            red_gets_raw_obs=(
+                args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend
+            ),
+            red_dummy=args.red_dummy,
+            stationary_red=args.red_stationary,
+            red_stationary=args.red_stationary,
+            red_attack_hard=args.red_attack_hard,
+            red_all_attack=args.red_all_attack,
+            red_all_defend=args.red_all_defend,
+            max_time=args.max_time,
+            max_score=args.max_score,
+            score_ends_episode=not args.no_score_end,
+            team_size_range=team_size_range,
+            tag_removes_agent=args.tag_removes_agent,
+            reinforcement_interval=reinf_interval,
+            reinforcement_prob=reinf_prob,
+            fixed_spawn=args.fixed_spawn,
+        )
+    except Exception:
+        ray.shutdown()
+        raise
+
+    dynamic_env = _get_dynamic_pyquaticus(env)
+    blue_ids = [f"agent_{i}" for i in range(team_max)]
+    red_ids = [f"agent_{i}" for i in range(team_max, 2 * team_max)]
+
+    blue_policy = None
+    if args.resume:
+        policy_path = _resolve_blue_policy_path(args.resume)
+        if os.path.isdir(policy_path):
+            print(f"Watch: loading blue policy from {policy_path}")
+            blue_policy = Policy.from_checkpoint(policy_path)
+        else:
+            print(f"Watch: no policy at {policy_path}, using random actions for Blue")
+
+    red_heuristics = {}
+    red_ckpt_policy = None
+    noop = len(ACTION_MAP) - 1
+
+    if args.red_heuristic:
+        red_heuristics = {
+            aid: Heuristic_CTF_Agent(aid, dynamic_env, mode=args.red_heuristic_mode) for aid in red_ids
+        }
+        print(f"Watch: Red heuristic (combined CTF, {args.red_heuristic_mode}).")
+    elif args.red_from_checkpoint:
+        red_path = _resolve_blue_policy_path(args.red_from_checkpoint)
+        if os.path.isdir(red_path):
+            print(f"Watch: loading red policy from {red_path}")
+            red_ckpt_policy = Policy.from_checkpoint(red_path)
+        else:
+            print(f"Watch: red checkpoint not found at {red_path}, using random for Red")
+    elif args.red_dummy or args.red_stationary:
+        print("Watch: Red do-nothing (dummy / stationary).")
+    else:
+        print("Watch: Red random actions.")
+
+    obs, info = env.reset()
+    episode_idx, step = 0, 0
+
+    try:
+        while True:
+            actions = {}
+            global_state = dynamic_env._history_to_state()
+            for aid in obs:
+                if blue_policy is not None and aid in blue_ids:
+                    out = blue_policy.compute_single_action(obs[aid], explore=False)
+                    actions[aid] = _int_action(out[0] if isinstance(out, (list, tuple)) else out)
+                elif aid in blue_ids:
+                    samp = _get_action_space(env, aid).sample()
+                    actions[aid] = _int_action(samp)
+                elif aid in red_heuristics:
+                    hinfo = {aid: {"global_state": global_state}}
+                    act = red_heuristics[aid].compute_action(obs[aid], hinfo)
+                    actions[aid] = _int_action(act)
+                elif red_ckpt_policy is not None:
+                    out = red_ckpt_policy.compute_single_action(obs[aid], explore=False)
+                    actions[aid] = _int_action(out[0] if isinstance(out, (list, tuple)) else out)
+                elif args.red_dummy or args.red_stationary:
+                    actions[aid] = noop
+                else:
+                    samp = _get_action_space(env, aid).sample()
+                    actions[aid] = _int_action(samp)
+
+            obs, rewards, term, trunc, info = env.step(actions)
+            step += 1
+
+            done = any(term.values()) or any(trunc.values())
+            if done:
+                episode_idx += 1
+                try:
+                    dynamic_env._set_game_events_from_state()
+                except Exception:
+                    pass
+                caps = np.asarray(dynamic_env.state["captures"]).flatten()
+                cb, cr = int(caps[0]), int(caps[1])
+                winner = "Blue" if cb > cr else ("Red" if cr > cb else "Draw")
+                b, r = Team.BLUE_TEAM, Team.RED_TEAM
+                ge = dynamic_env.game_events
+                gb, gr = int(ge[b]["grabs"]), int(ge[r]["grabs"])
+                tb, tr = int(ge[b]["tags"]), int(ge[r]["tags"])
+                print(
+                    f"Episode {episode_idx} done in {step} steps | "
+                    f"Blue caps {cb} Red caps {cr} ({winner}) | "
+                    f"grabs B/R {gb}/{gr} tags B/R {tb}/{tr}"
+                )
+                obs, info = env.reset()
+                step = 0
+    except KeyboardInterrupt:
+        print("Stopped.")
+    finally:
+        if env is not None:
+            try:
+                env.close()
+            except Exception:
+                pass
+        ray.shutdown()
+
+
+def _coerce_finite_scalar(v):
+    """Convert RLlib / numpy / torch leaf metrics to float; None if missing or non-finite."""
+    if v is None:
+        return None
+    if isinstance(v, (list, tuple)):
+        if not v:
+            return None
+        try:
+            xs = []
+            for x in v:
+                t = x.item() if hasattr(x, "item") and callable(getattr(x, "item", None)) else x
+                xs.append(float(t))
+            if xs and all(np.isfinite(x) for x in xs):
+                return float(np.mean(xs))
+        except (TypeError, ValueError):
+            return None
+        return None
+    try:
+        x = v.item() if hasattr(v, "item") and callable(getattr(v, "item", None)) else v
+        fv = float(x)
+        return fv if np.isfinite(fv) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _stat_key_matches(k, stat):
+    if k == stat:
+        return True
+    if not isinstance(k, str):
+        return False
+    if k.endswith("/" + stat) or k.endswith("." + stat):
+        return True
+    if "/" in k and k.rsplit("/", 1)[-1] == stat:
+        return True
+    if "." in k and k.rsplit(".", 1)[-1] == stat:
+        return True
+    return False
+
+
+def _find_stat(d, stat, depth=0):
+    """Walk nested dict/list/Mapping; match exact keys or Tune-style dotted/slashed metric paths."""
+    if depth > 14 or d is None:
+        return None
+    if isinstance(d, (dict, Mapping)):
+        if stat in d:
+            fv = _coerce_finite_scalar(d[stat])
+            if fv is not None:
+                return fv
+        for k, v in d.items():
+            if _stat_key_matches(k, stat):
+                fv = _coerce_finite_scalar(v)
+                if fv is not None:
+                    return fv
+        for v in d.values():
+            found = _find_stat(v, stat, depth + 1)
+            if found is not None:
+                return found
+    elif isinstance(d, (list, tuple)):
+        for v in d:
+            found = _find_stat(v, stat, depth + 1)
+            if found is not None:
+                return found
+    return None
+
+
+def _extract_blue_learner_metrics(result):
+    """Read entropy / policy_loss for ``blue_policy`` from known RLlib layouts, then generic search."""
+    entropy, policy_loss = None, None
+    if not isinstance(result, Mapping):
+        return entropy, policy_loss
+
+    def _from_learner_stats(ls):
+        if ls is None:
+            return None, None
+        if isinstance(ls, (list, tuple)) and ls:
+            ls = ls[-1]
+        if not isinstance(ls, Mapping):
+            return None, None
+        ent = _coerce_finite_scalar(ls.get("entropy"))
+        if ent is None:
+            ent = _coerce_finite_scalar(ls.get("mean_entropy"))
+        pl = _coerce_finite_scalar(ls.get("policy_loss"))
+        if pl is None:
+            pl = _coerce_finite_scalar(ls.get("mean_policy_loss"))
+        if pl is None:
+            pl = _coerce_finite_scalar(ls.get("total_loss"))
+        return ent, pl
+
+    info = result.get("info")
+    if isinstance(info, Mapping):
+        for root_key in ("learner", "learners"):
+            root = info.get(root_key)
+            if not isinstance(root, Mapping):
+                continue
+            bp = root.get("blue_policy")
+            if isinstance(bp, (list, tuple)) and bp:
+                bp = bp[-1]
+            if not isinstance(bp, Mapping):
+                continue
+            e, p = _from_learner_stats(bp.get("learner_stats"))
+            if e is not None:
+                entropy = e
+            if p is not None:
+                policy_loss = p
+            if entropy is None:
+                entropy = _coerce_finite_scalar(bp.get("entropy"))
+            if policy_loss is None:
+                policy_loss = _coerce_finite_scalar(bp.get("policy_loss"))
+            if policy_loss is None:
+                policy_loss = _coerce_finite_scalar(bp.get("total_loss"))
+            if entropy is not None or policy_loss is not None:
+                return entropy, policy_loss
+
+    learners = result.get("learners")
+    if isinstance(learners, Mapping):
+        bp = learners.get("blue_policy")
+        if isinstance(bp, (list, tuple)) and bp:
+            bp = bp[-1]
+        if isinstance(bp, Mapping):
+            e, p = _from_learner_stats(bp.get("learner_stats"))
+            if e is not None:
+                entropy = e
+            if p is not None:
+                policy_loss = p
+            if entropy is None:
+                entropy = _coerce_finite_scalar(bp.get("entropy"))
+            if policy_loss is None:
+                policy_loss = _coerce_finite_scalar(bp.get("policy_loss"))
+            if policy_loss is None:
+                policy_loss = _coerce_finite_scalar(bp.get("total_loss"))
+            if entropy is not None or policy_loss is not None:
+                return entropy, policy_loss
+
+    bp = result.get("blue_policy")
+    if isinstance(bp, (list, tuple)) and bp:
+        bp = bp[-1]
+    if isinstance(bp, Mapping):
+        e, p = _from_learner_stats(bp.get("learner_stats"))
+        entropy = e if entropy is None else entropy
+        policy_loss = p if policy_loss is None else policy_loss
+        if entropy is None:
+            entropy = _coerce_finite_scalar(bp.get("entropy"))
+        if policy_loss is None:
+            policy_loss = _coerce_finite_scalar(bp.get("policy_loss"))
+        if policy_loss is None:
+            policy_loss = _coerce_finite_scalar(bp.get("total_loss"))
+
+    if entropy is None:
+        entropy = _find_stat(result, "entropy") or _find_stat(result, "mean_entropy")
+    if policy_loss is None:
+        policy_loss = (
+            _find_stat(result, "policy_loss")
+            or _find_stat(result, "mean_policy_loss")
+            or _find_stat(result, "total_loss")
+        )
+    return entropy, policy_loss
+
+
+def main():
     parser = argparse.ArgumentParser(description="Train on Dynamic PyQuaticus")
     parser.add_argument("--render", action="store_true", help="Enable rendering")
     parser.add_argument("--iters", type=int, default=2000, help="Training iterations")
-    parser.add_argument("--save-every", type=int, default=12, help="Save checkpoint every N iters")
-    parser.add_argument("--out-dir", type=str, default="./ray_dynamic/", help="Output directory for checkpoints and train.log")
+    parser.add_argument("--save-every", type=int, default=5, help="Save checkpoint every N iters")
+    parser.add_argument(
+        "--out-dir",
+        type=str,
+        default=TRAINING_OUT_DIR,
+        help="Output directory for checkpoints and train.log (default: ./training/)",
+    )
     parser.add_argument("--runners", type=int, default=8, help="Number of parallel env runners (8=stable default; increase if PC has headroom)")
+    parser.add_argument(
+        "--train-batch-size",
+        type=int,
+        default=0,
+        help=(
+            "PPO train_batch_size (0=auto: 500 with --render, else "
+            f"{DEFAULT_HEADLESS_TRAIN_BATCH_SIZE} headless). "
+            "Lower if workers hit sample_timeout; raise when runners are fast."
+        ),
+    )
+    parser.add_argument(
+        "--envs-per-runner",
+        type=int,
+        default=1,
+        help="Rollout workers run this many env copies each (1=default; try 2–4 for more samples/iter if CPU/RAM allow; ignored with --render).",
+    )
     parser.add_argument("--entropy-coeff", type=float, default=0.05,
         help="PPO entropy coefficient (default 0.05 for Phase 1; use 0.01 for Phase 2+)")
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=3e-4,
+        help="PPO learning rate (default 3e-4; lower to 1e-4 for fine-tuning)",
+    )
+    parser.add_argument(
+        "--gnn-hidden",
+        type=int,
+        default=128,
+        help="GNN hidden dim (default 128; use 64 for faster iteration)",
+    )
+    parser.add_argument(
+        "--gnn-layers",
+        type=int,
+        default=2,
+        help="GNN message passing layers (default 2)",
+    )
     parser.add_argument("--speedup", type=int, default=8, help="Sim speedup factor (8=env steps 2x faster, minimal impact on learning)")
-    parser.add_argument("--resume", type=str, default=None, metavar="PATH", help="Resume from checkpoint (e.g. ./ray_dynamic/iter_1250)")
+    parser.add_argument("--resume", type=str, default=None, metavar="PATH", help="Resume from checkpoint (e.g. ./training/iter_1250)")
+    parser.add_argument("--watch", action="store_true", help="Render instead of training")
     parser.add_argument("--no-log-file", action="store_true", help="Disable writing progress to out_dir/train.log")
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")
     parser.add_argument("--red-dummy", action="store_true", help="Use do-nothing policy for Red (always no-op)")
     parser.add_argument("--red-stationary", action="store_true", help="Red uses 2 stationary active agents, third disabled")
     parser.add_argument("--red-attack-hard", action="store_true", help="Red uses 1 hard attacker-only heuristic (other red slots disabled)")
-    parser.add_argument("--red-all-attack", action="store_true", help="All 3 red agents use AttackGen hard heuristic")
-    parser.add_argument("--red-all-defend", action="store_true", help="All 3 red agents use DefendGen hard heuristic")
+    parser.add_argument("--red-all-attack", action="store_true", help="All red agents use AttackGen hard heuristic")
+    parser.add_argument("--red-all-defend", action="store_true", help="All red agents use DefendGen hard heuristic")
     parser.add_argument(
         "--stationary-red",
         action="store_true",
         help="Environment mode: Red agents stay stationary; on reset 2 red slots are used and 1 is disabled (top/mid/bot randomized).",
     )
     parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play vs previous iteration)")
-    parser.add_argument("--max-time", type=float, default=600, help="Max episode time in seconds (default 600 = 10 min)")
+    parser.add_argument(
+        "--max-time",
+        type=float,
+        default=600,
+        help="Max episode time in seconds (default 600 = 10 min; use e.g. 120 for shorter episodes / faster Ray sampling)",
+    )
     parser.add_argument("--max-score", type=int, default=3, help="Max score per team to end episode (default 3)")
-    parser.add_argument("--score-ends-episode", action="store_true", help="End episodes as soon as a team reaches --max-score (disabled by default for training)")
+    parser.add_argument(
+        "--no-score-end",
+        action="store_true",
+        help="Do not end the episode when a team reaches --max-score (default: episodes end on max score)",
+    )
+    parser.add_argument(
+        "--score-ends-episode",
+        action="store_true",
+        help="End episodes when a team reaches --max-score (default already on; use to override a prior --no-score-end in the same command).",
+    )
     parser.add_argument("--team-size-min", type=int, default=1, help="Min agents per team at episode start (default 1)")
-    parser.add_argument("--team-size-max", type=int, default=3, help="Max agents per team at episode start (default 3)")
+    parser.add_argument("--team-size-max", type=int, default=6, help="Max agents per team at episode start (default 6)")
     parser.add_argument("--tag-removes-agent", action="store_true", help="When tagged, agent is disabled (removed) until reinforcement")
     parser.add_argument("--reinforcement-interval", type=int, default=0, help="Steps between reinforcement spawn checks (0=off, e.g. 500)")
     parser.add_argument("--reinforcement-prob", type=float, default=0.5, help="Probability of spawning one reinforcement when interval hits (default 0.5)")
@@ -237,21 +867,27 @@ if __name__ == "__main__":
         help="Random positions on own side each episode (default_init=False). Omit for deterministic spawn-line placement (training default).",
     )
     args = parser.parse_args()
+    if getattr(args, "score_ends_episode", False):
+        args.no_score_end = False
     # Backwards/alias support: treat --stationary-red as enabling --red-stationary behavior.
     args.red_stationary = bool(getattr(args, "red_stationary", False) or getattr(args, "stationary_red", False))
     # Default spawn behavior is fixed spawn-line; opt into random with --random-spawn.
     args.fixed_spawn = not bool(getattr(args, "random_spawn", False))
 
     team_min, team_max = args.team_size_min, args.team_size_max
-    if team_min < 1 or team_max > 3 or team_min > team_max:
-        raise SystemExit("Require 1 <= --team-size-min <= --team-size-max <= 3.")
+    if team_min < 1 or team_max > MAX_TEAM_CAP or team_min > team_max:
+        raise SystemExit(f"Require 1 <= --team-size-min <= --team-size-max <= {MAX_TEAM_CAP}.")
 
     red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_stationary), bool(args.red_attack_hard), bool(args.red_all_attack), bool(args.red_all_defend), bool(args.red_from_checkpoint)])
     if red_mode_count > 1:
         raise SystemExit("Use only one of: --red-heuristic, --red-dummy, --red-stationary, --red-attack-hard, --red-all-attack, --red-all-defend, --red-from-checkpoint.")
 
+    if args.watch:
+        _run_watch(args)
+        return
+
     # Out-dir: use parent of resume path if resuming and out-dir not explicitly set
-    if args.resume and args.out_dir == "./ray_dynamic/":
+    if args.resume and os.path.abspath(args.out_dir) == os.path.abspath(TRAINING_OUT_DIR):
         args.out_dir = os.path.dirname(os.path.normpath(os.path.abspath(args.resume))) or "."
     os.makedirs(args.out_dir, exist_ok=True)
 
@@ -280,8 +916,17 @@ if __name__ == "__main__":
     SPEEDUP = max(1, int(args.speedup))
 
     team_size_range = (team_min, team_max)
+    BLUE_AGENT_IDS = [f"agent_{i}" for i in range(team_max)]
+    RED_AGENT_IDS = [f"agent_{i}" for i in range(team_max, 2 * team_max)]
     reinf_interval = max(0, int(args.reinforcement_interval))
     reinf_prob = max(0.0, min(1.0, args.reinforcement_prob))
+    train_bs = (
+        int(args.train_batch_size)
+        if args.train_batch_size > 0
+        else (500 if args.render else DEFAULT_HEADLESS_TRAIN_BATCH_SIZE)
+    )
+    if args.envs_per_runner < 1:
+        raise SystemExit("--envs-per-runner must be >= 1.")
 
     def env_creator(cfg=None):
         return make_env(
@@ -297,7 +942,7 @@ if __name__ == "__main__":
             red_all_defend=args.red_all_defend,
             max_time=args.max_time,
             max_score=args.max_score,
-            score_ends_episode=args.score_ends_episode,
+            score_ends_episode=not args.no_score_end,
             team_size_range=team_size_range,
             tag_removes_agent=args.tag_removes_agent,
             reinforcement_interval=reinf_interval,
@@ -318,7 +963,7 @@ if __name__ == "__main__":
         red_all_defend=args.red_all_defend,
         max_time=args.max_time,
         max_score=args.max_score,
-        score_ends_episode=args.score_ends_episode,
+        score_ends_episode=not args.no_score_end,
         team_size_range=team_size_range,
         tag_removes_agent=args.tag_removes_agent,
         reinforcement_interval=reinf_interval,
@@ -329,7 +974,7 @@ if __name__ == "__main__":
     obs, info = env.reset()
     # Get spaces - Blue uses graph obs, Red uses raw obs when --red-heuristic
     agent_id_blue = "agent_0"
-    agent_id_red = "agent_3"
+    agent_id_red = f"agent_{team_max}"
     if hasattr(env, "observation_space") and callable(env.observation_space):
         obs_space_blue = env.observation_space(agent_id_blue)
         obs_space_red = env.observation_space(agent_id_red)
@@ -367,20 +1012,28 @@ if __name__ == "__main__":
     log(
         f"Dynamic env: team_size={team_min}-{team_max} per team, init={spawn_mode}, "
         f"tag_removes_agent={args.tag_removes_agent}, reinforcement_interval={reinf_interval}, reinforcement_prob={reinf_prob}, "
-        f"score_ends_episode={args.score_ends_episode}, red_stationary={args.red_stationary}"
+        f"score_ends_episode={not args.no_score_end}, red_stationary={args.red_stationary}"
     )
 
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
-        if agent_id in ["agent_0", "agent_1", "agent_2"]:
+        if agent_id in BLUE_AGENT_IDS:
             return "blue_policy"
         if args.red_heuristic:
-            return "red_policy_3" if agent_id == "agent_3" else "red_policy_4" if agent_id == "agent_4" else "red_policy_5"
+            if agent_id in RED_AGENT_IDS:
+                n = int(agent_id.split("_", 1)[1])
+                return f"red_policy_{n}"
         if args.red_all_attack:
-            return "red_attack_3" if agent_id == "agent_3" else "red_attack_4" if agent_id == "agent_4" else "red_attack_5"
+            if agent_id in RED_AGENT_IDS:
+                n = int(agent_id.split("_", 1)[1])
+                return f"red_attack_{n}"
         if args.red_all_defend:
-            return "red_defend_3" if agent_id == "agent_3" else "red_defend_4" if agent_id == "agent_4" else "red_defend_5"
+            if agent_id in RED_AGENT_IDS:
+                n = int(agent_id.split("_", 1)[1])
+                return f"red_defend_{n}"
         if args.red_attack_hard:
-            return "red_attack_policy" if agent_id == "agent_3" else "red_dummy_policy"
+            if agent_id in RED_AGENT_IDS:
+                n = int(agent_id.split("_", 1)[1])
+                return f"red_attack_{n}"
         if args.red_dummy or args.red_stationary:
             return "red_dummy_policy"
         if args.red_from_checkpoint:
@@ -390,58 +1043,39 @@ if __name__ == "__main__":
     if args.red_heuristic:
         from pyquaticus.base_policies.base_policy_wrappers import CombinedGen
         mode = args.red_heuristic_mode
-        RedPolicy3 = CombinedGen("agent_3", base_env, mode)
-        RedPolicy4 = CombinedGen("agent_4", base_env, mode)
-        RedPolicy5 = CombinedGen("agent_5", base_env, mode)
-        RedPolicy3.__name__ = "HeuristicRed_3"
-        RedPolicy4.__name__ = "HeuristicRed_4"
-        RedPolicy5.__name__ = "HeuristicRed_5"
-        if POLICIES is not None:
-            POLICIES["HeuristicRed_3"] = RedPolicy3
-            POLICIES["HeuristicRed_4"] = RedPolicy4
-            POLICIES["HeuristicRed_5"] = RedPolicy5
-        policies = {
-            "blue_policy": (None, obs_space_blue, act_space, {}),
-            "red_policy_3": (RedPolicy3, obs_space_red, act_space, {}),
-            "red_policy_4": (RedPolicy4, obs_space_red, act_space, {}),
-            "red_policy_5": (RedPolicy5, obs_space_red, act_space, {}),
-        }
+        policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
+        for aid in RED_AGENT_IDS:
+            n = int(aid.split("_", 1)[1])
+            rp = CombinedGen(aid, base_env, mode)
+            rp.__name__ = f"HeuristicRed_{n}"
+            if POLICIES is not None:
+                POLICIES[f"HeuristicRed_{n}"] = rp
+            policies[f"red_policy_{n}"] = (rp, obs_space_red, act_space, {})
         log(f"Red team using built-in heuristic (combined CTF, {mode} mode).")
     elif args.red_all_attack:
         from pyquaticus.base_policies.base_policy_wrappers import AttackGen
-        RedA3 = AttackGen("agent_3", base_env, "hard")
-        RedA4 = AttackGen("agent_4", base_env, "hard")
-        RedA5 = AttackGen("agent_5", base_env, "hard")
-        policies = {
-            "blue_policy": (None, obs_space_blue, act_space, {}),
-            "red_attack_3": (RedA3, obs_space_red, act_space, {}),
-            "red_attack_4": (RedA4, obs_space_red, act_space, {}),
-            "red_attack_5": (RedA5, obs_space_red, act_space, {}),
-        }
-        log("Red team using all-attack heuristic (AttackGen hard, all 3 agents).")
+        policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
+        for aid in RED_AGENT_IDS:
+            n = int(aid.split("_", 1)[1])
+            policies[f"red_attack_{n}"] = (AttackGen(aid, base_env, "hard"), obs_space_red, act_space, {})
+        log("Red team using all-attack heuristic (AttackGen hard, all red agents).")
     elif args.red_all_defend:
         from pyquaticus.base_policies.base_policy_wrappers import DefendGen
-        RedD3 = DefendGen("agent_3", base_env, "hard")
-        RedD4 = DefendGen("agent_4", base_env, "hard")
-        RedD5 = DefendGen("agent_5", base_env, "hard")
-        policies = {
-            "blue_policy": (None, obs_space_blue, act_space, {}),
-            "red_defend_3": (RedD3, obs_space_red, act_space, {}),
-            "red_defend_4": (RedD4, obs_space_red, act_space, {}),
-            "red_defend_5": (RedD5, obs_space_red, act_space, {}),
-        }
-        log("Red team using all-defend heuristic (DefendGen hard, all 3 agents).")
+        policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
+        for aid in RED_AGENT_IDS:
+            n = int(aid.split("_", 1)[1])
+            policies[f"red_defend_{n}"] = (DefendGen(aid, base_env, "hard"), obs_space_red, act_space, {})
+        log("Red team using all-defend heuristic (DefendGen hard, all red agents).")
     elif args.red_attack_hard:
         from pyquaticus.base_policies.base_policy_wrappers import AttackGen
-        RedAttack = AttackGen("agent_3", base_env, "hard")
-        RedAttack.__name__ = "HeuristicRedAttackHard"
-        if POLICIES is not None:
-            POLICIES["HeuristicRedAttackHard"] = RedAttack
-        policies = {
-            "blue_policy": (None, obs_space_blue, act_space, {}),
-            "red_attack_policy": (RedAttack, obs_space_red, act_space, {}),
-            "red_dummy_policy": (DoNothingPolicy, obs_space_red, act_space, {}),
-        }
+        policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
+        for aid in RED_AGENT_IDS:
+            n = int(aid.split("_", 1)[1])
+            atk = AttackGen(aid, base_env, "hard")
+            atk.__name__ = f"HeuristicRedAttackHard_{n}"
+            if POLICIES is not None:
+                POLICIES[f"HeuristicRedAttackHard_{n}"] = atk
+            policies[f"red_attack_{n}"] = (atk, obs_space_red, act_space, {})
         log("Red team using 1 hard attacker-only heuristic (other red slots disabled).")
     elif args.red_dummy:
         policies = {
@@ -466,12 +1100,6 @@ if __name__ == "__main__":
             "blue_policy": (None, obs_space_blue, act_space, {}),
             "red_policy": (RandPolicy, obs_space_blue, act_space, {}),
         }
-
-    def _resolve_blue_policy_path(checkpoint_dir):
-        p = os.path.abspath(checkpoint_dir)
-        if os.path.isdir(p) and not p.endswith("blue_policy"):
-            return os.path.join(p, "policies", "blue_policy")
-        return p
 
     def _load_red_prev_weights(algo, red_ckpt_path):
         path = _resolve_blue_policy_path(red_ckpt_path)
@@ -511,6 +1139,7 @@ if __name__ == "__main__":
                 PPOConfig()
                 .api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False)
                 .environment(env="dynamic_pyquaticus")
+                .callbacks(callbacks_class=DynamicPyQuaticusCallbacks)
                 .env_runners(**env_runner_kw)
                 .multi_agent(
                     policies=policies,
@@ -518,8 +1147,14 @@ if __name__ == "__main__":
                     policies_to_train=["blue_policy"],
                 )
             ).training(
-                model={"custom_model": "gnn_model", "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2}},
-                train_batch_size=500,
+                model={
+                    "custom_model": "gnn_model",
+                    "custom_model_config": {"gnn_hidden": args.gnn_hidden, "gnn_layers": args.gnn_layers},
+                },
+                train_batch_size=train_bs,
+                lr=args.lr,
+                minibatch_size=512,
+                num_epochs=10,
                 entropy_coeff=args.entropy_coeff, # allows it to explore early during the traiing process - tismailw
             )
             algo = ppo_config.build_algo()
@@ -531,6 +1166,7 @@ if __name__ == "__main__":
                     ray.shutdown()
                     raise SystemExit(1)
                 blue_src = Policy.from_checkpoint(blue_path)
+                _warn_ckpt_gnn_mismatch(blue_src, args, log)
                 algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
                 log("Blue weights restored from resume checkpoint.")
                 _load_red_prev_weights(algo, args.red_from_checkpoint)
@@ -543,10 +1179,13 @@ if __name__ == "__main__":
             # Build a fresh algo with current args (and callbacks), then load only Blue weights from checkpoint.
             num_runners = args.runners
             env_runner_kw = {"num_env_runners": num_runners, "num_cpus_per_env_runner": 0.25}
+            if args.envs_per_runner > 1:
+                env_runner_kw["num_envs_per_env_runner"] = int(args.envs_per_runner)
             ppo_config = (
                 PPOConfig()
                 .api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False)
                 .environment(env="dynamic_pyquaticus")
+                .callbacks(callbacks_class=DynamicPyQuaticusCallbacks)
                 .env_runners(**env_runner_kw)
                 .multi_agent(
                     policies=policies,
@@ -556,9 +1195,12 @@ if __name__ == "__main__":
             ).training(
                 model={
                     "custom_model": "gnn_model",
-                    "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2},
+                    "custom_model_config": {"gnn_hidden": args.gnn_hidden, "gnn_layers": args.gnn_layers},
                 },
-                train_batch_size=4000,
+                train_batch_size=train_bs,
+                lr=args.lr,
+                minibatch_size=512,
+                num_epochs=10,
                 entropy_coeff=args.entropy_coeff,
             )
             algo = ppo_config.build_algo()
@@ -569,6 +1211,7 @@ if __name__ == "__main__":
                 ray.shutdown()
                 raise SystemExit(1)
             blue_src = Policy.from_checkpoint(blue_path)
+            _warn_ckpt_gnn_mismatch(blue_src, args, log)
             algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
             log("Blue weights restored from resume checkpoint.")
 
@@ -599,14 +1242,23 @@ if __name__ == "__main__":
             if args.runners != 0:
                 log("Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).")
             env_runner_kw["num_envs_per_env_runner"] = 1  # only one game window when rendering
-        # When rendering, use smaller batch so the SGD phase is shorter and the window freezes less
-        train_batch_size = 500 if args.render else 4000
+        elif args.envs_per_runner > 1:
+            env_runner_kw["num_envs_per_env_runner"] = int(args.envs_per_runner)
         if args.render:
-            log("Rendering: using smaller train batch (500) so freezes are shorter; window will still freeze briefly each iteration during PPO update.")
+            log(
+                f"Rendering: train_batch_size={train_bs} (use --train-batch-size to change); "
+                "window will still freeze briefly each iteration during PPO update."
+            )
+        else:
+            log(
+                f"PPO train_batch_size={train_bs} (0=auto: {DEFAULT_HEADLESS_TRAIN_BATCH_SIZE} headless, 500 with --render); "
+                f"envs_per_env_runner={env_runner_kw.get('num_envs_per_env_runner', 1)}."
+            )
         ppo_config = (
             PPOConfig()
             .api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False)
             .environment(env="dynamic_pyquaticus")
+            .callbacks(callbacks_class=DynamicPyQuaticusCallbacks)
             .env_runners(**env_runner_kw)
             .multi_agent(
                 policies=policies,
@@ -616,9 +1268,12 @@ if __name__ == "__main__":
         ).training(
             model={
                 "custom_model": "gnn_model",
-                "custom_model_config": {"gnn_hidden": 64, "gnn_layers": 2},
+                "custom_model_config": {"gnn_hidden": args.gnn_hidden, "gnn_layers": args.gnn_layers},
             },
-            train_batch_size=train_batch_size,
+            train_batch_size=train_bs,
+            lr=args.lr,
+            minibatch_size=512,
+            num_epochs=10,
             entropy_coeff=args.entropy_coeff, # allows it to explore early during the traiing process - tismailw
         )
         algo = ppo_config.build_algo()
@@ -626,10 +1281,14 @@ if __name__ == "__main__":
             _load_red_prev_weights(algo, args.red_from_checkpoint)
         log("Training started (new run).")
 
+    setattr(algo, "_matchup_save_every", max(1, int(args.save_every)))
     try:
         for i in range(i_start, args.iters + 1):
             start = time.time()
             try:
+                save_now_file = os.path.join(args.out_dir, "SAVE_NOW")
+                setattr(algo, "_matchup_force_print", os.path.isfile(save_now_file))
+                setattr(algo, "_matchup_train_loop_i", i)
                 result = algo.train()
                 elapsed = time.time() - start
                 ep_rew = result.get("env_runners", {}).get("episode_return_mean", 0)
@@ -639,12 +1298,9 @@ if __name__ == "__main__":
                     ep_rew_str = f"{float(ep_rew):.2f}"
                 # Print every 25 iters (and iter 0)
                 if i % args.save_every == 0 or i == 0:
-                    entropy = result.get("info", {}).get("learner", {}).get(
-                        "blue_policy", {}).get("learner_stats", {}).get("entropy", None)
-                    pol_loss = result.get("info", {}).get("learner", {}).get(
-                        "blue_policy", {}).get("learner_stats", {}).get("policy_loss", None)
+                    entropy, policy_loss = _extract_blue_learner_metrics(result)
                     entropy_str = f"{entropy:.4f}" if entropy is not None else "n/a"
-                    pol_str = f"{pol_loss:.4f}" if pol_loss is not None else "n/a"
+                    pol_str = f"{policy_loss:.4f}" if policy_loss is not None else "n/a"
                     log(
                         f"Iter {i}: return_mean={ep_rew_str}, entropy={entropy_str}, policy_loss={pol_str}, "
                         f"time={elapsed:.1f}s/iter (est. ~{50*elapsed:.0f}s per 50 iters)"
@@ -654,7 +1310,6 @@ if __name__ == "__main__":
                     algo.save(path)
                     log(f"Saved checkpoint to {path}")
                 # "Save now" trigger: create out_dir/SAVE_NOW to save at end of current iter
-                save_now_file = os.path.join(args.out_dir, "SAVE_NOW")
                 if os.path.isfile(save_now_file):
                     path = os.path.join(args.out_dir, f"iter_{i}")
                     algo.save(path)
@@ -678,3 +1333,7 @@ if __name__ == "__main__":
                 log_file.close()
             except OSError:
                 pass
+
+
+if __name__ == "__main__":
+    main()

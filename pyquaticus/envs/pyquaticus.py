@@ -898,6 +898,14 @@ class PyQuaticusEnvBase(ParallelEnv, ABC):
 
         self.active_collisions = active_collisions
 
+    def _zero_game_events(self):
+        """Clear per-episode counters at reset (before _set_game_events_from_state syncs from self.state)."""
+        for team in self.game_events:
+            self.game_events[team]["scores"] = 0
+            self.game_events[team]["grabs"] = 0
+            self.game_events[team]["tags"] = 0
+            self.game_events[team]["collisions"] = 0
+
     def _set_game_events_from_state(self):
         for team in self.game_events:
             self.game_events[team]['scores'] = self.state['captures'][int(team)]
@@ -1635,15 +1643,15 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
                             other_team_idx = int(other_player.team)
 
                             other_player.is_tagged = True
-                            self.state['agent_is_tagged'][j] = 1
-                            self.state['agent_made_tag'][i] = j
+                            self.state["agent_is_tagged"][other_player.idx] = 1
+                            self.state["agent_made_tag"][player.idx] = other_player.idx
                             self.state['tags'][team_idx] += 1
                             self.game_events[player.team]['tags'] += 1
 
                             if other_player.has_flag:
                                 #update tagged agent
                                 other_player.has_flag = False
-                                self.state['agent_has_flag'][j] = 0
+                                self.state["agent_has_flag"][other_player.idx] = 0
 
                                 #update flag
                                 self.flags[team_idx].reset()
@@ -1652,7 +1660,7 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
 
                             #set players tagging cooldown
                             player.tagging_cooldown = 0.0
-                            self.state['agent_tagging_cooldown'][i] = 0.0
+                            self.state["agent_tagging_cooldown"][player.idx] = 0.0
 
                             #break loop (should not be allowed to tag again during current timestep)
                             break
@@ -1736,29 +1744,40 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
 
     def _check_untag(self):
         """Untags the player if they return to their own flag."""
-        for i, player in enumerate(self.players.values()):
+        for player in self.players.values():
+            idx = player.idx
             team = int(player.team)
             flag_home = self.flags[team].home
             flag_distance = self.get_distance_between_2_points(
                 player.pos, flag_home
             )
-            if flag_distance < self.catch_radius and player.is_tagged:
+            tagged = player.is_tagged or bool(self.state["agent_is_tagged"][idx])
+            if flag_distance < self.catch_radius and tagged:
                 player.is_tagged = False
-                self.state['agent_is_tagged'][i] = 0
+                self.state["agent_is_tagged"][idx] = 0
 
     def _check_untag_vectorized(self):
         """Untags the player if they return to their own flag."""
         for team, team_agent_inds in self.agent_inds_of_team.items():
-            agent_poses = self.state['agent_position'][team_agent_inds]
-            flag_home = self.flags[int(team)].home
+            # Use live player pose / tag (same as _check_untag) so untag cannot miss due to state/Player desync.
+            agent_poses = np.stack(
+                [self.players[self.agents[int(ai)]].pos for ai in team_agent_inds],
+                axis=0,
+            )
+            flag_home = np.asarray(self.flags[int(team)].home, dtype=np.float64)
 
-            flag_distances = np.linalg.norm(flag_home - agent_poses)
-            agent_is_tagged = self.state['agent_is_tagged'][team_agent_inds]
+            flag_distances = np.linalg.norm(flag_home - agent_poses, axis=-1)
+            state_tagged = np.asarray(self.state["agent_is_tagged"][team_agent_inds], dtype=bool)
+            player_tagged = np.array(
+                [bool(self.players[self.agents[int(ai)]].is_tagged) for ai in team_agent_inds],
+                dtype=bool,
+            )
+            agent_is_tagged = state_tagged | player_tagged
 
             agent_untagged = (flag_distances < self.catch_radius) & agent_is_tagged
             agent_untagged_inds = team_agent_inds[np.where(agent_untagged)[0]]
 
-            self.state['agent_is_tagged'][agent_untagged_inds] = 0
+            self.state["agent_is_tagged"][agent_untagged_inds] = 0
             for agent_idx in agent_untagged_inds:
                 self.players[self.agents[agent_idx]].is_tagged = False
 
@@ -2435,6 +2454,7 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         self.reset_count += 1
         self.dones = self._reset_dones()
         self.active_collisions = np.zeros((self.num_agents, self.num_agents), dtype=bool)
+        self._zero_game_events()
 
         if options is not None:
             self.normalize_obs = options.get("normalize_obs", self.normalize_obs)
@@ -2899,7 +2919,28 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
                         spawn_line_unit_vec = (spawn_line_env_intersection_2 - spawn_line_env_intersection_1)/spawn_line_mag
 
                         agent_idx_within_team = np.where(self.agent_inds_of_team[player.team] == i)[0]
-                        pos = spawn_line_env_intersection_1 + (spawn_line_mag * (agent_idx_within_team + 1)/(self.team_size + 1)) * spawn_line_unit_vec
+                        k = int(np.ravel(agent_idx_within_team)[0])
+                        # Teams of 4+: first 3 agents on the forward spawn line (same layout as 3v3);
+                        # additional agents sit on a second row shifted back toward own flag, in a line parallel to the spawn line.
+                        if self.team_size <= 3:
+                            pos = spawn_line_env_intersection_1 + (spawn_line_mag * (k + 1) / (self.team_size + 1)) * spawn_line_unit_vec
+                        elif k < 3:
+                            pos = spawn_line_env_intersection_1 + (spawn_line_mag * (k + 1) / 4.0) * spawn_line_unit_vec
+                        else:
+                            spawn_center = (spawn_line_env_intersection_1 + spawn_line_env_intersection_2) / 2.0
+                            fh = np.asarray(flag_home, dtype=np.float64).reshape(-1)[:2]
+                            to_home = fh - spawn_center
+                            d_home = float(np.linalg.norm(to_home))
+                            u_back = to_home / max(d_home, 1e-9)
+                            depth = 0.10 * float(min(self.env_size[0], self.env_size[1]))
+                            n_back = self.team_size - 3
+                            j = k - 3
+                            t = (j + 1) / (n_back + 1)
+                            pos = (
+                                spawn_line_env_intersection_1
+                                + (spawn_line_mag * t) * spawn_line_unit_vec
+                                + depth * u_back
+                            )
 
                         pos[0] = max(2*self.agent_radius[i], min(self.env_size[0] - 2*self.agent_radius[i], pos[0])) #project out-of-bounds pos back into the environment (with buffer)
                         pos[1] = max(2*self.agent_radius[i], min(self.env_size[1] - 2*self.agent_radius[i], pos[1])) #project out-of-bounds pos back into the environment (with buffer)
@@ -4250,6 +4291,7 @@ when gps environment bounds are specified in meters"
                             )
                 #tagging
                 player.render_tagging_oob(self.tagging_cooldown)
+                player.render_disabled()
 
                 # heading
                 orientation = Vector2(list(mag_heading_to_vec(1.0, player.heading)))
