@@ -114,6 +114,9 @@ config_dict_std = {
     # Dynamic / training options (used by DynamicPyQuaticusEnv, not all envs)
     "red_dummy_mode": False,  # if True: no Red opponents (all disabled, placed behind flag); used with train_dynamic.py --red-dummy
     "stationary_red_mode": False,  # if True: Red actions forced to no-op; used by train_dynamic.py --red-stationary/--red-attack-hard
+    "stationary_red_active": 2,  # when stationary_red_mode (and not stationary_red_active_random): fixed active Red count; 0..team_size
+    "stationary_red_active_random": False,  # if True: each reset pick active stationary Red count uniformly
+    "stationary_red_random_range": None,  # optional (min,max); if set with stationary_red_active_random, sample k in [min,max]; else use team_size_range
     "force_num_red_active": None,  # if set: force this many Red agents active at reset (others disabled); used by --red-attack-hard
 }
 

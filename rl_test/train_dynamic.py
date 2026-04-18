@@ -69,7 +69,9 @@ except Exception as e:
 
 import pyquaticus.utils.rewards as rew
 from pyquaticus.config import config_dict_std, ACTION_MAP
+from pyquaticus.base_policies.base_attack import BaseAttacker
 from pyquaticus.base_policies.base_combined import Heuristic_CTF_Agent
+from pyquaticus.base_policies.base_defend import BaseDefender
 from pyquaticus.envs.dynamic_pyquaticus import DynamicPyQuaticusEnv
 from pyquaticus.structs import Team
 from pyquaticus.envs.graph_obs_wrapper import GraphObsWrapper
@@ -180,6 +182,10 @@ def make_env(
     reinforcement_interval=0,
     reinforcement_prob=0.5,
     fixed_spawn=True,
+    stationary_red_active=None,
+    stationary_red_active_random=False,
+    stationary_red_random_min=None,
+    stationary_red_random_max=None,
 ):
     cfg = config_dict_std.copy()
     cfg["sim_speedup_factor"] = sim_speedup
@@ -196,6 +202,12 @@ def make_env(
         cfg["red_dummy_mode"] = True
     if stationary_red or red_stationary:
         cfg["stationary_red_mode"] = True
+        if stationary_red_active is not None:
+            cfg["stationary_red_active"] = int(stationary_red_active)
+        if stationary_red_active_random:
+            cfg["stationary_red_active_random"] = True
+        if stationary_red_random_min is not None and stationary_red_random_max is not None:
+            cfg["stationary_red_random_range"] = (int(stationary_red_random_min), int(stationary_red_random_max))
     if red_attack_hard:
         # One hard attacker on Red, other Red slots disabled by forcing 1 active.
         cfg["force_num_red_active"] = 1
@@ -515,6 +527,10 @@ def _run_watch(args):
             reinforcement_interval=reinf_interval,
             reinforcement_prob=reinf_prob,
             fixed_spawn=args.fixed_spawn,
+            stationary_red_active=args.stationary_red_active,
+            stationary_red_active_random=args.stationary_red_active_random,
+            stationary_red_random_min=args.stationary_red_random_min,
+            stationary_red_random_max=args.stationary_red_random_max,
         )
     except Exception:
         ray.shutdown()
@@ -549,8 +565,33 @@ def _run_watch(args):
             red_ckpt_policy = Policy.from_checkpoint(red_path)
         else:
             print(f"Watch: red checkpoint not found at {red_path}, using random for Red")
+    elif args.red_all_attack:
+        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red all-attack heuristic (BaseAttacker hard).")
+    elif args.red_all_defend:
+        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red all-defend heuristic (BaseDefender hard).")
+    elif args.red_attack_hard:
+        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red attack-hard (one active Red; BaseAttacker hard on each slot).")
     elif args.red_dummy or args.red_stationary:
-        print("Watch: Red do-nothing (dummy / stationary).")
+        if args.red_stationary:
+            if getattr(args, "stationary_red_active_random", False):
+                _rn = getattr(args, "stationary_red_random_min", None)
+                _rx = getattr(args, "stationary_red_random_max", None)
+                if _rn is not None and _rx is not None:
+                    _rng = f"{_rn}-{_rx}"
+                else:
+                    _rng = f"{args.team_size_min}-{args.team_size_max}"
+                print(
+                    f"Watch: Red stationary (no-op), random active count each episode {_rng} "
+                    f"(Blue team size still {args.team_size_min}-{args.team_size_max})."
+                )
+            else:
+                _nw = int(args.stationary_red_active) if args.stationary_red_active is not None else 2
+                print(f"Watch: Red stationary (no-op), target {_nw} active Red agents.")
+        else:
+            print("Watch: Red do-nothing (dummy).")
     else:
         print("Watch: Red random actions.")
 
@@ -829,14 +870,40 @@ def main():
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")
     parser.add_argument("--red-dummy", action="store_true", help="Use do-nothing policy for Red (always no-op)")
-    parser.add_argument("--red-stationary", action="store_true", help="Red uses 2 stationary active agents, third disabled")
+    parser.add_argument("--red-stationary", action="store_true", help="Red agents are stationary (no-op); count via --stationary-red-active")
     parser.add_argument("--red-attack-hard", action="store_true", help="Red uses 1 hard attacker-only heuristic (other red slots disabled)")
     parser.add_argument("--red-all-attack", action="store_true", help="All red agents use AttackGen hard heuristic")
     parser.add_argument("--red-all-defend", action="store_true", help="All red agents use DefendGen hard heuristic")
     parser.add_argument(
         "--stationary-red",
         action="store_true",
-        help="Environment mode: Red agents stay stationary; on reset 2 red slots are used and 1 is disabled (top/mid/bot randomized).",
+        help="Alias for --red-stationary (Red stays put; how many are active: --stationary-red-active).",
+    )
+    parser.add_argument(
+        "--stationary-red-active",
+        type=int,
+        default=None,
+        metavar="N",
+        help="With --red-stationary / --stationary-red: fixed number of active stationary Red agents (0-6; default 2 from config). Ignored if --stationary-red-active-random.",
+    )
+    parser.add_argument(
+        "--stationary-red-active-random",
+        action="store_true",
+        help="With --red-stationary: each episode pick a random active stationary Red count (default: use --team-size-min/max; override range with --stationary-red-random-min/max).",
+    )
+    parser.add_argument(
+        "--stationary-red-random-min",
+        type=int,
+        default=None,
+        metavar="N",
+        help="With --stationary-red-active-random: minimum active stationary Reds per episode (use with --stationary-red-random-max).",
+    )
+    parser.add_argument(
+        "--stationary-red-random-max",
+        type=int,
+        default=None,
+        metavar="N",
+        help="With --stationary-red-active-random: maximum active stationary Reds per episode (use with --stationary-red-random-min).",
     )
     parser.add_argument("--red-from-checkpoint", type=str, default=None, metavar="PATH", help="Use Blue policy from this checkpoint for Red (self-play vs previous iteration)")
     parser.add_argument(
@@ -877,6 +944,28 @@ def main():
     team_min, team_max = args.team_size_min, args.team_size_max
     if team_min < 1 or team_max > MAX_TEAM_CAP or team_min > team_max:
         raise SystemExit(f"Require 1 <= --team-size-min <= --team-size-max <= {MAX_TEAM_CAP}.")
+
+    if getattr(args, "stationary_red_active", None) is not None:
+        n = int(args.stationary_red_active)
+        if n < 0 or n > MAX_TEAM_CAP:
+            raise SystemExit(f"Require 0 <= --stationary-red-active <= {MAX_TEAM_CAP}.")
+
+    if getattr(args, "stationary_red_active_random", False) and not args.red_stationary:
+        raise SystemExit("--stationary-red-active-random requires --red-stationary or --stationary-red.")
+
+    _srrn = getattr(args, "stationary_red_random_min", None)
+    _srrx = getattr(args, "stationary_red_random_max", None)
+    if (_srrn is None) != (_srrx is None):
+        raise SystemExit("Use both --stationary-red-random-min and --stationary-red-random-max together, or neither.")
+    if _srrn is not None:
+        if not getattr(args, "stationary_red_active_random", False):
+            raise SystemExit("--stationary-red-random-min/max require --stationary-red-active-random.")
+        if _srrn < 1 or _srrx > MAX_TEAM_CAP or _srrn > _srrx:
+            raise SystemExit(
+                f"Require 1 <= --stationary-red-random-min <= --stationary-red-random-max <= {MAX_TEAM_CAP}."
+            )
+        if _srrx > team_max:
+            raise SystemExit("--stationary-red-random-max cannot exceed --team-size-max.")
 
     red_mode_count = sum([bool(args.red_heuristic), bool(args.red_dummy), bool(args.red_stationary), bool(args.red_attack_hard), bool(args.red_all_attack), bool(args.red_all_defend), bool(args.red_from_checkpoint)])
     if red_mode_count > 1:
@@ -948,6 +1037,10 @@ def main():
             reinforcement_interval=reinf_interval,
             reinforcement_prob=reinf_prob,
             fixed_spawn=args.fixed_spawn,
+            stationary_red_active=args.stationary_red_active,
+            stationary_red_active_random=args.stationary_red_active_random,
+            stationary_red_random_min=args.stationary_red_random_min,
+            stationary_red_random_max=args.stationary_red_random_max,
         )
 
     register_env("dynamic_pyquaticus", env_creator)
@@ -969,6 +1062,10 @@ def main():
         reinforcement_interval=reinf_interval,
         reinforcement_prob=reinf_prob,
         fixed_spawn=args.fixed_spawn,
+        stationary_red_active=args.stationary_red_active,
+        stationary_red_active_random=args.stationary_red_active_random,
+        stationary_red_random_min=args.stationary_red_random_min,
+        stationary_red_random_max=args.stationary_red_random_max,
     )
     # Reset to ensure agents are initialized
     obs, info = env.reset()
@@ -1088,7 +1185,23 @@ def main():
             "blue_policy": (None, obs_space_blue, act_space, {}),
             "red_dummy_policy": (DoNothingPolicy, obs_space_blue, act_space, {}),
         }
-        log("Red team using 2 stationary agents (do-nothing, third disabled).")
+        if getattr(args, "stationary_red_active_random", False):
+            _rn = getattr(args, "stationary_red_random_min", None)
+            _rx = getattr(args, "stationary_red_random_max", None)
+            if _rn is not None and _rx is not None:
+                _rng = f"{_rn}-{_rx}"
+            else:
+                _rng = f"{args.team_size_min}-{args.team_size_max}"
+            log(
+                f"Red team stationary (do-nothing): random active Red count each episode {_rng} "
+                f"(Blue roster {args.team_size_min}-{args.team_size_max}; use --stationary-red-random-min/max for Red-only range)."
+            )
+        else:
+            _n = int(args.stationary_red_active) if args.stationary_red_active is not None else 2
+            log(
+                f"Red team stationary (do-nothing): {_n} active Red agents "
+                f"(env clamps to team size; see --stationary-red-active)."
+            )
     elif args.red_from_checkpoint:
         policies = {
             "blue_policy": (None, obs_space_blue, act_space, {}),

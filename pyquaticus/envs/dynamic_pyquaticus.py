@@ -41,11 +41,12 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         render_mode: Optional[str] = None,
     ):
         max_team_size = team_size_range[1]
+        _cfg = config_dict or {}
         super().__init__(
             team_size=max_team_size,
             action_space=action_space,
             reward_config=reward_config,
-            config_dict=config_dict or {},
+            config_dict=_cfg,
             render_mode=render_mode,
         )
 
@@ -56,10 +57,25 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self.num_blue_active = max_team_size
         self.num_red_active = max_team_size
         self._step_count = 0
-        self.red_dummy_mode = (config_dict or {}).get("red_dummy_mode", False)
-        self.stationary_red_mode = (config_dict or {}).get("stationary_red_mode", False)
+        self.red_dummy_mode = _cfg.get("red_dummy_mode", False)
+        self.stationary_red_mode = _cfg.get("stationary_red_mode", False)
         # Optional: force a fixed number of Red agents active at reset (others disabled).
-        self.force_num_red_active = (config_dict or {}).get("force_num_red_active", None)
+        self.force_num_red_active = _cfg.get("force_num_red_active", None)
+        # When stationary_red_mode: how many Red slots are active (stationary); remainder disabled.
+        _sra = int(_cfg.get("stationary_red_active", 2))
+        self.stationary_red_active = max(0, min(_sra, max_team_size))
+        self.stationary_red_active_random = bool(_cfg.get("stationary_red_active_random", False))
+        _srr = _cfg.get("stationary_red_random_range", None)
+        if _srr is not None:
+            try:
+                a, b = int(_srr[0]), int(_srr[1])
+                a = max(1, min(a, max_team_size))
+                b = max(a, min(b, max_team_size))
+                self.stationary_red_random_range = (a, b)
+            except (TypeError, IndexError, ValueError):
+                self.stationary_red_random_range = None
+        else:
+            self.stationary_red_random_range = None
 
         for player in self.players.values():
             if not hasattr(player, "is_disabled"):
@@ -167,7 +183,22 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         if self.stationary_red_mode:
             red_inds = list(range(self.num_blue, self.num_agents))
-            active_red = [random.choice(red_inds)]
+            if self.stationary_red_active_random:
+                if self.stationary_red_random_range is not None:
+                    lo = max(1, min(self.stationary_red_random_range[0], len(red_inds)))
+                    hi = min(self.stationary_red_random_range[1], len(red_inds))
+                else:
+                    lo = max(1, int(min_size))
+                    hi = min(int(max_size), len(red_inds))
+                k = 0 if hi < lo else random.randint(lo, hi)
+            else:
+                k = max(0, min(self.stationary_red_active, len(red_inds)))
+            if k <= 0:
+                active_red = []
+            elif k >= len(red_inds):
+                active_red = red_inds
+            else:
+                active_red = random.sample(red_inds, k=k)
             self._set_initial_disabled(active_blue_inds, active_red)
             self.state["num_blue_active"] = int(len(active_blue_inds))
             self.state["num_red_active"] = int(len(active_red))
