@@ -7,6 +7,7 @@ From the project root:
 ```bash
 conda activate env-full
 # or: pip install -e .[torch,ray]
+# or: conda activate ./env-full (for Robin)
 ```
 
 ---
