@@ -228,9 +228,13 @@ def caps_and_grabs(
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
-        reward += -1.0
-        if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} lost flag: -1.00")
+        # Don't penalize a successful capture as "lost flag".
+        team_i = int(team)
+        captured_now = state["captures"][team_i] > prev_state["captures"][team_i]
+        if not (captured_now and prev_has_flag == 1):
+            reward += -1.0
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} lost flag: -1.00")
     # Agent grabbed flag individually
     if (has_flag > prev_has_flag):
         reward += 0.5
