@@ -26,6 +26,7 @@ from typing import Union
 from pyquaticus.base_policies.base_attack import BaseAttacker
 from pyquaticus.base_policies.base_combined import Heuristic_CTF_Agent
 from pyquaticus.base_policies.base_defend import BaseDefender
+from pyquaticus.config import ACTION_MAP
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv
 from pyquaticus.moos_bridge.pyquaticus_moos_bridge import PyQuaticusMoosBridge
 
@@ -77,6 +78,7 @@ class NoOp(Policy):
 
     def __init__(self, observation_space, action_space, config):
         Policy.__init__(self, observation_space, action_space, config)
+        self.no_op_index = len(ACTION_MAP) - 1
 
     def compute_actions(
         self,
@@ -91,7 +93,7 @@ class NoOp(Policy):
         **kwargs,
     ):
 
-        return [16], [], {}
+        return [self.no_op_index], [], {}
 
     def get_weights(self):
         return {}

@@ -62,6 +62,10 @@ class GNNModel(TorchModelV2, nn.Module):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs):
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs)
         nn.Module.__init__(self)
+        if hasattr(action_space, "n") and int(num_outputs) != int(action_space.n):
+            raise ValueError(
+                f"GNNModel num_outputs ({num_outputs}) must match discrete action_space.n ({action_space.n})."
+            )
         self.num_outputs = num_outputs
         self._value_out = None
 

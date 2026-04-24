@@ -229,14 +229,15 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
     def step(self, raw_action_dict):
         """Step with no-op for disabled agents, tag removal, and reinforcements."""
-        # Patch actions for disabled agents (discrete no-op = 16, continuous = [0,0])
+        NO_OP_INDEX = len(ACTION_MAP) - 1
+        # Patch actions for disabled agents (discrete no-op = last ACTION_MAP entry, continuous = [0,0])
         patched = dict(raw_action_dict)
         for i, player in enumerate(self.players.values()):
             if getattr(player, "is_disabled", False):
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
                 else:
-                    patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
+                    patched[player.id] = NO_OP_INDEX
 
         if self.stationary_red_mode:
             # Force Red to no-op so they stay in place (even if "active").
@@ -246,7 +247,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)
                 else:
-                    patched[player.id] = len(ACTION_MAP) - 1  # no-op in ACTION_MAP
+                    patched[player.id] = NO_OP_INDEX
 
         prev_oob = np.asarray(self.state["agent_oob"], dtype=bool).copy()
         disabled_before = np.asarray(

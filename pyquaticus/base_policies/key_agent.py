@@ -2,11 +2,11 @@ import pygame
 from pygame import K_a, K_d, K_w
 
 from pyquaticus.base_policies.base_policy import BaseAgentPolicy
+from pyquaticus.config import ACTION_MAP
 
 
 class KeyAgent(BaseAgentPolicy):
 
-    NO_OP = 16
     STRAIGHT = 4
     LEFT = 6
     RIGHT = 2
@@ -17,9 +17,10 @@ class KeyAgent(BaseAgentPolicy):
         self.left = left
         self.up = up
         self.right = right
+        self.no_op_index = len(ACTION_MAP) - 1
 
         self.keys_to_action = {
-            0: KeyAgent.NO_OP,
+            0: self.no_op_index,
             self.up: KeyAgent.STRAIGHT,
             self.left: KeyAgent.LEFT,
             self.right: KeyAgent.RIGHT,

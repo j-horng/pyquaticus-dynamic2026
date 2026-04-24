@@ -33,6 +33,7 @@ import os
 import pyquaticus.utils.rewards as rew
 from pyquaticus.base_policies.base_policy_wrappers import DefendGen, AttackGen
 from pyquaticus.config import config_dict_std
+from pyquaticus.action_map import apply_nrl_action_map
 import logging
 class RandPolicy(Policy):
     """
@@ -74,6 +75,7 @@ if __name__ == '__main__':
     #Competitors: reward_config should be updated to reflect how you want to reward your learning agent
     
     args = parser.parse_args()
+    apply_nrl_action_map()
     logging.basicConfig(level=logging.ERROR)
 
     RENDER_MODE = 'human' if args.render else None #set to 'human' if you want rendered output

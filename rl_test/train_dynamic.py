@@ -69,6 +69,7 @@ except Exception as e:
 
 import pyquaticus.utils.rewards as rew
 from pyquaticus.config import config_dict_std, ACTION_MAP
+from pyquaticus.action_map import apply_legacy_action_map, apply_nrl_action_map
 from pyquaticus.base_policies.base_attack import BaseAttacker
 from pyquaticus.base_policies.base_combined import Heuristic_CTF_Agent
 from pyquaticus.base_policies.base_defend import BaseDefender
@@ -82,9 +83,11 @@ MAX_TEAM_CAP = 6
 
 # Episode custom metrics like "3v3/win" are summarized as "3v3/win_mean" under env_runners on many Ray versions.
 _MATCHUP_PREFIX_RE = re.compile(r"^(\d+v\d+)/")
+_ACTION_MAP_MODE = "nrl"
 
-# Fallback discrete action space if wrapped env does not expose per-agent spaces (watch / heuristics).
-_DEFAULT_ACTION_SPACE = Discrete(len(ACTION_MAP))
+def _default_action_space():
+    """Fallback space if wrapped env does not expose per-agent spaces."""
+    return Discrete(len(ACTION_MAP))
 
 try:
     from ray.rllib.algorithms.callbacks import DefaultCallbacks
@@ -187,6 +190,10 @@ def make_env(
     stationary_red_random_min=None,
     stationary_red_random_max=None,
 ):
+    if _ACTION_MAP_MODE == "nrl":
+        apply_nrl_action_map()
+    else:
+        apply_legacy_action_map()
     cfg = config_dict_std.copy()
     cfg["sim_speedup_factor"] = sim_speedup
     cfg["max_score"] = max_score
@@ -269,7 +276,7 @@ def _get_action_space(env, agent_id):
     par = getattr(env, "par_env", None)
     if par is not None:
         return _get_action_space(par, agent_id)
-    return _DEFAULT_ACTION_SPACE
+    return _default_action_space()
 
 
 def _get_dynamic_pyquaticus(wrapped_env):
@@ -822,6 +829,13 @@ def _extract_blue_learner_metrics(result):
 def main():
     parser = argparse.ArgumentParser(description="Train on Dynamic PyQuaticus")
     parser.add_argument("--render", action="store_true", help="Enable rendering")
+    parser.add_argument(
+        "--action-map",
+        type=str,
+        default="nrl",
+        choices=["nrl", "legacy"],
+        help="Discrete action map layout (default: nrl).",
+    )
     parser.add_argument("--iters", type=int, default=2000, help="Training iterations")
     parser.add_argument("--save-every", type=int, default=5, help="Save checkpoint every N iters")
     parser.add_argument(
@@ -939,6 +953,12 @@ def main():
         help="Random positions on own side each episode (default_init=False). Omit for deterministic spawn-line placement (training default).",
     )
     args = parser.parse_args()
+    global _ACTION_MAP_MODE
+    _ACTION_MAP_MODE = args.action_map
+    if args.action_map == "nrl":
+        apply_nrl_action_map()
+    else:
+        apply_legacy_action_map()
     if getattr(args, "score_ends_episode", False):
         args.no_score_end = False
     # Backwards/alias support: treat --stationary-red as enabling --red-stationary behavior.
