@@ -164,7 +164,7 @@ from pyquaticus.structs import Team
 from pyquaticus.utils.utils import *
 
 # Set to True to print reward events to console during deployment/rendering
-REWARD_DEBUG = True
+REWARD_DEBUG = False
 
 ### Example Reward Funtion ###
 def example_reward(
