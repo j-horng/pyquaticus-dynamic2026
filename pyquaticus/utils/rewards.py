@@ -237,7 +237,29 @@ def caps_and_grabs(
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            reward += 1.0 if t == int(team) else -1.0
+            reward += 3.0 if t == int(team) else -3.0
+
+    # When recharging tagging (cannot tag until cooldown reaches tagging_cooldown), encourage
+    # moving toward the opponent flag instead of idling. See env: agent can tag iff
+    # agent_tagging_cooldown == tagging_cooldown.
+    cd = float(state["agent_tagging_cooldown"][agent_index])
+    if (
+        cd < tagging_cooldown
+        and state["agent_has_flag"][agent_index] == 0
+        and state["agent_is_tagged"][agent_index] == 0
+    ):
+        opp_team = 1 - int(team)
+        opp_flag_curr = np.asarray(state["flag_position"][opp_team], dtype=np.float64)
+        opp_flag_prev = np.asarray(prev_state["flag_position"][opp_team], dtype=np.float64)
+        pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
+        prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
+        curr_dist = np.linalg.norm(pos - opp_flag_curr)
+        prev_dist_opp = np.linalg.norm(prev_pos - opp_flag_prev)
+        delta = prev_dist_opp - curr_dist
+        if delta > 0:
+            field_diag = float(np.linalg.norm(env_size))
+            if field_diag > 0:
+                reward += 0.3 * delta / field_diag
 
     return reward
 
