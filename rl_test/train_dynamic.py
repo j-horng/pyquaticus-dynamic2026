@@ -497,6 +497,10 @@ def _run_watch(args):
     logging.basicConfig(level=logging.ERROR)
     ray.init(ignore_reinit_error=True)
 
+    if getattr(args, "reward_debug", False):
+        import pyquaticus.utils.rewards as rew
+        rew.REWARD_DEBUG = True
+
     team_max = int(args.team_size_max)
     team_min = int(args.team_size_min)
     team_size_range = (team_min, team_max)
@@ -866,6 +870,7 @@ def main():
     parser.add_argument("--speedup", type=int, default=8, help="Sim speedup factor (8=env steps 2x faster, minimal impact on learning)")
     parser.add_argument("--resume", type=str, default=None, metavar="PATH", help="Resume from checkpoint (e.g. ./training/iter_1250)")
     parser.add_argument("--watch", action="store_true", help="Render instead of training")
+    parser.add_argument("--reward-debug", action="store_true", help="With --watch: print per-event reward lines ([REWARD] ...) to console")
     parser.add_argument("--no-log-file", action="store_true", help="Disable writing progress to out_dir/train.log")
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")

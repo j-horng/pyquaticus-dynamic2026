@@ -164,7 +164,7 @@ from pyquaticus.structs import Team
 from pyquaticus.utils.utils import *
 
 # Set to True to print reward events to console during deployment/rendering
-REWARD_DEBUG = False
+REWARD_DEBUG = True
 
 ### Example Reward Funtion ###
 def example_reward(
@@ -212,7 +212,7 @@ def caps_and_grabs(
     if num_oob > prev_num_oob:
         reward += -1.0
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} OOB: -1.0")
+            print(f"[REWARD] {agent_id} OOB: -1.00")
 
     # Reward for tagging an opponent
     if state["agent_made_tag"][agent_index] is not None:
@@ -228,32 +228,28 @@ def caps_and_grabs(
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
-        reward += -0.5
+        reward += -1.0
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} lost flag: -0.5")
+            print(f"[REWARD] {agent_id} lost flag: -1.00")
     # Agent grabbed flag individually
     if (has_flag > prev_has_flag):
         reward += 0.5
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} grabbed flag: +0.5")
+            print(f"[REWARD] {agent_id} grabbed flag: +0.50")
 
     # Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)].
     # Full per-agent credit (no team_size scaling).
     for t in range(len(state['grabs'])):
         prev_num_grabs = prev_state['grabs'][t]
         num_grabs = state['grabs'][t]
-        if num_grabs > prev_num_grabs:
-            r = 0.25 if t == int(team) else -0.25
-            reward += r
-            if REWARD_DEBUG:
-                print(f"[REWARD] {agent_id} team grab (team {t}): {r:+.2f}")
+        # Note: grab reward is individual-only (see has_flag delta above). No team grab reward here.
 
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            # Capture reward: +2 team-wide for the capturing team, plus +1 individual
+            # Capture reward: +0.5 team-wide for the capturing team, plus +1 individual
             # for the agent that was carrying the flag at capture time.
-            r_team = 2.0 if t == int(team) else -2.0
+            r_team = 0.5 if t == int(team) else -0.5
             reward += r_team
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} capture team (team {t}): {r_team:+.2f}")
