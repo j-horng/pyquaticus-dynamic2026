@@ -22,6 +22,11 @@ Usage:
   # Quick smoke test before a long run:
   python rl_test/train_dynamic.py --iters 100
 
+  # NRL action-map run (writes checkpoints to a dedicated folder):
+  python rl_test/train_dynamic.py --out-dir ./training/ray_dynamic_v7_new_MAP --action-map nrl
+  # Watch a saved checkpoint:
+  python rl_test/train_dynamic.py --resume ./training/ray_dynamic_v7_new_MAP/iter_10 --watch --action-map nrl
+
   # Watch / deploy without duplicating CLI: same env factory and flags as training (no PPO):
   python rl_test/train_dynamic.py --watch --team-size-min 4 --team-size-max 4
   python rl_test/train_dynamic.py --watch --resume ./training/iter_500 --team-size-min 4 --team-size-max 4
