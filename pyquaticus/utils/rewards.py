@@ -223,20 +223,23 @@ def caps_and_grabs(
     # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
     # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
 
-    #Check if agents lost or gained flag
-    prev_has_flag = prev_state['agent_has_flag'][agent_index]
-    has_flag = state['agent_has_flag'][agent_index]
-    #Agent lost flag
-    if (prev_has_flag > has_flag):
-        # Don't penalize a successful capture as "lost flag".
+    # Check if agents lost or gained flag (0/1 or bool from env state).
+    prev_has_flag = prev_state["agent_has_flag"][agent_index]
+    has_flag = state["agent_has_flag"][agent_index]
+    had_flag_before = bool(np.asarray(prev_has_flag).item())
+    has_flag_now = bool(np.asarray(has_flag).item())
+    # Agent lost opponent flag (carrier -> not carrier).
+    if had_flag_before and not has_flag_now:
+        # Successful capture clears the carrier and resets the flag in the same env step as
+        # captures[team] increments — do not treat that as a bad "lost flag" (-1).
         team_i = int(team)
         captured_now = state["captures"][team_i] > prev_state["captures"][team_i]
-        if not (captured_now and prev_has_flag == 1):
+        if not captured_now:
             reward += -1.0
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} lost flag: -1.00")
     # Agent grabbed flag individually
-    if (has_flag > prev_has_flag):
+    if has_flag_now and not had_flag_before:
         reward += 0.5
         if REWARD_DEBUG:
             print(f"[REWARD] {agent_id} grabbed flag: +0.50")
@@ -258,7 +261,7 @@ def caps_and_grabs(
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} capture team (team {t}): {r_team:+.2f}")
 
-            if t == int(team) and prev_has_flag == 1:
+            if t == int(team) and had_flag_before:
                 reward += 1.0
                 if REWARD_DEBUG:
                     print(f"[REWARD] {agent_id} capture individual: +1.00")
