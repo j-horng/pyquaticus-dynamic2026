@@ -178,7 +178,9 @@ class GNNModel(TorchModelV2, nn.Module):
             msg = msg * mask_src
             agg = torch.zeros(B, MAX_AGENTS, H, device=device, dtype=x.dtype)
             agg.scatter_add_(1, dst_expand, msg)
-            agg = agg * inv_deg
+            active_count = torch.zeros(B, MAX_AGENTS, 1, device=device, dtype=x.dtype)
+            active_count.scatter_add_(1, dst_idx.unsqueeze(-1), mask_src)
+            agg = agg / active_count.clamp(min=1)
             x = x + agg
             x = x * mask_exp
 

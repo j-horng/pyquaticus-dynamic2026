@@ -1,0 +1,22 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2142, policy_loss=-0.0070, time=69.0s/iter (est. ~3452s per 50 iters)
+Iter 50: return_mean=-4.21, entropy=3.0727, policy_loss=-0.0299, time=70.3s/iter (est. ~3514s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_50
+Iter 100: return_mean=-3.68, entropy=3.0783, policy_loss=-0.0345, time=70.5s/iter (est. ~3525s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_100
+Iter 150: return_mean=-4.11, entropy=3.1071, policy_loss=-0.0212, time=71.0s/iter (est. ~3548s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_150
+Iter 200: return_mean=-4.50, entropy=3.0982, policy_loss=-0.0281, time=70.8s/iter (est. ~3538s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_200
+Iter 250: return_mean=-4.83, entropy=3.1471, policy_loss=-0.0266, time=71.1s/iter (est. ~3553s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_250
+Iter 300: return_mean=-3.96, entropy=3.1379, policy_loss=-0.0289, time=71.9s/iter (est. ~3593s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_300
+Iter 350: return_mean=-4.36, entropy=3.1284, policy_loss=-0.0246, time=72.2s/iter (est. ~3609s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_350
+Iter 400: return_mean=-4.48, entropy=3.1238, policy_loss=-0.0306, time=71.6s/iter (est. ~3581s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_tahir_v1\iter_400
