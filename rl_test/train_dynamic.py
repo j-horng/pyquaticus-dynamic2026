@@ -536,7 +536,19 @@ def _run_watch(args):
             render_mode="human",
             sim_speedup=SPEEDUP,
             red_gets_raw_obs=(
-                args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend
+                args.red_heuristic
+                or args.red_attack_hard
+                or args.red_all_attack
+                or args.red_all_defend
+                or getattr(args, "red_easy_attack", False)
+                or getattr(args, "red_easy_defend", False)
+                or getattr(args, "red_easy_combined", False)
+                or getattr(args, "red_medium_attack", False)
+                or getattr(args, "red_medium_defend", False)
+                or getattr(args, "red_medium_combined", False)
+                or getattr(args, "red_hard_attack", False)
+                or getattr(args, "red_hard_defend", False)
+                or getattr(args, "red_hard_combined", False)
             ),
             red_dummy=args.red_dummy,
             stationary_red=args.red_stationary,
@@ -585,6 +597,18 @@ def _run_watch(args):
             aid: Heuristic_CTF_Agent(aid, dynamic_env, mode=args.red_heuristic_mode) for aid in red_ids
         }
         print(f"Watch: Red heuristic (combined CTF, {args.red_heuristic_mode}).")
+    elif getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
+        # Pick one variant per episode (attack/defend/combined) at each env.reset().
+        # We don't need per-agent variety; goal is to randomize the *opponent type* each episode.
+        if getattr(args, "red_easy_random", False):
+            pool = [("easy_attack", BaseAttacker, {"mode": "easy"}), ("easy_defend", BaseDefender, {"mode": "easy"}), ("easy_combined", Heuristic_CTF_Agent, {"mode": "easy"})]
+        elif getattr(args, "red_medium_random", False):
+            pool = [("medium_attack", BaseAttacker, {"mode": "medium"}), ("medium_defend", BaseDefender, {"mode": "medium"}), ("medium_combined", Heuristic_CTF_Agent, {"mode": "medium"})]
+        else:
+            pool = [("hard_attack", BaseAttacker, {"mode": "hard"}), ("hard_defend", BaseDefender, {"mode": "hard"}), ("hard_combined", Heuristic_CTF_Agent, {"mode": "hard"})]
+        chosen_name, chosen_cls, chosen_kw = random.choice(pool)
+        red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
+        print(f"Watch: Red randomized each episode among attack/defend/combined -> chosen {chosen_name}.")
     elif args.red_from_checkpoint:
         red_path = _resolve_blue_policy_path(args.red_from_checkpoint)
         if os.path.isdir(red_path):
@@ -927,6 +951,18 @@ def main():
     parser.add_argument("--no-log-file", action="store_true", help="Disable writing progress to out_dir/train.log")
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")
+    parser.add_argument("--red-easy-attack", action="store_true")
+    parser.add_argument("--red-easy-defend", action="store_true")
+    parser.add_argument("--red-easy-combined", action="store_true")
+    parser.add_argument("--red-easy-random", action="store_true", help="Randomize Red each episode among: easy attack/defend/combined")
+    parser.add_argument("--red-medium-attack", action="store_true")
+    parser.add_argument("--red-medium-defend", action="store_true")
+    parser.add_argument("--red-medium-combined", action="store_true")
+    parser.add_argument("--red-medium-random", action="store_true", help="Randomize Red each episode among: medium attack/defend/combined")
+    parser.add_argument("--red-hard-attack", action="store_true")
+    parser.add_argument("--red-hard-defend", action="store_true")
+    parser.add_argument("--red-hard-combined", action="store_true")
+    parser.add_argument("--red-hard-random", action="store_true", help="Randomize Red each episode among: hard attack/defend/combined")
     parser.add_argument("--red-dummy", action="store_true", help="Use do-nothing policy for Red (always no-op)")
     parser.add_argument("--red-stationary", action="store_true", help="Red agents are stationary (no-op); count via --stationary-red-active")
     parser.add_argument(
@@ -1140,9 +1176,26 @@ def main():
             raise SystemExit("--stationary-red-random-max cannot exceed --team-size-max.")
 
     _sta_block = bool(args.red_stationary_block_anchor) or bool(args.red_stationary_block_anchor_random)
+    _red_new_heur = any(
+        [
+            bool(getattr(args, "red_easy_attack", False)),
+            bool(getattr(args, "red_easy_defend", False)),
+            bool(getattr(args, "red_easy_combined", False)),
+            bool(getattr(args, "red_easy_random", False)),
+            bool(getattr(args, "red_medium_attack", False)),
+            bool(getattr(args, "red_medium_defend", False)),
+            bool(getattr(args, "red_medium_combined", False)),
+            bool(getattr(args, "red_medium_random", False)),
+            bool(getattr(args, "red_hard_attack", False)),
+            bool(getattr(args, "red_hard_defend", False)),
+            bool(getattr(args, "red_hard_combined", False)),
+            bool(getattr(args, "red_hard_random", False)),
+        ]
+    )
     red_mode_count = sum(
         [
             bool(args.red_heuristic),
+            _red_new_heur,
             bool(args.red_dummy),
             bool(args.red_stationary) and not _sta_block,
             _sta_block,
@@ -1156,7 +1209,10 @@ def main():
         raise SystemExit(
             "Use only one of: --red-heuristic, --red-dummy, --red-stationary, --red-stationary-midfield, "
             "--red-stationary-topfield, --red-stationary-bottomfield, --red-stationary-block-random, "
-            "--red-attack-hard, --red-all-attack, --red-all-defend, --red-from-checkpoint."
+            "--red-attack-hard, --red-all-attack, --red-all-defend, --red-from-checkpoint, "
+            "--red-easy-attack/--red-easy-defend/--red-easy-combined, "
+            "--red-medium-attack/--red-medium-defend/--red-medium-combined, "
+            "--red-hard-attack/--red-hard-defend/--red-hard-combined."
         )
 
     if args.watch:
@@ -1210,7 +1266,21 @@ def main():
             cfg,
             render_mode=RENDER,
             sim_speedup=SPEEDUP,
-            red_gets_raw_obs=(args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend),
+            red_gets_raw_obs=(
+                args.red_heuristic
+                or args.red_attack_hard
+                or args.red_all_attack
+                or args.red_all_defend
+                or getattr(args, "red_easy_attack", False)
+                or getattr(args, "red_easy_defend", False)
+                or getattr(args, "red_easy_combined", False)
+                or getattr(args, "red_medium_attack", False)
+                or getattr(args, "red_medium_defend", False)
+                or getattr(args, "red_medium_combined", False)
+                or getattr(args, "red_hard_attack", False)
+                or getattr(args, "red_hard_defend", False)
+                or getattr(args, "red_hard_combined", False)
+            ),
             red_dummy=args.red_dummy,
             stationary_red=args.stationary_red,
             red_stationary=args.red_stationary,
@@ -1237,7 +1307,21 @@ def main():
     env = make_env(
         render_mode=RENDER,
         sim_speedup=SPEEDUP,
-        red_gets_raw_obs=(args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend),
+        red_gets_raw_obs=(
+            args.red_heuristic
+            or args.red_attack_hard
+            or args.red_all_attack
+            or args.red_all_defend
+            or getattr(args, "red_easy_attack", False)
+            or getattr(args, "red_easy_defend", False)
+            or getattr(args, "red_easy_combined", False)
+            or getattr(args, "red_medium_attack", False)
+            or getattr(args, "red_medium_defend", False)
+            or getattr(args, "red_medium_combined", False)
+            or getattr(args, "red_hard_attack", False)
+            or getattr(args, "red_hard_defend", False)
+            or getattr(args, "red_hard_combined", False)
+        ),
         red_dummy=args.red_dummy,
         stationary_red=args.stationary_red,
         red_stationary=args.red_stationary,
@@ -1292,7 +1376,21 @@ def main():
     # Base env (for heuristic Red) = innermost PyQuaticus env, before env.close()
     base_env = (
         getattr(getattr(env, "par_env", env), "par_env", getattr(env, "par_env", env))
-        if (args.red_heuristic or args.red_attack_hard or args.red_all_attack or args.red_all_defend)
+        if (
+            args.red_heuristic
+            or args.red_attack_hard
+            or args.red_all_attack
+            or args.red_all_defend
+            or getattr(args, "red_easy_attack", False)
+            or getattr(args, "red_easy_defend", False)
+            or getattr(args, "red_easy_combined", False)
+            or getattr(args, "red_medium_attack", False)
+            or getattr(args, "red_medium_defend", False)
+            or getattr(args, "red_medium_combined", False)
+            or getattr(args, "red_hard_attack", False)
+            or getattr(args, "red_hard_defend", False)
+            or getattr(args, "red_hard_combined", False)
+        )
         else None
     )
     env.close()
@@ -1309,6 +1407,30 @@ def main():
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
         if agent_id in BLUE_AGENT_IDS:
             return "blue_policy"
+        if _red_new_heur:
+            if agent_id in RED_AGENT_IDS:
+                n = int(agent_id.split("_", 1)[1])
+                # Randomize among attack/defend/combined per episode if requested.
+                if getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
+                    if episode is not None:
+                        ud = getattr(episode, "user_data", None)
+                        if isinstance(ud, dict):
+                            key = "red_variant"
+                            if key not in ud:
+                                if getattr(args, "red_easy_random", False):
+                                    ud[key] = random.choice(["easy_attack", "easy_defend", "easy_combined"])
+                                elif getattr(args, "red_medium_random", False):
+                                    ud[key] = random.choice(["medium_attack", "medium_defend", "medium_combined"])
+                                else:
+                                    ud[key] = random.choice(["hard_attack", "hard_defend", "hard_combined"])
+                            variant = ud[key]
+                        else:
+                            variant = "easy_attack"
+                    else:
+                        variant = "easy_attack"
+                    tier, sub = variant.split("_", 1)
+                    return f"red_{tier}_{sub}_{n}"
+                return f"red_heuristic_{n}"
         if args.red_heuristic:
             if agent_id in RED_AGENT_IDS:
                 n = int(agent_id.split("_", 1)[1])
@@ -1331,6 +1453,91 @@ def main():
             return "red_prev_policy"
         return "red_policy"
 
+    if _red_new_heur:
+        from pyquaticus.base_policies.base_policy_wrappers import (
+            EasyAttackGen,
+            EasyDefendGen,
+            EasyCombinedGen,
+            MediumAttackGen,
+            MediumDefendGen,
+            MediumCombinedGen,
+            HardAttackGen,
+            HardDefendGen,
+            HardCombinedGen,
+        )
+        policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
+        # For random modes, create all 3 variants and pick per-episode in policy_mapping_fn.
+        if getattr(args, "red_easy_random", False):
+            desc = "easy_random"
+            for aid in RED_AGENT_IDS:
+                n = int(aid.split("_", 1)[1])
+                for sub, gen in (("attack", EasyAttackGen), ("defend", EasyDefendGen), ("combined", EasyCombinedGen)):
+                    rp = gen(aid, base_env)
+                    rp.__name__ = f"RedHeuristic_easy_{sub}_{n}"
+                    if POLICIES is not None:
+                        POLICIES[f"RedHeuristic_easy_{sub}_{n}"] = rp
+                    policies[f"red_easy_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+        elif getattr(args, "red_medium_random", False):
+            desc = "medium_random"
+            for aid in RED_AGENT_IDS:
+                n = int(aid.split("_", 1)[1])
+                for sub, gen in (("attack", MediumAttackGen), ("defend", MediumDefendGen), ("combined", MediumCombinedGen)):
+                    rp = gen(aid, base_env)
+                    rp.__name__ = f"RedHeuristic_medium_{sub}_{n}"
+                    if POLICIES is not None:
+                        POLICIES[f"RedHeuristic_medium_{sub}_{n}"] = rp
+                    policies[f"red_medium_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+        elif getattr(args, "red_hard_random", False):
+            desc = "hard_random"
+            for aid in RED_AGENT_IDS:
+                n = int(aid.split("_", 1)[1])
+                for sub, gen in (("attack", HardAttackGen), ("defend", HardDefendGen), ("combined", HardCombinedGen)):
+                    rp = gen(aid, base_env)
+                    rp.__name__ = f"RedHeuristic_hard_{sub}_{n}"
+                    if POLICIES is not None:
+                        POLICIES[f"RedHeuristic_hard_{sub}_{n}"] = rp
+                    policies[f"red_hard_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+        else:
+            if getattr(args, "red_easy_attack", False):
+                gen = EasyAttackGen
+                desc = "easy_attack"
+            elif getattr(args, "red_easy_defend", False):
+                gen = EasyDefendGen
+                desc = "easy_defend"
+            elif getattr(args, "red_easy_combined", False):
+                gen = EasyCombinedGen
+                desc = "easy_combined"
+            elif getattr(args, "red_medium_attack", False):
+                gen = MediumAttackGen
+                desc = "medium_attack"
+            elif getattr(args, "red_medium_defend", False):
+                gen = MediumDefendGen
+                desc = "medium_defend"
+            elif getattr(args, "red_medium_combined", False):
+                gen = MediumCombinedGen
+                desc = "medium_combined"
+            elif getattr(args, "red_hard_attack", False):
+                gen = HardAttackGen
+                desc = "hard_attack"
+            elif getattr(args, "red_hard_defend", False):
+                gen = HardDefendGen
+                desc = "hard_defend"
+            elif getattr(args, "red_hard_combined", False):
+                gen = HardCombinedGen
+                desc = "hard_combined"
+            else:
+                raise SystemExit("Internal: _red_new_heur true but no specific flag set.")
+        for aid in RED_AGENT_IDS:
+            n = int(aid.split("_", 1)[1])
+            if getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
+                # policy_mapping_fn will route to one of red_{tier}_{sub}_{n}
+                continue
+            rp = gen(aid, base_env)
+            rp.__name__ = f"RedHeuristic_{desc}_{n}"
+            if POLICIES is not None:
+                POLICIES[f"RedHeuristic_{desc}_{n}"] = rp
+            policies[f"red_heuristic_{n}"] = (rp, obs_space_red, act_space, {})
+        log(f"Red team using generator heuristic: {desc}.")
     if args.red_heuristic:
         from pyquaticus.base_policies.base_policy_wrappers import CombinedGen
         mode = args.red_heuristic_mode
@@ -1549,6 +1756,33 @@ def main():
                 _load_red_prev_weights(algo, args.red_from_checkpoint)
         if args.red_heuristic:
             mode_str = getattr(args, "red_heuristic_mode", "easy")
+        elif _red_new_heur:
+            if getattr(args, "red_easy_attack", False):
+                mode_str = "easy_attack"
+            elif getattr(args, "red_easy_defend", False):
+                mode_str = "easy_defend"
+            elif getattr(args, "red_easy_combined", False):
+                mode_str = "easy_combined"
+            elif getattr(args, "red_easy_random", False):
+                mode_str = "easy_random"
+            elif getattr(args, "red_medium_attack", False):
+                mode_str = "medium_attack"
+            elif getattr(args, "red_medium_defend", False):
+                mode_str = "medium_defend"
+            elif getattr(args, "red_medium_combined", False):
+                mode_str = "medium_combined"
+            elif getattr(args, "red_medium_random", False):
+                mode_str = "medium_random"
+            elif getattr(args, "red_hard_attack", False):
+                mode_str = "hard_attack"
+            elif getattr(args, "red_hard_defend", False):
+                mode_str = "hard_defend"
+            elif getattr(args, "red_hard_combined", False):
+                mode_str = "hard_combined"
+            elif getattr(args, "red_hard_random", False):
+                mode_str = "hard_random"
+            else:
+                mode_str = "heuristic_custom"
         elif args.red_dummy:
             mode_str = "dummy"
         elif getattr(args, "red_stationary_block_anchor_random", False):

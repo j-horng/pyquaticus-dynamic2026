@@ -93,11 +93,11 @@ class BaseDefender(BaseAgentPolicy):
 
             # If far away from the flag, move towards it
             if self.my_flag_distance > (self.flag_keepout + self.catch_radius + 1.0):
-                return self.action_from_vector(self.my_flag_loc, 0.5)
+                return self.action_from_vector(self.my_flag_loc, 0.25)
 
             # If too close to the flag, move away
             else:
-                return self.action_from_vector(-1 * self.my_flag_loc, 0.5)
+                return self.action_from_vector(-1 * self.my_flag_loc, 0.25)
 
         elif self.mode == "nothing":
             return self.action_from_vector(None, 0)
@@ -193,7 +193,8 @@ class BaseDefender(BaseAgentPolicy):
                     )
                     <= 2.5
                 ):
-                    return -1
+                    from pyquaticus.config import ACTION_MAP
+                    return len(ACTION_MAP) - 1
                 else:
                     return "CH"
 
@@ -203,17 +204,17 @@ class BaseDefender(BaseAgentPolicy):
 
             # If opposing team has the flag, chase them
             if self.opp_team_has_flag:
-                return self.action_from_vector(self.my_flag_loc, 0.5)
+                return self.action_from_vector(self.my_flag_loc, 0.8)
             else:
                 # If far away from the flag, move towards it
                 if self.my_flag_distance > (
                     self.flag_keepout + self.catch_radius + 1.0
                 ):
-                    return self.action_from_vector(self.my_flag_loc, 0.5)
+                    return self.action_from_vector(self.my_flag_loc, 0.8)
 
                 # If too close to the flag, move away
                 else:
-                    return self.action_from_vector(-1 * self.my_flag_loc, 0.5)
+                    return self.action_from_vector(-1 * self.my_flag_loc, 0.8)
 
         elif self.mode == "hard":
 
@@ -315,24 +316,12 @@ class BaseDefender(BaseAgentPolicy):
             if self.continuous:
                 return (0, 0)
             else:
-                return -1
+                from pyquaticus.config import ACTION_MAP
+                return len(ACTION_MAP) - 1
         rel_bearing = local_rect_to_rel_bearing(vector)
         if self.continuous:
             return (desired_speed_normalized * self.max_speed, rel_bearing)
-        elif desired_speed_normalized == 0.5:
-            if 1 >= rel_bearing >= -1:
-                return 12
-            elif rel_bearing < -1:
-                return 14
-            elif rel_bearing > 1:
-                return 10
-        elif desired_speed_normalized == 1:
-            if 1 >= rel_bearing >= -1:
-                return 4
-            elif rel_bearing < -1:
-                return 6
-            elif rel_bearing > 1:
-                return 2
+        return self.discrete_action_from_rel_bearing(rel_bearing, desired_speed_normalized)
 
     def update_state(self, obs, info: dict[str, dict]) -> None:
         """

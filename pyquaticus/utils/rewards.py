@@ -214,9 +214,9 @@ def caps_and_grabs(
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
-        reward += -1.0
+        reward += -2.0
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} OOB: -1.00")
+            print(f"[REWARD] {agent_id} OOB: -2.00")
 
     # Reward for tagging an opponent
     if state["agent_made_tag"][agent_index] is not None:

@@ -86,11 +86,11 @@ class BaseAttacker(BaseAgentPolicy):
 
             # If I or someone on my team has the flag, go back home
             if self.has_flag or self.my_team_has_flag:
-                return self.action_from_vector(self.home_loc, 0.5)
+                return self.action_from_vector(self.home_loc, 0.25)
 
             # Otherwise go get the opponents flag
             else:
-                return self.action_from_vector(self.opp_flag_loc, 0.5)
+                return self.action_from_vector(self.opp_flag_loc, 0.25)
 
         elif self.mode == "nothing":
             return self.action_from_vector(None, 0)
@@ -167,7 +167,7 @@ class BaseAttacker(BaseAgentPolicy):
                 avoid_vect = get_avoid_vect(self.opp_team_pos)
                 my_action = goal_vect + avoid_vect
 
-            return self.action_from_vector(my_action, 0.5)
+            return self.action_from_vector(my_action, 0.8)
 
         elif self.mode == "competition_medium":
 
@@ -339,24 +339,13 @@ class BaseAttacker(BaseAgentPolicy):
             if self.continuous:
                 return (0, 0)
             else:
-                return -1
+                from pyquaticus.config import ACTION_MAP
+                return len(ACTION_MAP) - 1
         rel_bearing = local_rect_to_rel_bearing(vector)
         if self.continuous:
             return (desired_speed_normalized * self.max_speed, rel_bearing)
-        elif desired_speed_normalized == 0.5:
-            if 1 >= rel_bearing >= -1:
-                return 12
-            elif rel_bearing < -1:
-                return 14
-            elif rel_bearing > 1:
-                return 10
-        elif desired_speed_normalized == 1:
-            if 1 >= rel_bearing >= -1:
-                return 4
-            elif rel_bearing < -1:
-                return 6
-            elif rel_bearing > 1:
-                return 2
+        # Discrete: map to the current ACTION_MAP (supports --action-map nrl).
+        return self.discrete_action_from_rel_bearing(rel_bearing, desired_speed_normalized)
 
     def update_state(self, obs, info: dict[str, dict]) -> None:
         """

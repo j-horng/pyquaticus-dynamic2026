@@ -37,6 +37,7 @@ from pyquaticus.config import config_dict_std
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv, Team
 from pyquaticus.moos_bridge.pyquaticus_moos_bridge import PyQuaticusMoosBridge
 from pyquaticus.utils.utils import angle180, dist, line_intersection
+from pyquaticus.config import ACTION_MAP
 
 MODES = {"easy", "medium", "hard", "nothing"}
 
@@ -109,13 +110,20 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
             return self.action_from_vector(None, 0)
 
         if self.mode == "easy":
-            # Opp is close - needs to defend:
-            if self.is_close_to_flag() and False in self.opp_team_tag:
-                return self.base_defender.compute_action(obs, info)
+            # Easy: only attacks (never defends), slow/hesitant, and sometimes makes mistakes.
+            # 30%: random action (wrong/slow reaction).
+            if np.random.random() < 0.30:
+                if self.continuous:
+                    # random heading error; keep speed small-ish
+                    return (0.25 * self.max_speed, float(np.random.uniform(-120.0, 120.0)))
+                return int(np.random.randint(0, len(ACTION_MAP)))
+            return self.base_attacker.compute_action(obs, info)
 
-            # Opp on defensive - needs to attack
-            else:
+        elif self.mode == "medium":
+            # Medium: mostly attacks (70%), occasionally defends (30%). No randomness beyond this mix.
+            if np.random.random() < 0.70:
                 return self.base_attacker.compute_action(obs, info)
+            return self.base_defender.compute_action(obs, info)
 
         else:
             # If I have the flag, just bring it back to base
@@ -134,10 +142,10 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
                 return self.base_attacker.compute_action(obs, info)
 
             else:
+                # Hard: no randomness; use defender positioning rather than random defense.
                 if self.mode == "hard":
-                    return self.base_attacker.compute_action(obs, info)
-                else:
-                    return self.random_defense_action(self.opp_team_pos)
+                    return self.base_defender.compute_action(obs, info)
+                return self.random_defense_action(self.opp_team_pos)
 
     def random_defense_action(self, enem_positions):
         """
@@ -359,21 +367,9 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
             if self.continuous:
                 return (0, 0)
             else:
-                return -1
+                from pyquaticus.config import ACTION_MAP
+                return len(ACTION_MAP) - 1
         rel_bearing = local_rect_to_rel_bearing(vector)
         if self.continuous:
             return (desired_speed_normalized * self.max_speed, rel_bearing)
-        elif desired_speed_normalized == 0.5:
-            if 1 >= rel_bearing >= -1:
-                return 12
-            elif rel_bearing < -1:
-                return 14
-            elif rel_bearing > 1:
-                return 10
-        elif desired_speed_normalized == 1:
-            if 1 >= rel_bearing >= -1:
-                return 4
-            elif rel_bearing < -1:
-                return 6
-            elif rel_bearing > 1:
-                return 2
+        return self.discrete_action_from_rel_bearing(rel_bearing, desired_speed_normalized)

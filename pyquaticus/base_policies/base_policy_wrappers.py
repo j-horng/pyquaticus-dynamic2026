@@ -328,3 +328,317 @@ def CombinedGen(agent_id: str, env: Union[PyQuaticusEnv, PyQuaticusMoosBridge], 
             pass
 
     return CombinedPolicy
+
+
+def _wrap_info_batch_for_policy(policy_obj, info_batch):
+    """Normalize RLlib infos into the shape heuristic policies expect."""
+    if info_batch is None:
+        raise RuntimeError(
+            "Heuristic policy requires env infos. Ensure INFOS is included "
+            "in the policy input (view_requirements[INFOS].used_for_compute_actions=True)."
+        )
+    # info_batch from RLlib: list of dicts, numpy array of dicts, or dict of arrays
+    if hasattr(info_batch, "items"):
+        get_info_i = lambda i: {k: v[i] for k, v in info_batch.items()}
+    else:
+        get_info_i = lambda i: info_batch[i] if i < len(info_batch) else {}
+
+    aid = policy_obj.id
+
+    def norm_info(raw):
+        if raw is None:
+            return {}
+        # Unwrap numpy 0-d array holding a dict
+        if hasattr(raw, "item") and callable(raw.item):
+            raw = raw.item()
+        if not isinstance(raw, dict):
+            return raw
+        # RLlib sometimes passes infos as {0: per_agent_info} (integer-keyed)
+        if list(raw.keys()) == [0] and isinstance(raw.get(0), dict):
+            raw = raw[0]
+        if aid in raw:
+            return raw
+        if "global_state" in raw:
+            return {aid: raw}
+        return raw
+
+    return get_info_i, norm_info
+
+
+def _maybe_apply_random_action(action_space, p_rand: float):
+    import numpy as _np
+    return action_space.sample() if (_np.random.random() < float(p_rand)) else None
+
+
+def _remap_discrete_speed(policy_obj, act, desired_speed_frac: float):
+    """Take a discrete act index, preserve heading, remap to desired speed under current ACTION_MAP."""
+    if act is None:
+        return act
+    try:
+        a = int(act)
+    except Exception:
+        return act
+    # Keep no-op as no-op
+    no_op = len(ACTION_MAP) - 1
+    if a == no_op:
+        return a
+    # Preserve the heading of the chosen action, but pick a new index with desired speed.
+    try:
+        heading = float(ACTION_MAP[a][1])
+    except Exception:
+        return a
+    return int(policy_obj.discrete_action_from_rel_bearing(heading, float(desired_speed_frac)))
+
+
+def EasyAttackGen(agent_id, env, *args, **kwargs):
+    """Easy Attack — BaseAttacker easy + speed 0.25 + 30% random actions."""
+
+    class EasyAttackPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseAttacker(agent_id, env, mode="easy")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                ra = _maybe_apply_random_action(self.action_space, 0.30)
+                if ra is not None:
+                    actions.append(ra)
+                    continue
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.25)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return EasyAttackPolicy
+
+
+def EasyDefendGen(agent_id, env, *args, **kwargs):
+    """Easy Defend — BaseDefender easy + speed 0.25 + 30% random actions."""
+
+    class EasyDefendPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseDefender(agent_id, env, mode="easy")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                ra = _maybe_apply_random_action(self.action_space, 0.30)
+                if ra is not None:
+                    actions.append(ra)
+                    continue
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.25)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return EasyDefendPolicy
+
+
+def EasyCombinedGen(agent_id, env, *args, **kwargs):
+    """Easy Combined — Heuristic_CTF_Agent easy (random+attack-only built in)."""
+
+    class EasyCombinedPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = Heuristic_CTF_Agent(agent_id, env, mode="easy")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return EasyCombinedPolicy
+
+
+def MediumAttackGen(agent_id, env, *args, **kwargs):
+    """Medium Attack — BaseAttacker medium + speed 0.8 + no randomness."""
+
+    class MediumAttackPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseAttacker(agent_id, env, mode="medium")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.8)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return MediumAttackPolicy
+
+
+def MediumDefendGen(agent_id, env, *args, **kwargs):
+    """Medium Defend — BaseDefender medium + speed 0.8 + no randomness."""
+
+    class MediumDefendPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseDefender(agent_id, env, mode="medium")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.8)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return MediumDefendPolicy
+
+
+def MediumCombinedGen(agent_id, env, *args, **kwargs):
+    """Medium Combined — Heuristic_CTF_Agent medium (70/30 mix built in)."""
+
+    class MediumCombinedPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = Heuristic_CTF_Agent(agent_id, env, mode="medium")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return MediumCombinedPolicy
+
+
+def HardAttackGen(agent_id, env, *args, **kwargs):
+    """Hard Attack — BaseAttacker hard + speed 1.0."""
+
+    class HardAttackPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseAttacker(agent_id, env, mode="hard")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 1.0)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return HardAttackPolicy
+
+
+def HardDefendGen(agent_id, env, *args, **kwargs):
+    """Hard Defend — BaseDefender hard + speed 1.0."""
+
+    class HardDefendPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = BaseDefender(agent_id, env, mode="hard")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 1.0)
+                actions.append(act)
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return HardDefendPolicy
+
+
+def HardCombinedGen(agent_id, env, *args, **kwargs):
+    """Hard Combined — Heuristic_CTF_Agent hard (intelligent switching built in)."""
+
+    class HardCombinedPolicy(Policy):
+        def __init__(self, observation_space, action_space, config):
+            Policy.__init__(self, observation_space, action_space, config)
+            self.policy = Heuristic_CTF_Agent(agent_id, env, mode="hard")
+            self.action_dict = {}
+            if SampleBatch.INFOS in self.view_requirements:
+                self.view_requirements[SampleBatch.INFOS].used_for_compute_actions = True
+
+        def compute_actions(self, obs_batch, state_batches=None, prev_action_batch=None, prev_reward_batch=None,
+                            info_batch=None, episodes=None, explore=None, timestep=None, **kwargs):
+            get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
+            actions = []
+            for i in range(len(obs_batch)):
+                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+            return actions, [], {}
+
+        def get_weights(self): return {}
+        def learn_on_batch(self, samples): return {}
+        def set_weights(self, weights): pass
+
+    return HardCombinedPolicy

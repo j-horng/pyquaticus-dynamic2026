@@ -19,11 +19,13 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv, Team
+# Discrete action layout may be patched at runtime (e.g. apply_nrl_action_map()).
+from pyquaticus.config import ACTION_MAP
 # from pyquaticus.moos_bridge.pyquaticus_moos_bridge import PyQuaticusMoosBridge
 
 
@@ -68,3 +70,50 @@ class BaseAgentPolicy:
             if discrete, an action index corresponding to ACTION_MAP in config.py
         """
         raise NotImplementedError
+
+    @staticmethod
+    def _wrap_angle180(deg: float) -> float:
+        """Wrap degrees to [-180, 180]."""
+        x = float(deg)
+        return (x + 180.0) % 360.0 - 180.0
+
+    def discrete_action_from_rel_bearing(self, rel_bearing_deg: float, desired_speed_frac: float) -> int:
+        """
+        Map a desired relative bearing + (normalized) speed request to a discrete action index.
+
+        This *must* consult the current `ACTION_MAP` because the project supports multiple layouts:
+        - legacy: multiple speeds and coarse headings
+        - nrl: full-speed only, fine headings in [-10..10] plus a few wider turns
+        """
+        # Convention across this repo: last entry is no-op.
+        no_op = len(ACTION_MAP) - 1
+        if desired_speed_frac <= 0.0 or len(ACTION_MAP) <= 1:
+            return int(no_op)
+
+        # If the action map only contains a single nonzero speed (e.g. NRL: full-speed only),
+        # approximate "slower" speeds by occasionally emitting a no-op.
+        # This preserves the requested difficulty spread even when discrete speed control is absent.
+        try:
+            speeds = {float(s) for (s, _h) in ACTION_MAP[:-1]}
+        except Exception:
+            speeds = set()
+        if len(speeds) == 1:
+            only_spd = next(iter(speeds))
+            if only_spd > 0.0 and desired_speed_frac < only_spd:
+                p_move = max(0.0, min(1.0, float(desired_speed_frac) / only_spd))
+                if np.random.random() > p_move:
+                    return int(no_op)
+
+        target_h = self._wrap_angle180(rel_bearing_deg)
+        best_i = 0
+        best_score = float("inf")
+        # Exclude no-op from matching.
+        for i, (spd, hdg) in enumerate(ACTION_MAP[:-1]):
+            dh = abs(self._wrap_angle180(float(hdg) - target_h)) / 180.0
+            ds = abs(float(spd) - float(desired_speed_frac))
+            # Heading dominates; speed tie-breaker for maps that include multiple speeds.
+            score = dh + 0.25 * ds
+            if score < best_score:
+                best_score = score
+                best_i = i
+        return int(best_i)

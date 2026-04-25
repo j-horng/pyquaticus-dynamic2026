@@ -28,17 +28,12 @@ import numpy as np
 
 from pyquaticus.base_policies.base_policy import BaseAgentPolicy
 from pyquaticus.base_policies.rrt.rrt_star import rrt_star
-<<<<<<< HEAD
 from pyquaticus.base_policies.rrt.utils import (
     Point,
     get_ungrouped_seglist,
     intersect,
     intersect_circles,
 )
-=======
-from pyquaticus.base_policies.rrt.utils import (Point, get_ungrouped_seglist,
-                                                intersect, intersect_circles)
->>>>>>> main
 from pyquaticus.base_policies.utils import global_rect_to_abs_bearing
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv, Team
 from pyquaticus.structs import CircleObstacle, PolygonObstacle
@@ -163,7 +158,8 @@ class WaypointPolicy(BaseAgentPolicy):
             if self.continuous:
                 return 0, 0
             else:
-                return -1
+                from pyquaticus.config import ACTION_MAP
+                return len(ACTION_MAP) - 1
 
         pos_err = self.wps[0] - self.pos
 
@@ -175,12 +171,9 @@ class WaypointPolicy(BaseAgentPolicy):
             return (desired_speed, heading_error)
 
         else:
-            if 1 >= heading_error >= -1:
-                return 12
-            elif heading_error < -1:
-                return 14
-            elif heading_error > 1:
-                return 10
+            # Discrete: map to current ACTION_MAP (supports --action-map nrl).
+            # Waypoint policy always requests "move" when not continuous.
+            return self.discrete_action_from_rel_bearing(heading_error, 1.0)
 
     def update_wps(self, pos: np.ndarray):
         """
