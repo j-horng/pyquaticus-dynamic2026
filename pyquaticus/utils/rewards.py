@@ -207,6 +207,10 @@ def caps_and_grabs(
     if disabled is not None and len(disabled) > agent_index and bool(disabled[agent_index]):
         return 0.0
 
+    # Only Blue team (team 0) gets trained — Red agents always return 0.0.
+    if int(team) != int(Team.BLUE_TEAM):
+        return 0.0
+
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
@@ -288,7 +292,8 @@ def caps_and_grabs(
 
         # Require some translation to avoid rewarding pure heading changes / numerical jitter.
         moved = float(np.linalg.norm(pos - prev_pos))
-        if delta > 0 and moved > 1e-3:
+        agent_on_own_side = bool(state["agent_on_sides"][agent_index])
+        if delta > 0 and moved > 1e-3 and (not agent_on_own_side):
             field_diag = float(np.linalg.norm(env_size))
             if field_diag > 0:
                 r = 0.3 * delta / field_diag
