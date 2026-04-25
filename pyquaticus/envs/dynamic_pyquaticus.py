@@ -17,6 +17,7 @@ import numpy as np
 from pyquaticus.config import ACTION_MAP
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv
 from pyquaticus.structs import Team
+from pyquaticus.utils.utils import closest_point_on_line, vec_to_mag_heading
 
 
 class DynamicPyQuaticusEnv(PyQuaticusEnv):
@@ -27,6 +28,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
     - tag_removes_agent: if True, tagged agents are disabled (removed from game)
     - reinforcement_interval: steps between reinforcement spawns (0 = disabled)
     - reinforcement_prob: probability of spawning a reinforcement when interval hits
+    - stationary_red_block_anchor: optional "midfield" | "topfield" | "bottomfield" (with stationary_red_mode)
+      to place active stationary Reds on two slots of the default-init forward spawn row (not arena center).
+    - stationary_red_block_anchor_random: if True, each reset uniformly picks one of those three row pairs.
     """
 
     def __init__(
@@ -76,6 +80,30 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 self.stationary_red_random_range = None
         else:
             self.stationary_red_random_range = None
+        _anchor_raw = _cfg.get("stationary_red_block_anchor")
+        if _anchor_raw is None and _cfg.get("stationary_red_midfield_spawn"):
+            _anchor_raw = "midfield"
+        if _anchor_raw is None and _cfg.get("stationary_red_center_spawn"):
+            _anchor_raw = "midfield"
+        if isinstance(_anchor_raw, str):
+            _a = _anchor_raw.strip().lower()
+            self.stationary_red_block_anchor = _a if _a in ("midfield", "topfield", "bottomfield") else None
+        else:
+            self.stationary_red_block_anchor = None
+        self.stationary_red_block_anchor_random = bool(_cfg.get("stationary_red_block_anchor_random", False))
+        if self.stationary_red_block_anchor_random:
+            self.stationary_red_block_anchor = None
+        # Spawn-row block (mid/top/bottom or random among them) only supports two stationary slots.
+        self._stationary_red_spawn_row_block = self.stationary_red_block_anchor_random or (
+            self.stationary_red_block_anchor is not None
+        )
+        if self._stationary_red_spawn_row_block:
+            self.stationary_red_active = min(self.stationary_red_active, 2)
+            if self.stationary_red_random_range is not None:
+                a, b = self.stationary_red_random_range
+                b = min(b, 2)
+                a = max(1, min(a, b))
+                self.stationary_red_random_range = (a, b)
 
         for player in self.players.values():
             if not hasattr(player, "is_disabled"):
@@ -131,6 +159,193 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self.state["disabled_agents"] = disabled
         for i, player in enumerate(self.players.values()):
             player.is_disabled = bool(disabled[i])
+
+    def _default_init_forward_spawn_slots_for_team(self, team: Team) -> list[np.ndarray]:
+        """First-row spawn slots (k=0,1,2) matching PyQuaticusEnv._generate_agent_starts default_init geometry."""
+        team_idx = int(team)
+        flag_home = np.asarray(self.flags[team_idx].home, dtype=np.float64).reshape(-1)[:2]
+        closest_scrim_line_point = closest_point_on_line(*self.scrimmage_coords, flag_home)
+        halfway_point = (flag_home + closest_scrim_line_point) / 2.0
+        mag, _ = vec_to_mag_heading(halfway_point - flag_home)
+        team_inds = self.agent_inds_of_team[team]
+        max_team_radius = float(np.max(self.agent_radius[team_inds]))
+        if mag < (self.flag_keepout_radius + max_team_radius):
+            mid = (np.asarray(self.flags[int(Team.BLUE_TEAM)].home) + np.asarray(self.flags[int(Team.RED_TEAM)].home)) / 2.0
+            return [mid.copy(), mid.copy(), mid.copy()]
+        spawn_line_env_intersection_1 = self._get_polygon_intersection(halfway_point, self.scrimmage_vec, self.env_corners)[1]
+        spawn_line_env_intersection_2 = self._get_polygon_intersection(halfway_point, -self.scrimmage_vec, self.env_corners)[1]
+        int1 = np.asarray(spawn_line_env_intersection_1, dtype=np.float64).reshape(-1)[:2]
+        int2 = np.asarray(spawn_line_env_intersection_2, dtype=np.float64).reshape(-1)[:2]
+        d = int2 - int1
+        spawn_line_mag = float(np.linalg.norm(d))
+        u = d / max(spawn_line_mag, 1e-9)
+        slots = []
+        ts = int(self.team_size)
+        for k in range(min(3, ts)):
+            if ts <= 3:
+                frac = (k + 1) / float(ts + 1)
+            else:
+                frac = (k + 1) / 4.0
+            pos = int1 + spawn_line_mag * frac * u
+            gi = int(team_inds[k])
+            ar = float(self.agent_radius[gi])
+            pos[0] = float(np.clip(pos[0], 2.0 * ar, float(self.env_size[0]) - 2.0 * ar))
+            pos[1] = float(np.clip(pos[1], 2.0 * ar, float(self.env_size[1]) - 2.0 * ar))
+            slots.append(pos.copy())
+        while len(slots) < 3:
+            slots.append(slots[-1].copy())
+        return slots
+
+    def _place_stationary_red_block_arena_fallback(self, active_red_inds: list[int], anchor: str) -> None:
+        """Legacy arena-relative cluster (used for gps_env where spawn-row math differs)."""
+        blue_flag = np.asarray(self.flags[int(Team.BLUE_TEAM)].home, dtype=np.float64)
+        red_flag = np.asarray(self.flags[int(Team.RED_TEAM)].home, dtype=np.float64)
+        mid = (blue_flag + red_flag) / 2.0
+        delta = red_flag - blue_flag
+        n = float(np.linalg.norm(delta))
+        if n < 1e-6:
+            u = np.array([1.0, 0.0], dtype=np.float64)
+        else:
+            u = delta / n
+        v = np.array([-u[1], u[0]], dtype=np.float64)
+        ar_max = float(np.max(self.agent_radius))
+        sep = max(12.0, 3.5 * ar_max)
+        margin = max(8.0, 2.0 * ar_max)
+        ex, ey = float(self.env_size[0]), float(self.env_size[1])
+        span = max(n, 1e-6)
+        half_sep = min(0.5 * sep, 0.14 * span)
+        k = len(active_red_inds)
+        if anchor == "midfield":
+            spread = v
+            base = mid.copy()
+        elif anchor == "topfield":
+            spread = u
+            base = np.array([float(mid[0]), ey - margin], dtype=np.float64)
+            base[1] = float(np.clip(base[1] + 0.14 * ey, margin, ey - margin))
+        else:
+            spread = u
+            base = np.array([float(mid[0]), margin], dtype=np.float64)
+            base[1] = float(np.clip(base[1] - 0.14 * ey, margin, ey - margin))
+        for j, idx in enumerate(sorted(int(i) for i in active_red_inds)):
+            offset = (j - (k - 1) / 2.0) * (2.0 * half_sep)
+            pos = base + spread * offset
+            pos[0] = float(np.clip(pos[0], margin, ex - margin))
+            pos[1] = float(np.clip(pos[1], margin, ey - margin))
+            self.state["agent_position"][idx] = pos.copy()
+            self.state["prev_agent_position"][idx] = pos.copy()
+            aid = self.agents[idx]
+            self.players[aid].pos = pos.copy()
+            self.players[aid].prev_pos = pos.copy()
+
+    def _place_stationary_red_block(self, active_red_inds: list[int], anchor: str) -> None:
+        """Place stationary Reds: bottom/top use the lower/higher adjacent-slot centroid, nudged in ±Y, grouped like midfield (c ± u_hat·half_sep)."""
+        if not active_red_inds or anchor not in ("midfield", "topfield", "bottomfield"):
+            return
+        if getattr(self, "gps_env", False):
+            self._place_stationary_red_block_arena_fallback(active_red_inds, anchor)
+            return
+        slots = self._default_init_forward_spawn_slots_for_team(Team.RED_TEAM)
+        p0, p1, p2 = slots[0], slots[1], slots[2]
+        u_hat = p2 - p0
+        nu = float(np.linalg.norm(u_hat))
+        u_hat = u_hat / max(nu, 1e-9)
+        red_inds = self.agent_inds_of_team[Team.RED_TEAM]
+        ar_max = float(np.max(self.agent_radius[red_inds]))
+        sep = max(12.0, 3.5 * ar_max)
+        row_span = float(np.linalg.norm(p2 - p0))
+        # Visual: env_to_screen flips Y so larger world-y is toward the top of the window.
+        # bottomfield / topfield = adjacent pair on the spawn row whose midpoint is lower / higher Y.
+        m01 = 0.5 * (float(p0[1]) + float(p1[1]))
+        m12 = 0.5 * (float(p1[1]) + float(p2[1]))
+        y_eps = 1e-3 * max(float(self.env_size[1]), 1.0)
+
+        def _pair_bottom_top_tiebreak(want_bottom: bool) -> tuple[np.ndarray, np.ndarray]:
+            if abs(m01 - m12) >= y_eps:
+                if want_bottom:
+                    return (p0.copy(), p1.copy()) if m01 < m12 else (p1.copy(), p2.copy())
+                return (p0.copy(), p1.copy()) if m01 > m12 else (p1.copy(), p2.copy())
+            mn0 = min(float(p0[1]), float(p1[1]))
+            mn1 = min(float(p1[1]), float(p2[1]))
+            mx0 = max(float(p0[1]), float(p1[1]))
+            mx1 = max(float(p1[1]), float(p2[1]))
+            if want_bottom:
+                return (p0.copy(), p1.copy()) if mn0 < mn1 else (p1.copy(), p2.copy())
+            return (p0.copy(), p1.copy()) if mx0 > mx1 else (p1.copy(), p2.copy())
+
+        # Same along-row grouping as midfield: two poses at c ± u_hat * half_sep (then clip).
+        half_sep = min(0.5 * sep, 0.14 * max(row_span, 1e-6))
+        ey_sz = float(self.env_size[1])
+        shift_y = min(0.14 * ey_sz, 0.52 * max(row_span, 1e-6))
+
+        if anchor == "bottomfield":
+            pa, pb = _pair_bottom_top_tiebreak(True)
+            c = 0.5 * (pa + pb) + np.array([0.0, -shift_y], dtype=np.float64)
+            a = c - u_hat * half_sep
+            b = c + u_hat * half_sep
+        elif anchor == "topfield":
+            pa, pb = _pair_bottom_top_tiebreak(False)
+            c = 0.5 * (pa + pb) + np.array([0.0, shift_y], dtype=np.float64)
+            a = c - u_hat * half_sep
+            b = c + u_hat * half_sep
+        else:
+            c = p1.copy()
+            a = c - u_hat * half_sep
+            b = c + u_hat * half_sep
+
+        pair_pts = [a, b]
+        sorted_idx = sorted(int(i) for i in active_red_inds)
+        n = len(sorted_idx)
+        margin = max(8.0, 2.0 * ar_max)
+        ex, ey = float(self.env_size[0]), float(self.env_size[1])
+        for j, idx in enumerate(sorted_idx):
+            if n <= 1:
+                pos = pair_pts[0].copy()
+            else:
+                t = j / float(n - 1)
+                pos = (1.0 - t) * pair_pts[0] + t * pair_pts[1]
+            pos[0] = float(np.clip(pos[0], margin, ex - margin))
+            pos[1] = float(np.clip(pos[1], margin, ey - margin))
+            self.state["agent_position"][idx] = pos.copy()
+            self.state["prev_agent_position"][idx] = pos.copy()
+            aid = self.agents[idx]
+            self.players[aid].pos = pos.copy()
+            self.players[aid].prev_pos = pos.copy()
+
+    def _tuck_disabled_reds_behind_flag(self) -> None:
+        """Move disabled Red agents off the spawn row (same idea as red_dummy_mode) so active block pair is visible."""
+        margin = 5.0
+        red_flag_home = np.array(self.flags[int(Team.RED_TEAM)].home, dtype=np.float64)
+        side_pos = red_flag_home + np.array([margin, 0.0], dtype=np.float64)
+        if side_pos[0] >= float(self.env_size[0]):
+            side_pos[0] = float(self.env_size[0]) - margin
+        side_pos[1] = np.clip(side_pos[1], margin, float(self.env_size[1]) - margin)
+        disabled = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
+        for red_agent_idx in range(self.num_blue, self.num_agents):
+            if not bool(disabled[red_agent_idx]):
+                continue
+            self.state["agent_position"][red_agent_idx] = side_pos.copy()
+            self.state["prev_agent_position"][red_agent_idx] = side_pos.copy()
+            aid = self.agents[red_agent_idx]
+            self.players[aid].pos = np.array(side_pos, dtype=np.float64)
+            self.players[aid].prev_pos = np.array(side_pos, dtype=np.float64)
+
+    def _finalize_dynamic_reset_observations(self) -> None:
+        """Recompute on_own_side and observation buffers after dynamic reset mutates poses or disabled_agents."""
+        for i, player in enumerate(self.players.values()):
+            own_side = self._check_on_sides(player.pos, player.team)
+            self.state["agent_on_sides"][i] = bool(np.asarray(own_side).reshape(-1)[0])
+        self._set_player_attributes_from_state()
+        self._update_dist_bearing_to_obstacles()
+        if self.lidar_obs:
+            self._update_lidar()
+        for agent_id in self.agents:
+            reset_obs, reset_unnorm_obs = self.state_to_obs(agent_id, self.normalize_obs)
+            self.state["obs_hist_buffer"][agent_id] = np.array(self.obs_hist_buffer_len * [reset_obs])
+            if self.normalize_obs:
+                self.state["unnorm_obs_hist_buffer"][agent_id] = np.array(self.obs_hist_buffer_len * [reset_unnorm_obs])
+        self.state["global_state_hist_buffer"] = np.array(
+            self.state_hist_buffer_len * [self.state_to_global_state(self.normalize_state)]
+        )
 
     def reset(self, seed=None, options: Optional[dict] = None):
         """Reset with randomized team sizes."""
@@ -193,6 +408,8 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 k = 0 if hi < lo else random.randint(lo, hi)
             else:
                 k = max(0, min(self.stationary_red_active, len(red_inds)))
+            if self._stationary_red_spawn_row_block:
+                k = min(k, 2, len(red_inds))
             if k <= 0:
                 active_red = []
             elif k >= len(red_inds):
@@ -205,8 +422,25 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             self.state["active_blue_inds"] = np.array(active_blue_inds, dtype=np.int64)
             self.state["active_red_inds"] = np.array(active_red, dtype=np.int64)
 
+        block_anchor_episode = None
+        if self.stationary_red_block_anchor_random and self.stationary_red_mode:
+            active_red_list = [int(i) for i in np.asarray(self.state.get("active_red_inds", [])).reshape(-1)]
+            block_anchor_episode = random.choice(["midfield", "topfield", "bottomfield"])
+            self._place_stationary_red_block(active_red_list, block_anchor_episode)
+        elif self.stationary_red_block_anchor and self.stationary_red_mode:
+            active_red_list = [int(i) for i in np.asarray(self.state.get("active_red_inds", [])).reshape(-1)]
+            block_anchor_episode = self.stationary_red_block_anchor
+            self._place_stationary_red_block(active_red_list, block_anchor_episode)
+
+        if self.stationary_red_mode and (
+            self.stationary_red_block_anchor_random or self.stationary_red_block_anchor
+        ):
+            self._tuck_disabled_reds_behind_flag()
+
         self.state["blue_oob_count"] = 0
         self.state["red_oob_count"] = 0
+
+        self._finalize_dynamic_reset_observations()
 
         obs = {aid: self._history_to_obs(aid, "obs_hist_buffer") for aid in self.players}
         global_state = self._history_to_state()
@@ -219,6 +453,11 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                 "num_blue_active": num_blue_active,
                 "num_red_active": num_red_active,
                 "disabled_agents": disabled_agents,
+                **(
+                    {"stationary_red_block_anchor": block_anchor_episode}
+                    if block_anchor_episode is not None
+                    else {}
+                ),
             }
             for aid in self.players
         }

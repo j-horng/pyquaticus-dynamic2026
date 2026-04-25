@@ -144,8 +144,16 @@ python rl_test/train_dynamic.py \
 | `--team-size-max N` | 6 | Max active agents per team (1–6) |
 | `--random-spawn` | off | Random position on own side (default: fixed spawn line) |
 | `--red-dummy` | off | No Red opponents |
-| `--red-stationary` | off | Stationary Red layout (see `--stationary-red`) |
-| `--stationary-red` | off | Env stationary-red mode (alias interacts with `--red-stationary`) |
+| `--red-stationary` | off | Stationary Red (no-op); default spawn line (see `--stationary-red`) |
+| `--stationary-red` | off | Alias for `--red-stationary` |
+| `--red-stationary-midfield` | off | Stationary Red on the **center** pair of slots on Red’s default forward spawn row |
+| `--stationary-red-midfield` | off | Alias for `--red-stationary-midfield` |
+| `--red-stationary-topfield` | off | Stationary Red on the **upper** pair of spawn-row slots (same row as default init) |
+| `--stationary-red-topfield` | off | Alias for `--red-stationary-topfield` |
+| `--red-stationary-bottomfield` | off | Stationary Red on the **lower** pair of spawn-row slots |
+| `--stationary-red-bottomfield` | off | Alias for `--red-stationary-bottomfield` |
+| `--red-stationary-block-random` | off | Each episode picks **center / upper / lower** spawn-row pair uniformly |
+| `--stationary-red-block-random` | off | Alias for `--red-stationary-block-random` |
 | `--red-heuristic` | off | Red uses built-in heuristic |
 | `--red-heuristic-mode` | `easy` | `easy`, `medium`, or `hard` |
 | `--red-attack-hard` | off | One hard attacker Red, rest disabled |
@@ -159,7 +167,7 @@ python rl_test/train_dynamic.py \
 
 > **Save on demand:** `touch training/SAVE_NOW` (Unix) or create `SAVE_NOW` in `out_dir` (Windows) — next completed iteration saves a checkpoint.
 
-> **Only one Red mode at a time.** `--red-dummy`, `--red-stationary`, `--red-heuristic`, `--red-attack-hard`, `--red-all-attack`, `--red-all-defend`, and `--red-from-checkpoint` are mutually exclusive.
+> **Only one Red mode at a time.** `--red-dummy`, `--red-stationary`, the stationary **block** flags (`--red-stationary-midfield`, `--red-stationary-topfield`, `--red-stationary-bottomfield`, `--red-stationary-block-random`), `--red-heuristic`, `--red-attack-hard`, `--red-all-attack`, `--red-all-defend`, and `--red-from-checkpoint` are mutually exclusive. **At most one** fixed block flag (mid/top/bottom) may be set; **block-random** cannot combine with those three.
 
 ---
 

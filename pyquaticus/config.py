@@ -117,6 +117,8 @@ config_dict_std = {
     "stationary_red_active": 2,  # when stationary_red_mode (and not stationary_red_active_random): fixed active Red count; 0..team_size
     "stationary_red_active_random": False,  # if True: each reset pick active stationary Red count uniformly
     "stationary_red_random_range": None,  # optional (min,max); if set with stationary_red_active_random, sample k in [min,max]; else use team_size_range
+    "stationary_red_block_anchor": None,  # None: default spawn line; "midfield" / "topfield" / "bottomfield" — at most two active stationary Reds on that pair of default-init **forward spawn-row** slots (see DynamicPyQuaticusEnv). Legacy: stationary_red_midfield_spawn / stationary_red_center_spawn still set anchor to midfield when this key is absent
+    "stationary_red_block_anchor_random": False,  # if True with stationary_red_mode: each reset pick uniform random among midfield / topfield / bottomfield for the stationary-red block (do not set stationary_red_block_anchor)
     "force_num_red_active": None,  # if set: force this many Red agents active at reset (others disabled); used by --red-attack-hard
 }
 
