@@ -163,6 +163,9 @@ import numpy as np
 from pyquaticus.structs import Team
 from pyquaticus.utils.utils import *
 
+# Set to True to print reward events to console during deployment/rendering
+REWARD_DEBUG = False
+
 ### Example Reward Funtion ###
 def example_reward(
     agent_id: str,
@@ -208,10 +211,14 @@ def caps_and_grabs(
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
         reward += -1.0
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} OOB: -1.00")
 
     # Reward for tagging an opponent
     if state["agent_made_tag"][agent_index] is not None:
         reward += 0.25
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} tagged opponent: +0.25")
 
     # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
     # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
@@ -221,23 +228,70 @@ def caps_and_grabs(
     has_flag = state['agent_has_flag'][agent_index]
     #Agent lost flag
     if (prev_has_flag > has_flag):
-        reward += -0.5
+        # Don't penalize a successful capture as "lost flag".
+        team_i = int(team)
+        captured_now = state["captures"][team_i] > prev_state["captures"][team_i]
+        if not (captured_now and prev_has_flag == 1):
+            reward += -1.0
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} lost flag: -1.00")
     # Agent grabbed flag individually
     if (has_flag > prev_has_flag):
         reward += 0.5
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} grabbed flag: +0.50")
 
     # Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)].
     # Full per-agent credit (no team_size scaling).
     for t in range(len(state['grabs'])):
         prev_num_grabs = prev_state['grabs'][t]
         num_grabs = state['grabs'][t]
-        if num_grabs > prev_num_grabs:
-            reward += 0.25 if t == int(team) else -0.25
+        # Note: grab reward is individual-only (see has_flag delta above). No team grab reward here.
 
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            reward += 1.0 if t == int(team) else -1.0
+            # Capture reward: +0.5 team-wide for the capturing team, plus +1 individual
+            # for the agent that was carrying the flag at capture time.
+            r_team = 0.5 if t == int(team) else -0.5
+            reward += r_team
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} capture team (team {t}): {r_team:+.2f}")
+
+            if t == int(team) and prev_has_flag == 1:
+                reward += 1.0
+                if REWARD_DEBUG:
+                    print(f"[REWARD] {agent_id} capture individual: +1.00")
+
+    # When recharging tagging (cannot tag until cooldown reaches tagging_cooldown), encourage
+    # moving toward the opponent flag instead of idling. See env: agent can tag iff
+    # agent_tagging_cooldown == tagging_cooldown.
+    cd = float(state["agent_tagging_cooldown"][agent_index])
+    if (
+        cd < tagging_cooldown
+        and state["agent_has_flag"][agent_index] == 0
+        and state["agent_is_tagged"][agent_index] == 0
+    ):
+        opp_team = 1 - int(team)
+        opp_flag_curr = np.asarray(state["flag_position"][opp_team], dtype=np.float64)
+        pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
+        prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
+
+        # Progress shaping should not be "free" when the flag itself moves (e.g. carried).
+        # Measure progress toward a fixed target position (current flag position).
+        curr_dist = np.linalg.norm(pos - opp_flag_curr)
+        prev_dist = np.linalg.norm(prev_pos - opp_flag_curr)
+        delta = prev_dist - curr_dist
+
+        # Require some translation to avoid rewarding pure heading changes / numerical jitter.
+        moved = float(np.linalg.norm(pos - prev_pos))
+        if delta > 0 and moved > 1e-3:
+            field_diag = float(np.linalg.norm(env_size))
+            if field_diag > 0:
+                r = 0.3 * delta / field_diag
+                reward += r
+                if REWARD_DEBUG:
+                    print(f"[REWARD] {agent_id} cooldown aggression: +{r:.4f}")
 
     return reward
 
