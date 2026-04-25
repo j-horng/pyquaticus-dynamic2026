@@ -1,0 +1,25 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2536, policy_loss=-0.0038, time=103.7s/iter (est. ~5187s per 50 iters)
+Iter 5: return_mean=-22.45, entropy=3.1917, policy_loss=-0.0142, time=111.2s/iter (est. ~5559s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_5
+Iter 10: return_mean=-12.69, entropy=3.1818, policy_loss=-0.0162, time=122.7s/iter (est. ~6133s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_10
+Iter 15: return_mean=-4.91, entropy=3.1611, policy_loss=-0.0184, time=123.8s/iter (est. ~6190s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_15
+Iter 20: return_mean=8.72, entropy=3.1102, policy_loss=-0.0214, time=128.9s/iter (est. ~6443s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_20
+Iter 25: return_mean=17.05, entropy=3.0558, policy_loss=-0.0221, time=141.2s/iter (est. ~7060s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_25
+Iter 30: return_mean=18.41, entropy=3.0657, policy_loss=-0.0187, time=118.1s/iter (est. ~5903s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_30
+Iter 35: return_mean=18.57, entropy=3.0795, policy_loss=-0.0217, time=119.1s/iter (est. ~5954s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_35
+Iter 40: return_mean=19.02, entropy=2.9272, policy_loss=-0.0238, time=117.3s/iter (est. ~5867s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_40
+Iter 45: return_mean=19.05, entropy=3.0705, policy_loss=-0.0236, time=99.2s/iter (est. ~4961s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_45
+Iter 50: return_mean=18.57, entropy=3.0414, policy_loss=-0.0262, time=99.7s/iter (est. ~4986s per 50 iters)
+Saved checkpoint to ./training/ray_dynamic_6v6_new-actionmap_v8\iter_50
