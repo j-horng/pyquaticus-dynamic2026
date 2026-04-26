@@ -1486,12 +1486,20 @@ def main():
         f"red_stationary_block_anchor_random={getattr(args, 'red_stationary_block_anchor_random', False)}"
     )
 
+    def _red_slot_id(agent_id_str: str) -> int:
+        """Map global agent id (agent_6..agent_11) -> stable red slot 0..team_max-1."""
+        try:
+            n = int(agent_id_str.split("_", 1)[1])
+        except Exception:
+            return 0
+        return int(n - team_max)
+
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
         if agent_id in BLUE_AGENT_IDS:
             return "blue_policy"
         if _red_new_heur:
             if agent_id in RED_AGENT_IDS:
-                n = int(agent_id.split("_", 1)[1])
+                slot = _red_slot_id(agent_id)
                 # Randomize among attack/defend/combined per episode if requested.
                 if getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
                     if episode is not None:
@@ -1511,24 +1519,24 @@ def main():
                     else:
                         variant = "easy_attack"
                     tier, sub = variant.split("_", 1)
-                    return f"red_{tier}_{sub}_{n}"
-                return f"red_heuristic_{n}"
+                    return f"red_{tier}_{sub}_{slot}"
+                return f"red_heuristic_{slot}"
         if args.red_heuristic:
             if agent_id in RED_AGENT_IDS:
-                n = int(agent_id.split("_", 1)[1])
-                return f"red_policy_{n}"
+                slot = _red_slot_id(agent_id)
+                return f"red_policy_{slot}"
         if args.red_all_attack:
             if agent_id in RED_AGENT_IDS:
-                n = int(agent_id.split("_", 1)[1])
-                return f"red_attack_{n}"
+                slot = _red_slot_id(agent_id)
+                return f"red_attack_{slot}"
         if args.red_all_defend:
             if agent_id in RED_AGENT_IDS:
-                n = int(agent_id.split("_", 1)[1])
-                return f"red_defend_{n}"
+                slot = _red_slot_id(agent_id)
+                return f"red_defend_{slot}"
         if args.red_attack_hard:
             if agent_id in RED_AGENT_IDS:
-                n = int(agent_id.split("_", 1)[1])
-                return f"red_attack_{n}"
+                slot = _red_slot_id(agent_id)
+                return f"red_attack_{slot}"
         if args.red_dummy or args.red_stationary:
             return "red_dummy_policy"
         if args.red_from_checkpoint:
@@ -1552,33 +1560,33 @@ def main():
         if getattr(args, "red_easy_random", False):
             desc = "easy_random"
             for aid in RED_AGENT_IDS:
-                n = int(aid.split("_", 1)[1])
+                slot = _red_slot_id(aid)
                 for sub, gen in (("attack", EasyAttackGen), ("defend", EasyDefendGen), ("combined", EasyCombinedGen)):
                     rp = gen(aid, base_env)
-                    rp.__name__ = f"RedHeuristic_easy_{sub}_{n}"
+                    rp.__name__ = f"RedHeuristic_easy_{sub}_{slot}"
                     if POLICIES is not None:
-                        POLICIES[f"RedHeuristic_easy_{sub}_{n}"] = rp
-                    policies[f"red_easy_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+                        POLICIES[f"RedHeuristic_easy_{sub}_{slot}"] = rp
+                    policies[f"red_easy_{sub}_{slot}"] = (rp, obs_space_red, act_space, {})
         elif getattr(args, "red_medium_random", False):
             desc = "medium_random"
             for aid in RED_AGENT_IDS:
-                n = int(aid.split("_", 1)[1])
+                slot = _red_slot_id(aid)
                 for sub, gen in (("attack", MediumAttackGen), ("defend", MediumDefendGen), ("combined", MediumCombinedGen)):
                     rp = gen(aid, base_env)
-                    rp.__name__ = f"RedHeuristic_medium_{sub}_{n}"
+                    rp.__name__ = f"RedHeuristic_medium_{sub}_{slot}"
                     if POLICIES is not None:
-                        POLICIES[f"RedHeuristic_medium_{sub}_{n}"] = rp
-                    policies[f"red_medium_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+                        POLICIES[f"RedHeuristic_medium_{sub}_{slot}"] = rp
+                    policies[f"red_medium_{sub}_{slot}"] = (rp, obs_space_red, act_space, {})
         elif getattr(args, "red_hard_random", False):
             desc = "hard_random"
             for aid in RED_AGENT_IDS:
-                n = int(aid.split("_", 1)[1])
+                slot = _red_slot_id(aid)
                 for sub, gen in (("attack", HardAttackGen), ("defend", HardDefendGen), ("combined", HardCombinedGen)):
                     rp = gen(aid, base_env)
-                    rp.__name__ = f"RedHeuristic_hard_{sub}_{n}"
+                    rp.__name__ = f"RedHeuristic_hard_{sub}_{slot}"
                     if POLICIES is not None:
-                        POLICIES[f"RedHeuristic_hard_{sub}_{n}"] = rp
-                    policies[f"red_hard_{sub}_{n}"] = (rp, obs_space_red, act_space, {})
+                        POLICIES[f"RedHeuristic_hard_{sub}_{slot}"] = rp
+                    policies[f"red_hard_{sub}_{slot}"] = (rp, obs_space_red, act_space, {})
         else:
             if getattr(args, "red_easy_attack", False):
                 gen = EasyAttackGen
@@ -1610,15 +1618,15 @@ def main():
             else:
                 raise SystemExit("Internal: _red_new_heur true but no specific flag set.")
         for aid in RED_AGENT_IDS:
-            n = int(aid.split("_", 1)[1])
+            slot = _red_slot_id(aid)
             if getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
                 # policy_mapping_fn will route to one of red_{tier}_{sub}_{n}
                 continue
             rp = gen(aid, base_env)
-            rp.__name__ = f"RedHeuristic_{desc}_{n}"
+            rp.__name__ = f"RedHeuristic_{desc}_{slot}"
             if POLICIES is not None:
-                POLICIES[f"RedHeuristic_{desc}_{n}"] = rp
-            policies[f"red_heuristic_{n}"] = (rp, obs_space_red, act_space, {})
+                POLICIES[f"RedHeuristic_{desc}_{slot}"] = rp
+            policies[f"red_heuristic_{slot}"] = (rp, obs_space_red, act_space, {})
         log(f"Red team using generator heuristic: {desc}.")
     if args.red_heuristic:
         from pyquaticus.base_policies.base_policy_wrappers import CombinedGen
