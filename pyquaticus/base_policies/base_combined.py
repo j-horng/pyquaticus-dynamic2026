@@ -274,11 +274,20 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
             away_x.append(ag[0])
             away_y.append(ag[1])
 
-        home_mean = np.array([np.mean(home_x), np.mean(home_y)])
-        home_std = np.mean(np.array([np.std(home_x), np.std(home_y)]))
+        # Guard against empty lists (can happen when teammates are disabled/removed in dynamic env).
+        if home_x:
+            home_mean = np.array([np.mean(home_x), np.mean(home_y)])
+            home_std = float(np.mean(np.array([np.std(home_x), np.std(home_y)])))
+        else:
+            home_mean = np.array([0.0, 0.0], dtype=np.float64)
+            home_std = 0.0
 
-        away_mean = np.array([np.mean(away_x), np.mean(away_y)])
-        away_std = np.mean(np.array([np.std(away_x), np.std(away_y)]))
+        if away_x:
+            away_mean = np.array([np.mean(away_x), np.mean(away_y)])
+            away_std = float(np.mean(np.array([np.std(away_x), np.std(away_y)])))
+        else:
+            away_mean = np.array([0.0, 0.0], dtype=np.float64)
+            away_std = 0.0
 
         return [home_mean, home_std], [away_mean, away_std]
 
