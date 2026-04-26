@@ -46,6 +46,7 @@ DEFAULT_HEADLESS_TRAIN_BATCH_SIZE = 4000
 import argparse
 import logging
 import os
+import random
 import re
 import sys
 import time
@@ -468,6 +469,18 @@ class DynamicPyQuaticusCallbacks(DefaultCallbacks):
         cm[f"{key}/blue_oob"] = blue_oob
         cm[f"{key}/red_oob"] = red_oob
 
+        # If using random Red opponent modes (easy/medium/hard random), policy_mapping_fn stores
+        # the chosen variant in episode.user_data["red_variant"]. Surface it as custom_metrics so
+        # we can print a per-iteration distribution in on_train_result.
+        try:
+            ud = getattr(episode, "user_data", None)
+            if isinstance(ud, dict):
+                v = ud.get("red_variant")
+                if isinstance(v, str) and v:
+                    cm[f"red_variant/{v}"] = 1.0
+        except Exception:
+            pass
+
     def on_train_result(self, *, algorithm, metrics_logger=None, result=None, **kwargs):
         if result is None:
             return
@@ -483,13 +496,11 @@ class DynamicPyQuaticusCallbacks(DefaultCallbacks):
         result["matchup_distribution"] = {
             k: float(cm.get(f"{k}/win_mean", 0.0)) for k in sorted(prefixes)
         }
-        # Only print on checkpoint cadence (same as main loop: i>0 and i%save_every==0), or SAVE_NOW.
+        # Only print on checkpoint cadence (same as main loop: i>0 and i%save_every==0).
+        # Keep console output uncluttered by avoiding per-iter prints.
         loop_i = getattr(algorithm, "_matchup_train_loop_i", None)
         se = max(1, int(getattr(algorithm, "_matchup_save_every", 5) or 5))
-        force = bool(getattr(algorithm, "_matchup_force_print", False))
-        should_print = force or (
-            loop_i is not None and loop_i > 0 and loop_i % se == 0
-        )
+        should_print = (loop_i is not None and loop_i > 0 and loop_i % se == 0)
         if not should_print:
             return
         if prefixes:
@@ -504,6 +515,17 @@ class DynamicPyQuaticusCallbacks(DefaultCallbacks):
             )
         else:
             print("matchup stats this iter (0 types)", file=sys.stderr, flush=True)
+
+        # Print which random Red variant we trained against this iter (fractions over episodes).
+        red_vars = []
+        for k in cm:
+            if isinstance(k, str) and k.startswith("red_variant/") and k.endswith("_mean"):
+                red_vars.append(k)
+        if red_vars:
+            parts = " ".join(
+                f"{k[len('red_variant/'):-len('_mean')]}={float(cm.get(k, 0.0)):.2f}" for k in sorted(red_vars)
+            )
+            print(f"red random opponent this iter (episode_frac): {parts}", file=sys.stderr, flush=True)
 
 def _int_action(action):
     if isinstance(action, (list, tuple)):
