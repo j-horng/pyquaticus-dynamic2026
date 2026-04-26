@@ -183,3 +183,22 @@ Iter 330: return_mean=12.19, entropy=3.0550, policy_loss=-0.0333, time=88.3s/ite
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_330
 Iter 335: return_mean=12.29, entropy=3.0788, policy_loss=-0.0263, time=87.8s/iter (est. ~4388s per 50 iters)
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: easy_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: easy_random (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: easy_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: easy_random (current args). Blue weights restored from checkpoint.
+Iter 340: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.0s/iter (est. ~101s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_340
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: easy_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: easy_random (current args). Blue weights restored from checkpoint.
+Iter 340: return_mean=-60.47, entropy=3.2184, policy_loss=-0.0137, time=131.9s/iter (est. ~6595s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_340

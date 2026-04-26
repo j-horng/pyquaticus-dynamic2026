@@ -1519,8 +1519,29 @@ def main():
                     else:
                         variant = "easy_attack"
                     tier, sub = variant.split("_", 1)
-                    return f"red_{tier}_{sub}_{slot}"
-                return f"red_heuristic_{slot}"
+                    pid = f"red_{tier}_{sub}_{slot}"
+                    # Guard against mismatches between mapping and worker policy map.
+                    try:
+                        pm = getattr(worker, "policy_map", None)
+                        keys = list(pm.keys()) if pm is not None else []
+                    except Exception:
+                        keys = []
+                    if keys and pid not in keys:
+                        pref = f"red_{tier}_{sub}_"
+                        for k in keys:
+                            if isinstance(k, str) and k.startswith(pref):
+                                pid = k
+                                break
+                    return pid
+                pid = f"red_heuristic_{slot}"
+                try:
+                    pm = getattr(worker, "policy_map", None)
+                    keys = list(pm.keys()) if pm is not None else []
+                except Exception:
+                    keys = []
+                if keys and pid not in keys:
+                    pid = "red_heuristic_0"
+                return pid
         if args.red_heuristic:
             if agent_id in RED_AGENT_IDS:
                 slot = _red_slot_id(agent_id)
@@ -1628,7 +1649,7 @@ def main():
                 POLICIES[f"RedHeuristic_{desc}_{slot}"] = rp
             policies[f"red_heuristic_{slot}"] = (rp, obs_space_red, act_space, {})
         log(f"Red team using generator heuristic: {desc}.")
-    if args.red_heuristic:
+    elif args.red_heuristic:
         from pyquaticus.base_policies.base_policy_wrappers import CombinedGen
         mode = args.red_heuristic_mode
         policies = {"blue_policy": (None, obs_space_blue, act_space, {})}
