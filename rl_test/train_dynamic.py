@@ -613,6 +613,37 @@ def _run_watch(args):
     red_heuristics = {}
     red_ckpt_policy = None
     noop = len(ACTION_MAP) - 1
+    red_random_pool = None
+
+    def _pick_red_random_pool():
+        if getattr(args, "red_easy_random", False):
+            return [
+                ("easy_attack", BaseAttacker, {"mode": "easy"}),
+                ("easy_defend", BaseDefender, {"mode": "easy"}),
+                ("easy_combined", Heuristic_CTF_Agent, {"mode": "easy"}),
+            ]
+        if getattr(args, "red_medium_random", False):
+            return [
+                ("medium_attack", BaseAttacker, {"mode": "medium"}),
+                ("medium_defend", BaseDefender, {"mode": "medium"}),
+                ("medium_combined", Heuristic_CTF_Agent, {"mode": "medium"}),
+            ]
+        if getattr(args, "red_hard_random", False):
+            return [
+                ("hard_attack", BaseAttacker, {"mode": "hard"}),
+                ("hard_defend", BaseDefender, {"mode": "hard"}),
+                ("hard_combined", Heuristic_CTF_Agent, {"mode": "hard"}),
+            ]
+        return None
+
+    def _reroll_red_heuristics_for_episode():
+        """When using --red-*-random, pick one variant per episode (at each env.reset())."""
+        nonlocal red_heuristics
+        if not red_random_pool:
+            return None
+        chosen_name, chosen_cls, chosen_kw = random.choice(red_random_pool)
+        red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
+        return chosen_name
 
     if args.red_heuristic:
         red_heuristics = {
@@ -620,16 +651,8 @@ def _run_watch(args):
         }
         print(f"Watch: Red heuristic (combined CTF, {args.red_heuristic_mode}).")
     elif getattr(args, "red_easy_random", False) or getattr(args, "red_medium_random", False) or getattr(args, "red_hard_random", False):
-        # Pick one variant per episode (attack/defend/combined) at each env.reset().
-        # We don't need per-agent variety; goal is to randomize the *opponent type* each episode.
-        if getattr(args, "red_easy_random", False):
-            pool = [("easy_attack", BaseAttacker, {"mode": "easy"}), ("easy_defend", BaseDefender, {"mode": "easy"}), ("easy_combined", Heuristic_CTF_Agent, {"mode": "easy"})]
-        elif getattr(args, "red_medium_random", False):
-            pool = [("medium_attack", BaseAttacker, {"mode": "medium"}), ("medium_defend", BaseDefender, {"mode": "medium"}), ("medium_combined", Heuristic_CTF_Agent, {"mode": "medium"})]
-        else:
-            pool = [("hard_attack", BaseAttacker, {"mode": "hard"}), ("hard_defend", BaseDefender, {"mode": "hard"}), ("hard_combined", Heuristic_CTF_Agent, {"mode": "hard"})]
-        chosen_name, chosen_cls, chosen_kw = random.choice(pool)
-        red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
+        red_random_pool = _pick_red_random_pool()
+        chosen_name = _reroll_red_heuristics_for_episode()
         print(f"Watch: Red randomized each episode among attack/defend/combined -> chosen {chosen_name}.")
     elif getattr(args, "red_easy_attack", False):
         red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="easy") for aid in red_ids}
@@ -767,6 +790,13 @@ def _run_watch(args):
                     f"Blue caps {cb} Red caps {cr} ({winner}) | "
                     f"grabs B/R {gb}/{gr} tags B/R {tb}/{tr}"
                 )
+                # Match training behavior: if --red-*-random, reroll opponent type per episode.
+                if red_random_pool:
+                    chosen_name = _reroll_red_heuristics_for_episode()
+                    print(
+                        f"Watch: Red randomized each episode among attack/defend/combined -> chosen {chosen_name}.",
+                        flush=True,
+                    )
                 obs, info = env.reset()
                 step = 0
     except KeyboardInterrupt:
