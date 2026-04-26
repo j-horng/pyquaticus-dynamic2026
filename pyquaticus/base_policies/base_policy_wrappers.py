@@ -391,7 +391,7 @@ def _remap_discrete_speed(policy_obj, act, desired_speed_frac: float):
 
 
 def EasyAttackGen(agent_id, env, *args, **kwargs):
-    """Easy Attack — BaseAttacker easy + speed 0.25 + 30% random actions."""
+    """Easy Attack — BaseAttacker easy + slower speed + 30% random actions."""
 
     class EasyAttackPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -411,7 +411,8 @@ def EasyAttackGen(agent_id, env, *args, **kwargs):
                     actions.append(ra)
                     continue
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.25)
+                # Keep easy attackers slower (esp. under NRL full-speed-only map).
+                act = _remap_discrete_speed(self.policy, act, 0.4)
                 actions.append(act)
             return actions, [], {}
 
@@ -423,7 +424,7 @@ def EasyAttackGen(agent_id, env, *args, **kwargs):
 
 
 def EasyDefendGen(agent_id, env, *args, **kwargs):
-    """Easy Defend — BaseDefender easy + speed 0.25 + 30% random actions."""
+    """Easy Defend — BaseDefender easy + speed 0.4 + 30% random actions."""
 
     class EasyDefendPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -443,7 +444,7 @@ def EasyDefendGen(agent_id, env, *args, **kwargs):
                     actions.append(ra)
                     continue
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.25)
+                act = _remap_discrete_speed(self.policy, act, 0.4)
                 actions.append(act)
             return actions, [], {}
 
@@ -481,7 +482,7 @@ def EasyCombinedGen(agent_id, env, *args, **kwargs):
 
 
 def MediumAttackGen(agent_id, env, *args, **kwargs):
-    """Medium Attack — BaseAttacker medium + speed 0.8 + no randomness."""
+    """Medium Attack — BaseAttacker medium + speed 0.6 + no randomness."""
 
     class MediumAttackPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -497,7 +498,7 @@ def MediumAttackGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.8)
+                act = _remap_discrete_speed(self.policy, act, 0.6)
                 actions.append(act)
             return actions, [], {}
 
@@ -509,7 +510,7 @@ def MediumAttackGen(agent_id, env, *args, **kwargs):
 
 
 def MediumDefendGen(agent_id, env, *args, **kwargs):
-    """Medium Defend — BaseDefender medium + speed 0.8 + no randomness."""
+    """Medium Defend — BaseDefender medium + speed 0.6 + no randomness."""
 
     class MediumDefendPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -525,7 +526,7 @@ def MediumDefendGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.8)
+                act = _remap_discrete_speed(self.policy, act, 0.6)
                 actions.append(act)
             return actions, [], {}
 

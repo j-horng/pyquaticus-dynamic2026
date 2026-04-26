@@ -609,6 +609,33 @@ def _run_watch(args):
         chosen_name, chosen_cls, chosen_kw = random.choice(pool)
         red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
         print(f"Watch: Red randomized each episode among attack/defend/combined -> chosen {chosen_name}.")
+    elif getattr(args, "red_easy_attack", False):
+        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="easy") for aid in red_ids}
+        print("Watch: Red easy-attack heuristic (BaseAttacker easy).")
+    elif getattr(args, "red_easy_defend", False):
+        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="easy") for aid in red_ids}
+        print("Watch: Red easy-defend heuristic (BaseDefender easy).")
+    elif getattr(args, "red_easy_combined", False):
+        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="easy") for aid in red_ids}
+        print("Watch: Red easy-combined heuristic (Heuristic_CTF_Agent easy).")
+    elif getattr(args, "red_medium_attack", False):
+        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="medium") for aid in red_ids}
+        print("Watch: Red medium-attack heuristic (BaseAttacker medium).")
+    elif getattr(args, "red_medium_defend", False):
+        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="medium") for aid in red_ids}
+        print("Watch: Red medium-defend heuristic (BaseDefender medium).")
+    elif getattr(args, "red_medium_combined", False):
+        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="medium") for aid in red_ids}
+        print("Watch: Red medium-combined heuristic (Heuristic_CTF_Agent medium).")
+    elif getattr(args, "red_hard_attack", False):
+        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red hard-attack heuristic (BaseAttacker hard).")
+    elif getattr(args, "red_hard_defend", False):
+        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red hard-defend heuristic (BaseDefender hard).")
+    elif getattr(args, "red_hard_combined", False):
+        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="hard") for aid in red_ids}
+        print("Watch: Red hard-combined heuristic (Heuristic_CTF_Agent hard).")
     elif args.red_from_checkpoint:
         red_path = _resolve_blue_policy_path(args.red_from_checkpoint)
         if os.path.isdir(red_path):

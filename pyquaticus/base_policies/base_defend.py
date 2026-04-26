@@ -85,234 +85,96 @@ class BaseDefender(BaseAgentPolicy):
         """
         self.update_state(obs, info)
 
+        if self.mode == "nothing":
+            return self.action_from_vector(None, 0)
+
         global_state = info[self.id]["global_state"]
         if not isinstance(global_state, dict):
             global_state = self.state_normalizer.unnormalized(global_state)
 
-        if self.mode == "easy":
+        # Treat competition_* as hard for this simplified "pure defend" defender.
+        effective_mode = self.mode if self.mode in ("easy", "medium", "hard") else "hard"
 
-            # If far away from the flag, move towards it
-            if self.my_flag_distance > (self.flag_keepout + self.catch_radius + 1.0):
-                return self.action_from_vector(self.my_flag_loc, 0.25)
+        if effective_mode == "easy":
+            spd = 0.4
+            react_thresh = 20.0
+        elif effective_mode == "medium":
+            spd = 0.6
+            react_thresh = 40.0
+        else:
+            spd = 1.0
+            react_thresh = float("inf")
 
-            # If too close to the flag, move away
-            else:
-                return self.action_from_vector(-1 * self.my_flag_loc, 0.25)
-
-        elif self.mode == "nothing":
-            return self.action_from_vector(None, 0)
-
-        elif self.mode == "competition_easy":
-
-            assert self.aquaticus_field_points is not None
-
-            if self.team == Team.RED_TEAM:
-                estimated_position = np.asarray(
-                    [
-                        self.wall_distances[1],
-                        self.wall_distances[0],
-                    ]
-                )
-            else:
-                estimated_position = np.asarray(
-                    [
-                        self.wall_distances[3],
-                        self.wall_distances[2],
-                    ]
-                )
-
-            value = self.goal
-
-            if self.team == Team.BLUE_TEAM:
-                if "P" in self.goal:
-                    value = "S" + value[1:]
-                elif "S" in self.goal:
-                    value = "P" + value[1:]
-                if "X" not in self.goal and self.goal not in ["SC", "CC", "PC"]:
-                    value += "X"
-                elif self.goal not in ["SC", "CC", "PC"]:
-                    value = value[:-1]
-            if self.is_tagged:
-                self.goal = "SC"
-            if dist(estimated_position, self.aquaticus_field_points[value]) <= 2.5:
-                if self.goal == "SM":
-                    self.goal = "PM"
+        # If opponent has our flag, chase aggressively at full speed regardless of mode.
+        if self.opp_team_has_flag:
+            # Easy defenders should be clearly beatable: don't instantly full-send after the carrier
+            # from anywhere on the map. Only pursue if the carrier is fairly close; otherwise patrol.
+            if effective_mode == "easy":
+                carrier = None
+                carrier_dist = float("inf")
+                for enem, pos in getattr(self, "opp_team_pos_dict", {}).items():
+                    try:
+                        has_flag = bool(global_state.get((enem, "has_flag"), 0.0))
+                    except Exception:
+                        has_flag = False
+                    if not has_flag:
+                        continue
+                    d = float(pos[0])
+                    if d < carrier_dist:
+                        carrier_dist = d
+                        carrier = np.asarray(dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64)
+                # If we can't identify the carrier, fall back to patrolling.
+                if carrier is not None and carrier_dist <= 60.0:
+                    my_action = carrier
+                    desired_speed = spd
                 else:
-                    self.goal = "SM"
-
-            return self.goal
-
-        elif self.mode == "competition_medium":
-
-            assert self.aquaticus_field_points is not None
-
-            my_flag_vec = rel_bearing_to_local_unit_rect(self.my_flag_bearing)
-
-            # Check if opponents are on teams side
-            min_enemy_distance = 1000.00
-            enemy_dis_dict = {}
-            closest_enemy = None
-            enemy_loc = None
-            for enem, pos in self.opp_team_pos_dict.items():
-                enemy_dis_dict[enem] = pos[0]
-                if (
-                    pos[0] < min_enemy_distance
-                    and not global_state[(enem, "is_tagged")]
-                    and global_state[(enem, "on_side")] == 0
-                ):
-                    min_enemy_distance = pos[0]
-                    closest_enemy = enem
-                    enemy_loc = dist_rel_bearing_to_local_rect(pos[0], pos[1])
-
-            # If the opposing team doesn't have the flag, guard it
-            if self.opp_team_has_flag:
-                # If the opposing team has the flag, chase them
-                ag_vect = my_flag_vec
-            elif closest_enemy is not None:
-                ag_vect = enemy_loc
+                    my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
+                    desired_speed = spd
             else:
-                if self.team == Team.RED_TEAM:
-                    estimated_position = np.asarray(
-                        [
-                            self.wall_distances[1],
-                            self.wall_distances[0],
-                        ]
-                    )
-                else:
-                    estimated_position = np.asarray(
-                        [
-                            self.wall_distances[3],
-                            self.wall_distances[2],
-                        ]
-                    )
-                point = "CH" if self.team == Team.RED_TEAM else "CHX"
-                if (
-                    dist(
-                        estimated_position,
-                        self.aquaticus_field_points[point],
-                    )
-                    <= 2.5
-                ):
-                    from pyquaticus.config import ACTION_MAP
-                    return len(ACTION_MAP) - 1
-                else:
-                    return "CH"
+                my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
+                # Medium should not suddenly become "hard speed" just because the opponent has the flag.
+                desired_speed = 1.0 if effective_mode == "hard" else spd
+        else:
+            # Always prioritize chasing nearest untagged opponent on our side.
+            nearest = None
+            nearest_dist = float("inf")
+            for enem, pos in getattr(self, "opp_team_pos_dict", {}).items():
+                try:
+                    on_our_side = float(global_state.get((enem, "on_side"), 1.0)) == 0.0
+                    is_tagged = bool(global_state.get((enem, "is_tagged"), 0.0))
+                except Exception:
+                    on_our_side, is_tagged = False, False
+                if (not on_our_side) or is_tagged:
+                    continue
+                d = float(pos[0])
+                if d < nearest_dist:
+                    nearest_dist = d
+                    nearest = np.asarray(dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64)
 
-            return self.action_from_vector(ag_vect, 1)
-
-        elif self.mode == "medium":
-
-            # If opposing team has the flag, chase them
-            if self.opp_team_has_flag:
-                return self.action_from_vector(self.my_flag_loc, 0.8)
+            if nearest is not None and nearest_dist <= react_thresh:
+                my_action = nearest
+                desired_speed = spd
             else:
-                # If far away from the flag, move towards it
-                if self.my_flag_distance > (
-                    self.flag_keepout + self.catch_radius + 1.0
-                ):
-                    return self.action_from_vector(self.my_flag_loc, 0.8)
-
-                # If too close to the flag, move away
+                # Patrol between flag and scrimmage line (approx): hover near flag, then push outward.
+                if self.my_flag_distance > (self.flag_keepout + self.catch_radius + 5.0):
+                    my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
                 else:
-                    return self.action_from_vector(-1 * self.my_flag_loc, 0.8)
+                    my_action = np.asarray(-1.0 * self.my_flag_loc, dtype=np.float64)
+                desired_speed = spd
 
-        elif self.mode == "hard":
+        # OOB avoidance for both (exact per-task snippet).
+        wall_pos = []
+        for wd, wb in zip(getattr(self, "wall_distances", []), getattr(self, "wall_bearings", [])):
+            if float(wd) < 8 and (-90 < float(wb) < 90):
+                wall_pos.append((float(wd), float(wb)))
+        if wall_pos:
+            avoid = get_avoid_vect(wall_pos, avoid_threshold=8.0)
+            my_action = my_action + avoid
 
-            # If I'm close to a wall, add the closest point to the wall as an obstacle to avoid
-            wall_pos = []
-            if self.wall_distances[0] < 7 and (-90 < self.wall_bearings[0] < 90):
-                wall_pos.append(
-                    (
-                        self.wall_distances[0],
-                        self.wall_bearings[0],
-                    )
-                )
-            elif self.wall_distances[2] < 7 and (-90 < self.wall_bearings[2] < 90):
-                wall_pos.append(
-                    (
-                        self.wall_distances[2],
-                        self.wall_bearings[2],
-                    )
-                )
-            if self.wall_distances[1] < 7 and (-90 < self.wall_bearings[1] < 90):
-                wall_pos.append(
-                    (
-                        self.wall_distances[1],
-                        self.wall_bearings[1],
-                    )
-                )
-            elif self.wall_distances[3] < 7 and (-90 < self.wall_bearings[3] < 90):
-                wall_pos.append(
-                    (
-                        self.wall_distances[3],
-                        self.wall_bearings[3],
-                    )
-                )
-
-            defense_perim = 5 * self.flag_keepout
-            # Get nearest untagged enemy:
-            min_enemy_distance = 1000.00
-            enemy_dis_dict = {}
-            closest_enemy = None
-            enemy_loc = np.asarray((0, 0))
-            for enem, pos in self.opp_team_pos_dict.items():
-                enemy_dis_dict[enem] = pos[0]
-                if (
-                    pos[0] < min_enemy_distance
-                    and not global_state[(enem, "is_tagged")]
-                ):
-                    min_enemy_distance = pos[0]
-                    closest_enemy = enem
-                    enemy_loc = dist_rel_bearing_to_local_rect(pos[0], pos[1])
-
-            if closest_enemy is None:
-                closest_enemy = min(enemy_dis_dict, key=enemy_dis_dict.__getitem__)
-                enemy_loc = dist_rel_bearing_to_local_rect(
-                    self.opp_team_pos_dict[closest_enemy][0],
-                    self.opp_team_pos_dict[closest_enemy][1],
-                )
-
-            if not self.opp_team_has_flag:
-                enemy_dist_2_flag = dist(np.array(self.my_flag_loc), enemy_loc)
-                unit_flag_enemy = unit_vect_between_points(
-                    np.array(self.my_flag_loc), enemy_loc
-                )
-                defend_pt = self.my_flag_loc + (enemy_dist_2_flag / 2) * unit_flag_enemy
-
-                defend_pt_flag_dist = dist(defend_pt, np.array(self.my_flag_loc))
-                unit_def_flag = unit_vect_between_points(
-                    np.array(self.my_flag_loc), defend_pt
-                )
-
-                if (
-                    enemy_dist_2_flag > defense_perim
-                    or global_state[(closest_enemy, "is_tagged")]
-                ):
-                    if (
-                        defend_pt_flag_dist > defense_perim
-                        or global_state[(closest_enemy, "is_tagged")]
-                    ):
-                        guide_pt = [
-                            self.my_flag_loc[0] + (unit_def_flag[0] * defense_perim),
-                            self.my_flag_loc[1] + (unit_def_flag[1] * defense_perim),
-                        ]
-                    else:
-                        guide_pt = defend_pt
-                else:
-                    guide_pt = enemy_loc
-
-                ag_vect = guide_pt
-
-            else:
-                ag_vect = rel_bearing_to_local_unit_rect(self.my_flag_bearing)
-
-            if len(wall_pos) > 0:
-                ag_vect = ag_vect + get_avoid_vect(wall_pos)
-
-            return self.action_from_vector(ag_vect, 1)
+        return self.action_from_vector(my_action, desired_speed)
 
     def action_from_vector(self, vector, desired_speed_normalized):
-        if desired_speed_normalized == 0:
+        if desired_speed_normalized == 0 or vector is None:
             if self.continuous:
                 return (0, 0)
             else:

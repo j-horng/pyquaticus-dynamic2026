@@ -41,6 +41,9 @@ class BaseAgentPolicy:
         suppress_numpy_warnings=True,
     ):
         self.id = agent_id
+        # Used to approximate "slow speed" when discrete action map has only one nonzero speed
+        # (e.g., NRL full-speed-only). This avoids fully random stutter behavior.
+        self._discrete_move_accum = 0.0
 
         if self.id in env.agent_ids_of_team[Team.BLUE_TEAM]:
             self.team = Team.BLUE_TEAM
@@ -91,8 +94,9 @@ class BaseAgentPolicy:
             return int(no_op)
 
         # If the action map only contains a single nonzero speed (e.g. NRL: full-speed only),
-        # approximate "slower" speeds by occasionally emitting a no-op.
-        # This preserves the requested difficulty spread even when discrete speed control is absent.
+        # approximate "slower" speeds by emitting no-op at a *controlled cadence*.
+        # This preserves the requested difficulty spread even when discrete speed control is absent,
+        # without making the policy look randomly indecisive.
         try:
             speeds = {float(s) for (s, _h) in ACTION_MAP[:-1]}
         except Exception:
@@ -101,8 +105,12 @@ class BaseAgentPolicy:
             only_spd = next(iter(speeds))
             if only_spd > 0.0 and desired_speed_frac < only_spd:
                 p_move = max(0.0, min(1.0, float(desired_speed_frac) / only_spd))
-                if np.random.random() > p_move:
+                # Accumulator: add p_move each step; move whenever it crosses 1.0.
+                # Example: p_move=0.5 => move every other step; p_move=0.75 => move 3 of 4 steps.
+                self._discrete_move_accum = float(self._discrete_move_accum) + float(p_move)
+                if self._discrete_move_accum < 1.0:
                     return int(no_op)
+                self._discrete_move_accum -= 1.0
 
         target_h = self._wrap_angle180(rel_bearing_deg)
         best_i = 0

@@ -270,36 +270,30 @@ def caps_and_grabs(
                 if REWARD_DEBUG:
                     print(f"[REWARD] {agent_id} capture individual: +1.00")
 
-    # When recharging tagging (cannot tag until cooldown reaches tagging_cooldown), encourage
-    # moving toward the opponent flag instead of idling. See env: agent can tag iff
-    # agent_tagging_cooldown == tagging_cooldown.
     cd = float(state["agent_tagging_cooldown"][agent_index])
     if (
         cd < tagging_cooldown
         and state["agent_has_flag"][agent_index] == 0
         and state["agent_is_tagged"][agent_index] == 0
     ):
-        opp_team = 1 - int(team)
-        opp_flag_curr = np.asarray(state["flag_position"][opp_team], dtype=np.float64)
         pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
         prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
-
-        # Progress shaping should not be "free" when the flag itself moves (e.g. carried).
-        # Measure progress toward a fixed target position (current flag position).
-        curr_dist = np.linalg.norm(pos - opp_flag_curr)
-        prev_dist = np.linalg.norm(prev_pos - opp_flag_curr)
-        delta = prev_dist - curr_dist
-
-        # Require some translation to avoid rewarding pure heading changes / numerical jitter.
-        moved = float(np.linalg.norm(pos - prev_pos))
-        agent_on_own_side = bool(state["agent_on_sides"][agent_index])
-        if delta > 0 and moved > 1e-3 and (not agent_on_own_side):
-            field_diag = float(np.linalg.norm(env_size))
-            if field_diag > 0:
-                r = 0.3 * delta / field_diag
-                reward += r
-                if REWARD_DEBUG:
-                    print(f"[REWARD] {agent_id} cooldown aggression: +{r:.4f}")
+        # Reward once when agent crosses the 3/4 map threshold into enemy territory while on cooldown.
+        # 3/4 of field width means agent is 75% across the map toward the enemy side.
+        field_w = float(env_size[0])
+        pos_x = float(pos[0])
+        prev_pos_x = float(prev_pos[0])
+        threshold_x = 0.75 * field_w
+        # Blue is on left side (x=0), enemy flag is on right side (x=field_w).
+        # Flip for red team (team 1).
+        if int(team) == 0:
+            crossed = prev_pos_x < threshold_x <= pos_x
+        else:
+            crossed = prev_pos_x > (field_w - threshold_x) >= pos_x
+        if crossed:
+            reward += 0.5
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} cooldown deep push: +0.50")
 
     return reward
 
