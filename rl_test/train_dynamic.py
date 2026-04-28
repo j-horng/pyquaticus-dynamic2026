@@ -540,8 +540,9 @@ def _run_watch(args):
     logging.basicConfig(level=logging.ERROR)
     ray.init(ignore_reinit_error=True)
 
+    import pyquaticus.utils.rewards as rew
+
     if getattr(args, "reward_debug", False):
-        import pyquaticus.utils.rewards as rew
         rew.REWARD_DEBUG = True
 
     team_max = int(args.team_size_max)
@@ -598,6 +599,20 @@ def _run_watch(args):
         raise
 
     dynamic_env = _get_dynamic_pyquaticus(env)
+    dynamic_env.render_reward_thresholds = True
+    dynamic_env.render_idle_dist_thresh_m = float(getattr(rew, "IDLE_DIST_THRESH", 0.0))
+    dynamic_env.render_circle_dist_thresh_m = float(getattr(rew, "CIRCLE_DIST_THRESH", 0.0))
+    dynamic_env.render_circle_heading_delta_deg = float(getattr(rew, "CIRCLE_HEADING_DELTA_DEG", 0.0))
+    dynamic_env.render_idle_grace_steps = int(getattr(rew, "IDLE_GRACE_STEPS", 0))
+    dynamic_env.render_circle_grace_steps = int(getattr(rew, "CIRCLE_GRACE_STEPS", 0))
+    print(
+        "Watch: reward threshold overlays ON "
+        f"(idle<{dynamic_env.render_idle_dist_thresh_m:.2f}m, "
+        f"circle<{dynamic_env.render_circle_dist_thresh_m:.2f}m with "
+        f"heading change>{dynamic_env.render_circle_heading_delta_deg:.0f}deg; "
+        f"grace: idle={dynamic_env.render_idle_grace_steps} steps, "
+        f"circle={dynamic_env.render_circle_grace_steps} steps)."
+    )
     blue_ids = [f"agent_{i}" for i in range(team_max)]
     red_ids = [f"agent_{i}" for i in range(team_max, 2 * team_max)]
 

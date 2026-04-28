@@ -4196,6 +4196,21 @@ when gps environment bounds are specified in meters"
         # Background
         self.screen.blit(self.pygame_background_img, (0, 0))
 
+        if getattr(self, "render_reward_thresholds", False):
+            if not hasattr(self, "reward_overlay_font"):
+                self.reward_overlay_font = pygame.font.SysFont(None, 20)
+            idle_m = float(getattr(self, "render_idle_dist_thresh_m", 0.0))
+            circle_m = float(getattr(self, "render_circle_dist_thresh_m", 0.0))
+            idle_grace = int(getattr(self, "render_idle_grace_steps", 0))
+            circle_grace = int(getattr(self, "render_circle_grace_steps", 0))
+            legend_text = (
+                f"Blue reward thresholds: idle<{idle_m:.2f}m (purple), "
+                f"circle<{circle_m:.2f}m + turn>{float(getattr(self, 'render_circle_heading_delta_deg', 0.0)):.0f}deg (orange), "
+                f"grace idle/circle={idle_grace}/{circle_grace} steps"
+            )
+            legend = self.reward_overlay_font.render(legend_text, True, (20, 20, 20))
+            self.screen.blit(legend, (12, 10))
+
         # Flags
         for team in self.agents_of_team:
             team_idx = int(team)
@@ -4268,6 +4283,19 @@ when gps environment bounds are specified in meters"
 
             for player in teams_players:
                 blit_pos = self.env_to_screen(player.pos)
+
+                if getattr(self, "render_reward_thresholds", False) and team == Team.BLUE_TEAM:
+                    # Movement thresholds are often smaller than agent radius, so draw them
+                    # as offsets outside the rendered hull to keep rings visible.
+                    idle_px = int(round(float(getattr(self, "render_idle_dist_thresh_m", 0.0)) * self.pixel_size))
+                    circle_px = int(round(float(getattr(self, "render_circle_dist_thresh_m", 0.0)) * self.pixel_size))
+                    base_px = int(round(float(self.agent_render_radius[player.idx])))
+                    idle_draw_radius = max(base_px + 2, base_px + idle_px)
+                    circle_draw_radius = max(idle_draw_radius + 2, base_px + circle_px)
+                    if circle_px > 0:
+                        draw.circle(self.screen, (255, 140, 0), blit_pos, radius=circle_draw_radius, width=2)
+                    if idle_px > 0:
+                        draw.circle(self.screen, (160, 32, 240), blit_pos, radius=idle_draw_radius, width=2)
 
                 # lidar
                 if self.lidar_obs and self.render_lidar_mode:

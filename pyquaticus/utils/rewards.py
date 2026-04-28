@@ -165,6 +165,18 @@ from pyquaticus.utils.utils import *
 
 # Set to True to print reward events to console during deployment/rendering
 REWARD_DEBUG = False
+TAGGED_PENALTY = -0.75
+IDLE_STEP_PENALTY = -0.002
+CIRCLE_STEP_PENALTY = -0.003
+IDLE_DIST_THRESH = 0.15
+CIRCLE_DIST_THRESH = 0.60
+CIRCLE_HEADING_DELTA_DEG = 35.0
+# With default tau=0.1s and sim_speedup_factor=1, 20 steps ~= 2 seconds.
+IDLE_GRACE_STEPS = 20
+CIRCLE_GRACE_STEPS = 20
+
+_IDLE_STREAK_STEPS = {}
+_CIRCLE_STREAK_STEPS = {}
 
 ### Example Reward Funtion ###
 def example_reward(
@@ -197,6 +209,7 @@ def caps_and_grabs(
     max_speeds: list,
     tagging_cooldown: float
 ):
+    global _IDLE_STREAK_STEPS, _CIRCLE_STREAK_STEPS
     reward = 0.0
     
     #----------
@@ -214,18 +227,59 @@ def caps_and_grabs(
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
-        reward += -2.0
+        reward += -3.0
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} OOB: -2.00")
+            print(f"[REWARD] {agent_id} OOB: -3.00")
+
+    pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
+    prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
+    step_dist = float(np.linalg.norm(pos - prev_pos))
+    idle_streak = _IDLE_STREAK_STEPS.get(agent_id, 0)
+    if step_dist < IDLE_DIST_THRESH:
+        idle_streak += 1
+        _IDLE_STREAK_STEPS[agent_id] = idle_streak
+    else:
+        _IDLE_STREAK_STEPS[agent_id] = 0
+    if idle_streak >= IDLE_GRACE_STEPS:
+        reward += IDLE_STEP_PENALTY
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} idle step: {IDLE_STEP_PENALTY:+.4f} (streak={idle_streak})")
+
+    heading_now = float(np.asarray(state["agent_heading"][agent_index]).item())
+    heading_prev = float(np.asarray(prev_state["agent_heading"][agent_index]).item())
+    heading_delta = abs(((heading_now - heading_prev + 180.0) % 360.0) - 180.0)
+    circle_streak = _CIRCLE_STREAK_STEPS.get(agent_id, 0)
+    if step_dist < CIRCLE_DIST_THRESH and heading_delta > CIRCLE_HEADING_DELTA_DEG:
+        circle_streak += 1
+        _CIRCLE_STREAK_STEPS[agent_id] = circle_streak
+    else:
+        _CIRCLE_STREAK_STEPS[agent_id] = 0
+    if circle_streak >= CIRCLE_GRACE_STEPS:
+        reward += CIRCLE_STEP_PENALTY
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} circle step: {CIRCLE_STEP_PENALTY:+.4f} (streak={circle_streak})")
+
+    prev_is_tagged = bool(np.asarray(prev_state["agent_is_tagged"][agent_index]).item())
+    is_tagged = bool(np.asarray(state["agent_is_tagged"][agent_index]).item())
+    if (not prev_is_tagged) and is_tagged:
+        reward += TAGGED_PENALTY
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} got tagged: {TAGGED_PENALTY:+.2f}")
 
     # Reward for tagging an opponent
     if state["agent_made_tag"][agent_index] is not None:
-        reward += 0.25
+        reward += 0.75
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} tagged opponent: +0.25")
+            print(f"[REWARD] {agent_id} tagged opponent: +0.75")
 
-    # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
-    # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
+    # Bonus for tagging the flag carrier
+    tagged_idx = state["agent_made_tag"][agent_index]
+    if tagged_idx is not None and bool(state["agent_has_flag"][tagged_idx]):
+        reward += 1.0
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} tagged flag carrier bonus: +1.00")
+
+    # Note: this function now adds a separate bonus for tagging the flag carrier.
 
     # Check if agents lost or gained flag (0/1 or bool from env state).
     prev_has_flag = prev_state["agent_has_flag"][agent_index]
@@ -244,9 +298,9 @@ def caps_and_grabs(
                 print(f"[REWARD] {agent_id} lost flag: -1.00")
     # Agent grabbed flag individually
     if has_flag_now and not had_flag_before:
-        reward += 0.5
+        reward += 1.0
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} grabbed flag: +0.50")
+            print(f"[REWARD] {agent_id} grabbed flag: +1.00")
 
     # Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)].
     # Full per-agent credit (no team_size scaling).
@@ -260,15 +314,15 @@ def caps_and_grabs(
         if num_caps > prev_num_caps:
             # Capture reward: +0.5 team-wide for the capturing team, plus +1 individual
             # for the agent that was carrying the flag at capture time.
-            r_team = 0.5 if t == int(team) else -0.5
+            r_team = 1.0 if t == int(team) else -1.5
             reward += r_team
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} capture team (team {t}): {r_team:+.2f}")
 
             if t == int(team) and had_flag_before:
-                reward += 1.0
+                reward += 1.5
                 if REWARD_DEBUG:
-                    print(f"[REWARD] {agent_id} capture individual: +1.00")
+                    print(f"[REWARD] {agent_id} capture individual: +1.50")
 
     cd = float(state["agent_tagging_cooldown"][agent_index])
     if (
@@ -276,8 +330,6 @@ def caps_and_grabs(
         and state["agent_has_flag"][agent_index] == 0
         and state["agent_is_tagged"][agent_index] == 0
     ):
-        pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
-        prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
         # Reward once when agent crosses the 3/4 map threshold into enemy territory while on cooldown.
         # 3/4 of field width means agent is 75% across the map toward the enemy side.
         field_w = float(env_size[0])
@@ -295,6 +347,42 @@ def caps_and_grabs(
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} cooldown deep push: +0.50")
 
+    agent_on_own_side = bool(state["agent_on_sides"][agent_index])
+    # Shared evasion: find nearest active opponent distance delta
+    _evasion_active = (
+        (not agent_on_own_side and not has_flag_now and not bool(state["agent_is_tagged"][agent_index]))
+        or
+        (has_flag_now and not bool(state["agent_is_tagged"][agent_index]))
+    )
+    _can_tag_now = cd >= float(tagging_cooldown)
+    if _evasion_active and _can_tag_now:
+        field_diag = float(np.linalg.norm(env_size))
+        min_curr_dist = float("inf")
+        min_prev_dist = float("inf")
+        for opp_idx in agent_inds_of_team.get(Team.RED_TEAM, []):
+            opp_disabled = state.get("disabled_agents")
+            if opp_disabled is not None and len(opp_disabled) > opp_idx and bool(opp_disabled[opp_idx]):
+                continue
+            opp_pos = np.asarray(state["agent_position"][opp_idx], dtype=np.float64)
+            opp_prev_pos = np.asarray(prev_state["agent_position"][opp_idx], dtype=np.float64)
+            curr_d = np.linalg.norm(pos - opp_pos)
+            prev_d = np.linalg.norm(prev_pos - opp_prev_pos)
+            if curr_d < min_curr_dist:
+                min_curr_dist = curr_d
+                min_prev_dist = prev_d
+        if min_curr_dist < float("inf"):
+            evasion_delta = min_curr_dist - min_prev_dist
+            if evasion_delta > 0 and field_diag > 0 and min_curr_dist < 30.0:
+                # Higher multiplier when carrying flag (more critical to survive)
+                multiplier = 0.3 if has_flag_now else 0.2
+                r = multiplier * evasion_delta / field_diag
+                reward += r
+                if REWARD_DEBUG:
+                    label = "carrying flag" if has_flag_now else "enemy side"
+                    print(f"[REWARD] {agent_id} evasion ({label}): +{r:.4f}")
+
     return reward
+
+
 
 ### Add Custom Reward Functions Here ###

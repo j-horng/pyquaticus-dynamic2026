@@ -19,6 +19,7 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+import hashlib
 from typing import Union
 
 import numpy as np
@@ -30,12 +31,13 @@ from pyquaticus.base_policies.utils import (dist_rel_bearing_to_local_rect,
                                             local_rect_to_rel_bearing,
                                             rel_bearing_to_local_unit_rect,
                                             unit_vect_between_points)
-from pyquaticus.config import config_dict_std
+from pyquaticus.config import ACTION_MAP, config_dict_std
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv, Team
 from pyquaticus.moos_bridge.pyquaticus_moos_bridge import PyQuaticusMoosBridge
 from pyquaticus.utils.utils import angle180, closest_point_on_line, dist
 
 MODES = {"nothing", "easy", "medium", "hard", "competition_easy", "competition_medium"}
+EASY_RANDOM_ACTION_PROB = 0.30
 
 
 class BaseDefender(BaseAgentPolicy):
@@ -92,84 +94,173 @@ class BaseDefender(BaseAgentPolicy):
         if not isinstance(global_state, dict):
             global_state = self.state_normalizer.unnormalized(global_state)
 
-        # Treat competition_* as hard for this simplified "pure defend" defender.
+        # Keep competition_* behavior aligned with existing policy handling.
         effective_mode = self.mode if self.mode in ("easy", "medium", "hard") else "hard"
+
+        if effective_mode == "easy" and np.random.random() < EASY_RANDOM_ACTION_PROB:
+            if self.continuous:
+                return (float(np.random.uniform(0.0, self.max_speed)), float(np.random.uniform(-180.0, 180.0)))
+            return int(np.random.randint(0, len(ACTION_MAP)))
 
         if effective_mode == "easy":
             spd = 0.4
+            carrier_chase_spd = 0.6
             react_thresh = 20.0
+            carrier_thresh = 60.0
+            zone_mod = 1
         elif effective_mode == "medium":
             spd = 0.6
-            react_thresh = 40.0
+            carrier_chase_spd = 0.85
+            react_thresh = 80.0
+            carrier_thresh = 100.0
+            zone_mod = 2
         else:
             spd = 1.0
+            carrier_chase_spd = 1.0
             react_thresh = float("inf")
+            carrier_thresh = float("inf")
+            zone_mod = 3
 
-        # If opponent has our flag, chase aggressively at full speed regardless of mode.
-        if self.opp_team_has_flag:
-            # Easy defenders should be clearly beatable: don't instantly full-send after the carrier
-            # from anywhere on the map. Only pursue if the carrier is fairly close; otherwise patrol.
-            if effective_mode == "easy":
-                carrier = None
-                carrier_dist = float("inf")
-                for enem, pos in getattr(self, "opp_team_pos_dict", {}).items():
-                    try:
-                        has_flag = bool(global_state.get((enem, "has_flag"), 0.0))
-                    except Exception:
-                        has_flag = False
-                    if not has_flag:
-                        continue
-                    d = float(pos[0])
-                    if d < carrier_dist:
-                        carrier_dist = d
-                        carrier = np.asarray(dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64)
-                # If we can't identify the carrier, fall back to patrolling.
-                if carrier is not None and carrier_dist <= 60.0:
-                    my_action = carrier
-                    desired_speed = spd
-                else:
-                    my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
-                    desired_speed = spd
-            else:
-                my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
-                # Medium should not suddenly become "hard speed" just because the opponent has the flag.
-                desired_speed = 1.0 if effective_mode == "hard" else spd
+        team_str = self.team.name.lower().split("_")[0]
+        opp_str = "red" if team_str == "blue" else "blue"
+        my_flag_home = np.asarray(global_state[team_str + "_flag_home"], dtype=np.float64)
+        opp_flag_home = np.asarray(global_state[opp_str + "_flag_home"], dtype=np.float64)
+        scrimmage_x = float((my_flag_home[0] + opp_flag_home[0]) / 2.0)
+        my_pos = np.asarray(global_state[(self.id, "pos")], dtype=np.float64)
+        on_own_side = (my_pos[0] <= scrimmage_x) if team_str == "blue" else (my_pos[0] >= scrimmage_x)
+
+        def _to_local(target_global: np.ndarray) -> np.ndarray:
+            delta = np.asarray(target_global, dtype=np.float64) - my_pos
+            d = float(np.linalg.norm(delta))
+            abs_b = global_rect_to_abs_bearing(delta)
+            rel_b = angle180(abs_b - float(global_state[(self.id, "heading")]))
+            return np.asarray(dist_rel_bearing_to_local_rect(d, rel_b), dtype=np.float64)
+
+        # If crossed scrimmage, redirect to own flag immediately.
+        if not on_own_side:
+            return self.action_from_vector(np.asarray(self.my_flag_loc, dtype=np.float64), spd)
+
+        # Zone-based patrol using agent hash.
+        agent_hash = int(hashlib.md5(self.id.encode()).hexdigest(), 16) % 3
+        zone = agent_hash % zone_mod
+
+        team_ids = sorted(list(getattr(self, "teammate_ids", [])))
+        try:
+            slot_idx = team_ids.index(self.id)
+        except ValueError:
+            slot_idx = 0
+        num_slots = max(1, len(team_ids))
+
+        # Lateral spread on own side (10%..90% of field height) to avoid flag clumping.
+        lane_count = min(4, max(2, num_slots))
+        lane_idx = slot_idx % lane_count
+        lane_frac = (lane_idx + 0.5) / lane_count
+
+        my_to_opp_x = float(opp_flag_home[0] - my_flag_home[0])
+        x_to_scrim = abs(scrimmage_x - float(my_flag_home[0]))
+
+        # Difficulty-specific depth bands on own side, all constrained before scrimmage.
+        if effective_mode == "easy":
+            depth_fractions = (0.20, 0.35, 0.50)
+        elif effective_mode == "medium":
+            depth_fractions = (0.30, 0.55, 0.80)
         else:
-            # Always prioritize chasing nearest untagged opponent on our side.
-            nearest = None
+            depth_fractions = (0.35, 0.65, 0.92)
+        depth_frac = float(depth_fractions[min(zone, len(depth_fractions) - 1)])
+        depth = depth_frac * x_to_scrim
+
+        if my_to_opp_x >= 0.0:
+            patrol_x = float(my_flag_home[0] + depth)
+            patrol_x = min(patrol_x, scrimmage_x - 2.0)
+        else:
+            patrol_x = float(my_flag_home[0] - depth)
+            patrol_x = max(patrol_x, scrimmage_x + 2.0)
+
+        y_coords = [float(my_flag_home[1]), float(opp_flag_home[1])]
+        for wall in getattr(self, "walls", []):
+            for endpoint in wall:
+                y_coords.append(float(endpoint[1]))
+        y_min = min(y_coords)
+        y_max = max(y_coords)
+        patrol_y = y_min + lane_frac * (y_max - y_min)
+
+        scrim_push_margin = 5.0
+        if team_str == "blue":
+            near_scrimmage_x = float(scrimmage_x - scrim_push_margin)
+        else:
+            near_scrimmage_x = float(scrimmage_x + scrim_push_margin)
+
+        if zone == 0:
+            if effective_mode in ("easy", "medium"):
+                # Easy/medium mode: spread in a front-centered arc near our flag lane.
+                centered_lane_frac = 0.5 + 0.6 * (lane_frac - 0.5)
+                lane_phase = (centered_lane_frac - 0.5) * np.pi  # narrower fan around centerline
+                arc_depth = 0.60 * x_to_scrim
+                arc_width = 0.30 * (y_max - y_min)
+                if my_to_opp_x >= 0.0:
+                    arc_x = float(my_flag_home[0] + arc_depth * np.cos(lane_phase))
+                    arc_x = min(arc_x, scrimmage_x - 2.0)
+                else:
+                    arc_x = float(my_flag_home[0] - arc_depth * np.cos(lane_phase))
+                    arc_x = max(arc_x, scrimmage_x + 2.0)
+                arc_y = float(my_flag_home[1] + arc_width * np.sin(lane_phase))
+                arc_y = min(max(arc_y, y_min + 1.0), y_max - 1.0)
+                patrol_target = np.asarray([arc_x, arc_y], dtype=np.float64)
+            else:
+                patrol_target = np.asarray([patrol_x, patrol_y], dtype=np.float64)
+        elif zone == 1:
+            patrol_target = np.asarray([patrol_x, patrol_y], dtype=np.float64)
+        else:
+            patrol_target = np.asarray([near_scrimmage_x, patrol_y], dtype=np.float64)
+
+        # Flag carrier pursuit — separate from general enemy chase.
+        carrier_local = None
+        carrier_dist = float("inf")
+        if self.opp_team_has_flag:
+            for enem, pos in getattr(self, "opp_team_pos_dict", {}).items():
+                if not bool(global_state.get((enem, "has_flag"), False)):
+                    continue
+                on_our_side = float(global_state.get((enem, "on_side"), 1.0)) == 0.0
+                if not on_our_side:
+                    continue
+                d = float(pos[0])
+                if d < carrier_dist:
+                    carrier_dist = d
+                    carrier_local = np.asarray(
+                        dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64
+                    )
+        desired_speed = spd
+        if carrier_local is not None and carrier_dist <= carrier_thresh:
+            my_action = carrier_local
+            desired_speed = carrier_chase_spd
+        else:
+            # Enemy detection — only chase enemies on own side, not tagged.
+            nearest_local = None
             nearest_dist = float("inf")
             for enem, pos in getattr(self, "opp_team_pos_dict", {}).items():
-                try:
-                    on_our_side = float(global_state.get((enem, "on_side"), 1.0)) == 0.0
-                    is_tagged = bool(global_state.get((enem, "is_tagged"), 0.0))
-                except Exception:
-                    on_our_side, is_tagged = False, False
-                if (not on_our_side) or is_tagged:
+                on_our_side = float(global_state.get((enem, "on_side"), 1.0)) == 0.0
+                is_tagged = bool(global_state.get((enem, "is_tagged"), False))
+                if not on_our_side or is_tagged:
                     continue
                 d = float(pos[0])
                 if d < nearest_dist:
                     nearest_dist = d
-                    nearest = np.asarray(dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64)
+                    nearest_local = np.asarray(
+                        dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64
+                    )
 
-            if nearest is not None and nearest_dist <= react_thresh:
-                my_action = nearest
-                desired_speed = spd
+            if nearest_local is not None and nearest_dist <= react_thresh:
+                my_action = nearest_local
             else:
-                # Patrol between flag and scrimmage line (approx): hover near flag, then push outward.
-                if self.my_flag_distance > (self.flag_keepout + self.catch_radius + 5.0):
-                    my_action = np.asarray(self.my_flag_loc, dtype=np.float64)
-                else:
-                    my_action = np.asarray(-1.0 * self.my_flag_loc, dtype=np.float64)
-                desired_speed = spd
+                my_action = _to_local(patrol_target)
 
-        # OOB avoidance for both (exact per-task snippet).
+        # Wall avoidance.
         wall_pos = []
-        for wd, wb in zip(getattr(self, "wall_distances", []), getattr(self, "wall_bearings", [])):
+        for wd, wb in zip(self.wall_distances, self.wall_bearings):
             if float(wd) < 8 and (-90 < float(wb) < 90):
                 wall_pos.append((float(wd), float(wb)))
         if wall_pos:
-            avoid = get_avoid_vect(wall_pos, avoid_threshold=8.0)
-            my_action = my_action + avoid
+            my_action = my_action + get_avoid_vect(wall_pos, avoid_threshold=8.0)
 
         return self.action_from_vector(my_action, desired_speed)
 

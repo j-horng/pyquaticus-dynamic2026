@@ -29,11 +29,13 @@ from pyquaticus.base_policies.utils import (dist_rel_bearing_to_local_rect,
                                             global_rect_to_abs_bearing,
                                             local_rect_to_rel_bearing,
                                             rel_bearing_to_local_unit_rect)
+from pyquaticus.config import ACTION_MAP
 from pyquaticus.envs.pyquaticus import PyQuaticusEnv, Team
 from pyquaticus.moos_bridge.pyquaticus_moos_bridge import PyQuaticusMoosBridge
 from pyquaticus.utils.utils import angle180, closest_point_on_line, dist
 
 MODES = {"nothing", "easy", "medium", "hard", "competition_easy", "competition_medium"}
+EASY_RANDOM_ACTION_PROB = 0.30
 
 
 class BaseAttacker(BaseAgentPolicy):
@@ -88,6 +90,11 @@ class BaseAttacker(BaseAgentPolicy):
 
         # Treat competition_* as hard for this simplified "pure capture" attacker.
         effective_mode = self.mode if self.mode in ("easy", "medium", "hard") else "hard"
+
+        if effective_mode == "easy" and np.random.random() < EASY_RANDOM_ACTION_PROB:
+            if self.continuous:
+                return (float(np.random.uniform(0.0, self.max_speed)), float(np.random.uniform(-180.0, 180.0)))
+            return int(np.random.randint(0, len(ACTION_MAP)))
 
         # Pure capture logic:
         # - If carrying: always return home (full commitment).
