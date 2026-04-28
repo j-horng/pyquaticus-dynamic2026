@@ -110,103 +110,58 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
             return self.action_from_vector(None, 0)
 
         if self.mode == "easy":
-            # Easy combined — situation-based switching (like medium), but with 30% random action.
-            if np.random.random() < 0.30:
-                if self.continuous:
-                    return (0.25 * self.max_speed, float(np.random.uniform(-120.0, 120.0)))
-                return int(np.random.randint(0, len(ACTION_MAP)))
-            # If carrying flag → attack (go home)
-            if self.has_flag:
-                return self.base_attacker.compute_action(obs, info)
-            # If opponent has flag → defend (chase carrier)
+            # If our flag is taken, everyone helps defend
             if self.opp_team_has_flag:
                 return self.base_defender.compute_action(obs, info)
-            # If teammate has flag → defend (protect carrier / engage threats)
-            if any(self.teammate_has_flag):
-                return self.base_defender.compute_action(obs, info)
-            # Otherwise → deterministic split by agent slot (avoid per-step randomness).
+            # If I have flag, go home
+            if self.has_flag:
+                return self.base_attacker.compute_action(obs, info)
+            # Slot-based split: even attack, odd defend
             try:
                 idx = int(str(self.id).split("_", 1)[1])
             except Exception:
                 idx = 0
-            return (
-                self.base_attacker.compute_action(obs, info)
-                if (idx % 2) == 0
-                else self.base_defender.compute_action(obs, info)
-            )
+            if (idx % 2) == 0:
+                return self.base_attacker.compute_action(obs, info)
+            return self.base_defender.compute_action(obs, info)
 
         elif self.mode == "medium":
-            # Medium combined — situation-aware split, no randomness.
-            # If carrying flag → attack (go home)
-            if self.has_flag:
-                return self.base_attacker.compute_action(obs, info)
-            # If we are very close to grabbing the opponent flag, keep attacking even if
-            # the opponent has our flag (go for the trade / score pressure).
-            if float(getattr(self, "opp_flag_distance", float("inf"))) <= 20.0:
-                return self.base_attacker.compute_action(obs, info)
-            # If opponent has flag → defend (chase carrier)
+            # Flag taken -> everyone defends
             if self.opp_team_has_flag:
                 return self.base_defender.compute_action(obs, info)
-            # If teammate has flag → defend (protect carrier by engaging nearest enemy)
-            if any(self.teammate_has_flag):
+            # I have flag -> go home
+            if self.has_flag:
+                return self.base_attacker.compute_action(obs, info)
+            # Enemies close to flag -> defend
+            if self.is_close_to_flag(threshold=40) and (False in self.opp_team_tag):
                 return self.base_defender.compute_action(obs, info)
-            # Otherwise → deterministic 60/40 split based on agent slot (avoid per-step randomness).
+            # Otherwise slot-based 60/40 attack
             try:
                 idx = int(str(self.id).split("_", 1)[1])
             except Exception:
                 idx = 0
-            return (
-                self.base_attacker.compute_action(obs, info)
-                if (idx % 5) < 3
-                else self.base_defender.compute_action(obs, info)
-            )
+            if (idx % 5) < 3:
+                return self.base_attacker.compute_action(obs, info)
+            return self.base_defender.compute_action(obs, info)
 
-        else:
-            # Hard combined — fully intelligent, no randomness.
-            # Priority order:
-            # I have flag → go home (attack)
-            if self.has_flag:
-                return self.base_attacker.compute_action(obs, info)
-            # Teammate has flag → bodyguard the carrier (stay near them / escort).
-            if any(self.teammate_has_flag) and getattr(self, "teammate_flag_carrier_pos_global", None) is not None:
-                # Triangle formation around the carrier:
-                # - carrier stays center
-                # - one escort in front (toward home direction)
-                # - two escorts to the sides
-                try:
-                    idx = int(str(self.id).split("_", 1)[1])
-                except Exception:
-                    idx = 0
-                role = idx % 3  # 0=front, 1=left, 2=right
-                carrier = np.asarray(self.teammate_flag_carrier_pos_global, dtype=np.float64)
-                u_home = np.asarray(getattr(self, "teammate_flag_carrier_to_home_u", np.array([1.0, 0.0])), dtype=np.float64)
-                u_perp = np.asarray(getattr(self, "teammate_flag_carrier_to_home_perp_u", np.array([0.0, 1.0])), dtype=np.float64)
-                front_dist = 16.0
-                side_dist = 12.0
-                if role == 0:
-                    tgt_global = carrier + front_dist * u_home
-                elif role == 1:
-                    tgt_global = carrier + side_dist * u_perp
-                else:
-                    tgt_global = carrier - side_dist * u_perp
-                escort_target_local = global_rect_to_local_rect(
-                    tgt_global,
-                    self._my_pos_global,
-                    self._my_heading_global,
-                )
-                return self.action_from_vector(escort_target_local, 1.0)
-            # If we are very close to grabbing the opponent flag, keep attacking even if
-            # the opponent has our flag (go for the trade / score pressure).
-            if float(getattr(self, "opp_flag_distance", float("inf"))) <= 15.0:
-                return self.base_attacker.compute_action(obs, info)
-            # Opponent has flag → chase them (defend)
+        else:  # hard
+            # Flag taken -> all hands defend
             if self.opp_team_has_flag:
                 return self.base_defender.compute_action(obs, info)
-            # Opponent close to my flag → intercept (defend)
-            if self.is_close_to_flag(threshold=25):
+            # I have flag -> go home
+            if self.has_flag:
+                return self.base_attacker.compute_action(obs, info)
+            # Enemies very close to flag -> defend
+            if self.is_close_to_flag(threshold=25) and (False in self.opp_team_tag):
                 return self.base_defender.compute_action(obs, info)
-            # Own side clear → attack
-            return self.base_attacker.compute_action(obs, info)
+            # Flag is safe -> slot split attack/defend
+            try:
+                idx = int(str(self.id).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            if (idx % 2) == 0:
+                return self.base_attacker.compute_action(obs, info)
+            return self.base_defender.compute_action(obs, info)
 
     def random_defense_action(self, enem_positions):
         """
@@ -255,7 +210,9 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
         if self.mode == "hard":
             return self.action_from_vector(goal_vec, 1)
         else:
-            return self.action_from_vector(goal_vec, 0.5)
+            # Match requested speed scale: easy=0.8, medium=0.9.
+            spd = 0.8 if self.mode == "easy" else 0.9
+            return self.action_from_vector(goal_vec, spd)
 
     def get_team_density(self, friendly_positions, enemy_positions):
         """This function returns the center of mass and varience of all the agents in the team."""
@@ -468,20 +425,27 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
             else:
                 from pyquaticus.config import ACTION_MAP
                 return len(ACTION_MAP) - 1
+        desired_speed_normalized = min(1.0, float(desired_speed_normalized))
+        vector = np.asarray(vector, dtype=np.float64)
         # Reduce overlap/clumping in hard mode by adding a small teammate repulsion.
         if getattr(self, "mode", None) == "hard":
             try:
                 if getattr(self, "my_team_pos", None):
-                    vector = np.asarray(vector, dtype=np.float64) + get_avoid_vect(self.my_team_pos, avoid_threshold=15.0)
+                    vector = vector + get_avoid_vect(self.my_team_pos, avoid_threshold=15.0)
             except Exception:
                 pass
-        # Wall avoidance in combined: if close to any wall, add avoidance vector.
+        # Stronger wall avoidance so heuristic targets do not encourage boundary crossing.
         wall_pos = []
         for wd, wb in zip(getattr(self, "wall_distances", []), getattr(self, "wall_bearings", [])):
-            if float(wd) < 8 and (-90 < float(wb) < 90):
+            if float(wd) < 10.0 and (-100.0 < float(wb) < 100.0):
                 wall_pos.append((float(wd), float(wb)))
         if wall_pos:
-            vector = np.asarray(vector, dtype=np.float64) + get_avoid_vect(wall_pos, avoid_threshold=8.0)
+            wall_avoid = 1.5 * get_avoid_vect(wall_pos, avoid_threshold=10.0)
+            candidate = vector + wall_avoid
+            if float(np.linalg.norm(candidate)) >= 3.0:
+                vector = candidate
+            else:
+                vector = rel_bearing_to_local_unit_rect(local_rect_to_rel_bearing(wall_avoid))
         rel_bearing = local_rect_to_rel_bearing(vector)
         if self.continuous:
             return (desired_speed_normalized * self.max_speed, rel_bearing)

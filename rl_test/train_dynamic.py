@@ -175,6 +175,7 @@ if POLICIES is not None:
 def make_env(
     config=None,
     render_mode=None,
+    render_agent_ids=False,
     sim_speedup=4,
     red_gets_raw_obs=False,
     red_dummy=False,
@@ -210,6 +211,7 @@ def make_env(
     cfg["max_time"] = max_time
     cfg["tagging_cooldown"] = 60
     cfg["tag_on_oob"] = True
+    cfg["render_agent_ids"] = bool(render_agent_ids)
     # default_init True  = deterministic spawn-line placement (no random positions).
     # default_init False + on_sides_init True = random position on own side each reset.
     cfg["default_init"] = bool(fixed_spawn)
@@ -557,6 +559,7 @@ def _run_watch(args):
         env = make_env(
             None,
             render_mode="human",
+            render_agent_ids=True,
             sim_speedup=SPEEDUP,
             red_gets_raw_obs=(
                 args.red_heuristic
@@ -605,14 +608,6 @@ def _run_watch(args):
     dynamic_env.render_circle_heading_delta_deg = float(getattr(rew, "CIRCLE_HEADING_DELTA_DEG", 0.0))
     dynamic_env.render_idle_grace_steps = int(getattr(rew, "IDLE_GRACE_STEPS", 0))
     dynamic_env.render_circle_grace_steps = int(getattr(rew, "CIRCLE_GRACE_STEPS", 0))
-    print(
-        "Watch: reward threshold overlays ON "
-        f"(idle<{dynamic_env.render_idle_dist_thresh_m:.2f}m, "
-        f"circle<{dynamic_env.render_circle_dist_thresh_m:.2f}m with "
-        f"heading change>{dynamic_env.render_circle_heading_delta_deg:.0f}deg; "
-        f"grace: idle={dynamic_env.render_idle_grace_steps} steps, "
-        f"circle={dynamic_env.render_circle_grace_steps} steps)."
-    )
     blue_ids = [f"agent_{i}" for i in range(team_max)]
     red_ids = [f"agent_{i}" for i in range(team_max, 2 * team_max)]
 
@@ -633,21 +628,24 @@ def _run_watch(args):
     def _pick_red_random_pool():
         if getattr(args, "red_easy_random", False):
             return [
-                ("easy_attack", BaseAttacker, {"mode": "easy"}),
-                ("easy_defend", BaseDefender, {"mode": "easy"}),
-                ("easy_combined", Heuristic_CTF_Agent, {"mode": "easy"}),
+                # Distribution variants (per-episode): match the explicit --red-easy-* distributions.
+                ("easy_attack_dist", None, None),
+                ("easy_defend_dist", None, None),
+                ("easy_combined_dist", None, None),
             ]
         if getattr(args, "red_medium_random", False):
             return [
-                ("medium_attack", BaseAttacker, {"mode": "medium"}),
-                ("medium_defend", BaseDefender, {"mode": "medium"}),
-                ("medium_combined", Heuristic_CTF_Agent, {"mode": "medium"}),
+                # Distribution variants (per-episode): match the explicit --red-medium-* distributions.
+                ("medium_attack_dist", None, None),
+                ("medium_defend_dist", None, None),
+                ("medium_combined_dist", None, None),
             ]
         if getattr(args, "red_hard_random", False):
             return [
-                ("hard_attack", BaseAttacker, {"mode": "hard"}),
-                ("hard_defend", BaseDefender, {"mode": "hard"}),
-                ("hard_combined", Heuristic_CTF_Agent, {"mode": "hard"}),
+                # Distribution variants (per-episode): match the explicit --red-hard-* distributions.
+                ("hard_attack_dist", None, None),
+                ("hard_defend_dist", None, None),
+                ("hard_combined_dist", None, None),
             ]
         return None
 
@@ -657,7 +655,50 @@ def _run_watch(args):
         if not red_random_pool:
             return None
         chosen_name, chosen_cls, chosen_kw = random.choice(red_random_pool)
-        red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
+        if chosen_cls is None and chosen_name in {
+            "easy_attack_dist", "easy_defend_dist", "easy_combined_dist",
+            "medium_attack_dist", "medium_defend_dist", "medium_combined_dist",
+            "hard_attack_dist", "hard_defend_dist", "hard_combined_dist",
+        }:
+            if chosen_name.startswith("easy_"):
+                mode = "easy"
+            elif chosen_name.startswith("medium_"):
+                mode = "medium"
+            else:
+                mode = "hard"
+            red_heuristics = {}
+            for aid in red_ids:
+                try:
+                    idx = int(str(aid).split("_", 1)[1])
+                except Exception:
+                    idx = 0
+                slot = idx % 6
+                if chosen_name.endswith("attack_dist"):
+                    # 3 attackers + 1 combined + 2 defenders
+                    if slot in (0, 1, 2):
+                        red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode=mode)
+                    elif slot == 3:
+                        red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode=mode)
+                    else:
+                        red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode=mode)
+                elif chosen_name.endswith("defend_dist"):
+                    # 3 defenders + 1 combined + 2 attackers
+                    if slot in (0, 1, 2):
+                        red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode=mode)
+                    elif slot == 3:
+                        red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode=mode)
+                    else:
+                        red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode=mode)
+                else:
+                    # 2 combined + 2 attackers + 2 defenders
+                    if slot in (0, 1):
+                        red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode=mode)
+                    elif slot in (2, 3):
+                        red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode=mode)
+                    else:
+                        red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode=mode)
+        else:
+            red_heuristics = {aid: chosen_cls(aid, dynamic_env, **chosen_kw) for aid in red_ids}
         return chosen_name
 
     if args.red_heuristic:
@@ -670,32 +711,167 @@ def _run_watch(args):
         chosen_name = _reroll_red_heuristics_for_episode()
         print(f"Watch: Red randomized each episode among attack/defend/combined -> chosen {chosen_name}.")
     elif getattr(args, "red_easy_attack", False):
-        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="easy") for aid in red_ids}
-        print("Watch: Red easy-attack heuristic (BaseAttacker easy).")
+        # Distribution: 3 attackers + 1 combined + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="easy")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="easy")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="easy")
+        print(
+            "Watch: Red easy-attack distribution (3x BaseAttacker easy, 1x Heuristic_CTF_Agent easy, 2x BaseDefender easy)."
+        )
     elif getattr(args, "red_easy_defend", False):
-        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="easy") for aid in red_ids}
-        print("Watch: Red easy-defend heuristic (BaseDefender easy).")
+        # Distribution: 3 defenders + 1 combined + 2 attackers (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="easy")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="easy")
+            else:
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="easy")
+        print(
+            "Watch: Red easy-defend distribution (3x BaseDefender easy, 1x Heuristic_CTF_Agent easy, 2x BaseAttacker easy)."
+        )
     elif getattr(args, "red_easy_combined", False):
-        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="easy") for aid in red_ids}
-        print("Watch: Red easy-combined heuristic (Heuristic_CTF_Agent easy).")
+        # Distribution: 2 combined + 2 attackers + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1):
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="easy")
+            elif slot in (2, 3):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="easy")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="easy")
+        print(
+            "Watch: Red easy-combined distribution (2x Heuristic_CTF_Agent easy, 2x BaseAttacker easy, 2x BaseDefender easy)."
+        )
     elif getattr(args, "red_medium_attack", False):
-        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="medium") for aid in red_ids}
-        print("Watch: Red medium-attack heuristic (BaseAttacker medium).")
+        # Distribution: 3 attackers + 1 combined + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="medium")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="medium")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="medium")
+        print(
+            "Watch: Red medium-attack distribution (3x BaseAttacker medium, 1x Heuristic_CTF_Agent medium, 2x BaseDefender medium)."
+        )
     elif getattr(args, "red_medium_defend", False):
-        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="medium") for aid in red_ids}
-        print("Watch: Red medium-defend heuristic (BaseDefender medium).")
+        # Distribution: 3 defenders + 1 combined + 2 attackers (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="medium")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="medium")
+            else:
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="medium")
+        print(
+            "Watch: Red medium-defend distribution (3x BaseDefender medium, 1x Heuristic_CTF_Agent medium, 2x BaseAttacker medium)."
+        )
     elif getattr(args, "red_medium_combined", False):
-        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="medium") for aid in red_ids}
-        print("Watch: Red medium-combined heuristic (Heuristic_CTF_Agent medium).")
+        # Distribution: 2 combined + 2 attackers + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1):
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="medium")
+            elif slot in (2, 3):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="medium")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="medium")
+        print(
+            "Watch: Red medium-combined distribution (2x Heuristic_CTF_Agent medium, 2x BaseAttacker medium, 2x BaseDefender medium)."
+        )
     elif getattr(args, "red_hard_attack", False):
-        red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="hard") for aid in red_ids}
-        print("Watch: Red hard-attack heuristic (BaseAttacker hard).")
+        # Distribution: 3 attackers + 1 combined + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="hard")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="hard")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="hard")
+        print(
+            "Watch: Red hard-attack distribution (3x BaseAttacker hard, 1x Heuristic_CTF_Agent hard, 2x BaseDefender hard)."
+        )
     elif getattr(args, "red_hard_defend", False):
-        red_heuristics = {aid: BaseDefender(aid, dynamic_env, mode="hard") for aid in red_ids}
-        print("Watch: Red hard-defend heuristic (BaseDefender hard).")
+        # Distribution: 3 defenders + 1 combined + 2 attackers (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1, 2):
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="hard")
+            elif slot == 3:
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="hard")
+            else:
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="hard")
+        print(
+            "Watch: Red hard-defend distribution (3x BaseDefender hard, 1x Heuristic_CTF_Agent hard, 2x BaseAttacker hard)."
+        )
     elif getattr(args, "red_hard_combined", False):
-        red_heuristics = {aid: Heuristic_CTF_Agent(aid, dynamic_env, mode="hard") for aid in red_ids}
-        print("Watch: Red hard-combined heuristic (Heuristic_CTF_Agent hard).")
+        # Distribution: 2 combined + 2 attackers + 2 defenders (slot-based).
+        red_heuristics = {}
+        for aid in red_ids:
+            try:
+                idx = int(str(aid).split("_", 1)[1])
+            except Exception:
+                idx = 0
+            slot = idx % 6
+            if slot in (0, 1):
+                red_heuristics[aid] = Heuristic_CTF_Agent(aid, dynamic_env, mode="hard")
+            elif slot in (2, 3):
+                red_heuristics[aid] = BaseAttacker(aid, dynamic_env, mode="hard")
+            else:
+                red_heuristics[aid] = BaseDefender(aid, dynamic_env, mode="hard")
+        print(
+            "Watch: Red hard-combined distribution (2x Heuristic_CTF_Agent hard, 2x BaseAttacker hard, 2x BaseDefender hard)."
+        )
     elif args.red_from_checkpoint:
         red_path = _resolve_blue_policy_path(args.red_from_checkpoint)
         if os.path.isdir(red_path):

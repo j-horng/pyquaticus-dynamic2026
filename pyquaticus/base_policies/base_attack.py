@@ -88,69 +88,203 @@ class BaseAttacker(BaseAgentPolicy):
         if self.mode == "nothing":
             return self.action_from_vector(None, 0)
 
-        # Treat competition_* as hard for this simplified "pure capture" attacker.
-        effective_mode = self.mode if self.mode in ("easy", "medium", "hard") else "hard"
+        # Match the classic (old) attacker behavior, but keep the new actionmap
+        # via our current action_from_vector/discrete_action_from_rel_bearing.
+        try:
+            idx = int(str(self.id).split("_", 1)[1])
+        except Exception:
+            idx = 0
+        spread_angle = (-24.0, -8.0, 8.0, 24.0)[idx % 4]
 
-        if effective_mode == "easy" and np.random.random() < EASY_RANDOM_ACTION_PROB:
-            if self.continuous:
-                return (float(np.random.uniform(0.0, self.max_speed)), float(np.random.uniform(-180.0, 180.0)))
-            return int(np.random.randint(0, len(ACTION_MAP)))
+        if self.mode == "easy":
+            if self.has_flag:
+                goal_vect = rel_bearing_to_local_unit_rect(self.home_bearing)
+                avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=20.0)
+                my_action = goal_vect + 0.5 * avoid_vect
+                return self.action_from_vector(my_action, 0.7)
+            goal_vect = rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
+            avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=15.0)
+            my_action = goal_vect + 0.4 * avoid_vect
+            return self.action_from_vector(my_action, 0.7)
 
-        # Pure capture logic:
-        # - If carrying: always return home (full commitment).
-        # - Otherwise: always attack toward opponent flag.
-        if effective_mode == "easy":
-            # Easy should be clearly beatable: slower and less committed "beeline" chasing.
-            spd_flag, spd_home = 0.4, 0.5
-        elif effective_mode == "medium":
-            spd_flag, spd_home = 0.6, 0.6
-        else:
-            spd_flag, spd_home = 1.0, 1.0
+        if self.mode == "competition_easy":
+            # Keep competition behavior unchanged (MOOS/Aquaticus waypoint logic).
+            assert self.aquaticus_field_points is not None
+
+            if self.team == Team.RED_TEAM:
+                estimated_position = np.asarray(
+                    [
+                        self.wall_distances[1],
+                        self.wall_distances[0],
+                    ]
+                )
+            else:
+                estimated_position = np.asarray(
+                    [
+                        self.wall_distances[3],
+                        self.wall_distances[2],
+                    ]
+                )
+
+            value = self.goal
+
+            if self.team == Team.BLUE_TEAM:
+                if "P" in self.goal:
+                    value = "S" + value[1:]
+                elif "S" in self.goal:
+                    value = "P" + value[1:]
+                if "X" not in self.goal and self.goal not in ["SC", "CC", "PC"]:
+                    value += "X"
+                elif self.goal not in ["SC", "CC", "PC"]:
+                    value = value[:-1]
+
+            if self.is_tagged:
+                self.goal = "SC"
+            if (
+                -2.5
+                <= dist(estimated_position, self.aquaticus_field_points[value])
+                <= 2.5
+            ):
+                if self.goal == "SC":
+                    self.goal = "CFX"
+                elif self.goal == "CFX":
+                    self.goal = "PC"
+                elif self.goal == "PC":
+                    self.goal = "CF"
+                elif self.goal == "CF":
+                    self.goal = "SC"
+
+            if (
+                self.goal == "CF"
+                and -6
+                <= dist(estimated_position, self.aquaticus_field_points[value])
+                <= 6
+            ):
+                self.goal = "SC"
+            return self.goal
+
+        if self.mode == "medium":
+            if self.has_flag:
+                goal_vect = 2.0 * rel_bearing_to_local_unit_rect(self.home_bearing)
+                avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=35.0)
+                my_action = goal_vect + 1.2 * avoid_vect
+            else:
+                goal_vect = 2.0 * rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
+                avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=25.0)
+                my_action = goal_vect + 0.8 * avoid_vect
+            return self.action_from_vector(my_action, 0.9)
+
+        if self.mode == "competition_medium":
+            # Keep competition behavior unchanged (classic wall-as-obstacle logic).
+            if self.wall_distances[0] < 10 and (-90 < self.wall_bearings[0] < 90):
+                self.opp_team_pos.append(
+                    (
+                        self.wall_distances[0],
+                        self.wall_bearings[0],
+                    )
+                )
+            elif self.wall_distances[2] < 10 and (-90 < self.wall_bearings[2] < 90):
+                self.opp_team_pos.append(
+                    (
+                        self.wall_distances[2],
+                        self.wall_bearings[2],
+                    )
+                )
+            if self.wall_distances[1] < 10 and (-90 < self.wall_bearings[1] < 90):
+                self.opp_team_pos.append(
+                    (
+                        self.wall_distances[1],
+                        self.wall_bearings[1],
+                    )
+                )
+            elif self.wall_distances[3] < 10 and (-90 < self.wall_bearings[3] < 90):
+                self.opp_team_pos.append(
+                    (
+                        self.wall_distances[3],
+                        self.wall_bearings[3],
+                    )
+                )
+
+            avoid_thresh = 60.0
+
+            if self.has_flag:
+                goal_vect = 1.25 * rel_bearing_to_local_unit_rect(self.home_bearing)
+                avoid_vect = get_avoid_vect(
+                    self.opp_team_pos, avoid_threshold=avoid_thresh
+                )
+                my_action = goal_vect + avoid_vect
+            else:
+                goal_vect = rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
+                avoid_vect = get_avoid_vect(
+                    self.opp_team_pos, avoid_threshold=avoid_thresh
+                )
+                if (not np.any(goal_vect + (avoid_vect))) or (
+                    np.allclose(
+                        np.abs(np.abs(goal_vect) - np.abs(avoid_vect)),
+                        np.zeros(np.array(goal_vect).shape),
+                        atol=1e-01,
+                        rtol=1e-02,
+                    )
+                ):
+                    top_dist = self.wall_distances[0]
+                    bottom_dist = self.wall_distances[2]
+                    if top_dist > 1.25 * bottom_dist:
+                        my_action = dist_rel_bearing_to_local_rect(
+                            top_dist, self.wall_bearings[0]
+                        )
+                    else:
+                        my_action = dist_rel_bearing_to_local_rect(
+                            bottom_dist, self.wall_bearings[2]
+                        )
+                else:
+                    my_action = 1.25 * goal_vect + avoid_vect
+
+            return self.action_from_vector(my_action, 1)
+
+        # Hard (and any other remaining modes): classic wall + opponent avoidance.
+        # Add nearby walls as obstacles.
+        if self.wall_distances[0] < 10 and (-90 < self.wall_bearings[0] < 90):
+            self.opp_team_pos.append((self.wall_distances[0], self.wall_bearings[0]))
+        elif self.wall_distances[2] < 10 and (-90 < self.wall_bearings[2] < 90):
+            self.opp_team_pos.append((self.wall_distances[2], self.wall_bearings[2]))
+        if self.wall_distances[1] < 10 and (-90 < self.wall_bearings[1] < 90):
+            self.opp_team_pos.append((self.wall_distances[1], self.wall_bearings[1]))
+        elif self.wall_distances[3] < 10 and (-90 < self.wall_bearings[3] < 90):
+            self.opp_team_pos.append((self.wall_distances[3], self.wall_bearings[3]))
+
+        avoid_thresh = 30.0
 
         if self.has_flag:
-            my_action = np.asarray(self.home_loc, dtype=np.float64)
-            desired_speed = spd_home
+            # I have flag — go home with avoidance
+            goal_vect = 1.25 * rel_bearing_to_local_unit_rect(self.home_bearing)
+            avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=avoid_thresh)
+            my_action = goal_vect + avoid_vect
         else:
-            # In easy mode, sometimes "cruise" instead of hard-locking onto the flag each step.
-            # This makes easy attackers less effective without making them look broken.
-            if effective_mode == "easy" and np.random.random() < 0.50:
-                my_action = rel_bearing_to_local_unit_rect(float(np.random.uniform(-60.0, 60.0)))
+            # Teammate has flag OR no flag — keep attacking opponent flag
+            goal_vect = rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
+            avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=avoid_thresh)
+            if (not np.any(goal_vect + (avoid_vect))) or (
+                np.allclose(
+                    np.abs(np.abs(goal_vect) - np.abs(avoid_vect)),
+                    np.zeros(np.array(goal_vect).shape),
+                    atol=1e-01,
+                    rtol=1e-02,
+                )
+            ):
+                top_dist = self.wall_distances[0]
+                bottom_dist = self.wall_distances[2]
+                if top_dist > 1.25 * bottom_dist:
+                    my_action = dist_rel_bearing_to_local_rect(
+                        top_dist, self.wall_bearings[0]
+                    )
+                else:
+                    my_action = dist_rel_bearing_to_local_rect(
+                        bottom_dist, self.wall_bearings[2]
+                    )
             else:
-                my_action = np.asarray(self.opp_flag_loc, dtype=np.float64)
-            desired_speed = spd_flag
+                my_action = np.multiply(1.25, goal_vect) + avoid_vect
 
-        # In hard mode, add a small formation offset + teammate separation to reduce clumping
-        # when multiple attackers head to the same objective.
-        if effective_mode == "hard" and not self.has_flag:
-            try:
-                idx = int(str(self.id).split("_", 1)[1])
-            except Exception:
-                idx = 0
-            try:
-                base_bearing = float(local_rect_to_rel_bearing(my_action))
-            except Exception:
-                base_bearing = 0.0
-            offset_bearing = [-30.0, 0.0, 30.0][idx % 3]
-            my_action = rel_bearing_to_local_unit_rect(base_bearing + offset_bearing)
-            if getattr(self, "my_team_pos", None):
-                my_action = np.asarray(my_action, dtype=np.float64) + get_avoid_vect(self.my_team_pos, avoid_threshold=15.0)
-
-        # Opponent avoidance in medium+hard (per spec).
-        if effective_mode in ("medium", "hard"):
-            my_action = rel_bearing_to_local_unit_rect(local_rect_to_rel_bearing(my_action)) + get_avoid_vect(
-                self.opp_team_pos, avoid_threshold=30.0
-            )
-
-        # OOB avoidance for both (exact per-task snippet).
-        wall_pos = []
-        for wd, wb in zip(self.wall_distances, self.wall_bearings):
-            if wd < 8 and (-90 < wb < 90):
-                wall_pos.append((wd, wb))
-        if wall_pos:
-            avoid = get_avoid_vect(wall_pos, avoid_threshold=8.0)
-            my_action = my_action + avoid
-
-        return self.action_from_vector(my_action, desired_speed)
+        return self.action_from_vector(my_action, 1)
 
     def action_from_vector(self, vector, desired_speed_normalized):
         if desired_speed_normalized == 0 or vector is None:
@@ -159,6 +293,18 @@ class BaseAttacker(BaseAgentPolicy):
             else:
                 from pyquaticus.config import ACTION_MAP
                 return len(ACTION_MAP) - 1
+        vector = np.asarray(vector, dtype=np.float64)
+        near_wall = []
+        for wd, wb in zip(getattr(self, "wall_distances", []), getattr(self, "wall_bearings", [])):
+            if float(wd) < 10.0 and (-100.0 < float(wb) < 100.0):
+                near_wall.append((float(wd), float(wb)))
+        if near_wall:
+            wall_avoid = 1.5 * get_avoid_vect(near_wall, avoid_threshold=10.0)
+            candidate = vector + wall_avoid
+            if float(np.linalg.norm(candidate)) >= 3.0:
+                vector = candidate
+            else:
+                vector = rel_bearing_to_local_unit_rect(local_rect_to_rel_bearing(wall_avoid))
         rel_bearing = local_rect_to_rel_bearing(vector)
         if self.continuous:
             return (desired_speed_normalized * self.max_speed, rel_bearing)

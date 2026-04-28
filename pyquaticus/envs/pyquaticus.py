@@ -1186,6 +1186,10 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         self._check_flag_captures()
         self._check_untag_vectorized() if self.team_size >= 5 else self._check_untag()
         self._set_dones()
+        self.state["current_time"] = self.current_time
+        self.state["max_time"] = self.max_time
+        self.state["max_score"] = self.max_score
+        self.state["game_done"] = self.dones["__all__"]
         self._update_dist_bearing_to_obstacles()
         self._check_agent_collisions()
 
@@ -2521,7 +2525,11 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
                     "captures":                  np.zeros(len(self.agents_of_team), dtype=int), #total number of flag captures made by this team
                     "tags":                      np.zeros(len(self.agents_of_team), dtype=int), #total number of tags made by this team
                     "grabs":                     np.zeros(len(self.agents_of_team), dtype=int), #total number of flag grabs made by this team
-                    "agent_collisions":          np.zeros(len(self.players), dtype=int) #total number of collisions per agent
+                    "agent_collisions":          np.zeros(len(self.players), dtype=int), #total number of collisions per agent
+                    "current_time":              self.current_time,
+                    "max_time":                  self.max_time,
+                    "max_score":                 self.max_score,
+                    "game_done":                 False,
                 }
 
             # set player and flag attributes and self.game_events
@@ -2661,6 +2669,10 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
             "tags":                      np.zeros(len(self.agents_of_team), dtype=int),
             "grabs":                     np.zeros(len(self.agents_of_team), dtype=int),
             "agent_collisions":          np.zeros(len(self.players), dtype=int), #total number of collisions per agent
+            "current_time":              self.current_time,
+            "max_time":                  self.max_time,
+            "max_score":                 self.max_score,
+            "game_done":                 False,
         }
 
         ### Set Agents ###
@@ -4196,21 +4208,6 @@ when gps environment bounds are specified in meters"
         # Background
         self.screen.blit(self.pygame_background_img, (0, 0))
 
-        if getattr(self, "render_reward_thresholds", False):
-            if not hasattr(self, "reward_overlay_font"):
-                self.reward_overlay_font = pygame.font.SysFont(None, 20)
-            idle_m = float(getattr(self, "render_idle_dist_thresh_m", 0.0))
-            circle_m = float(getattr(self, "render_circle_dist_thresh_m", 0.0))
-            idle_grace = int(getattr(self, "render_idle_grace_steps", 0))
-            circle_grace = int(getattr(self, "render_circle_grace_steps", 0))
-            legend_text = (
-                f"Blue reward thresholds: idle<{idle_m:.2f}m (purple), "
-                f"circle<{circle_m:.2f}m + turn>{float(getattr(self, 'render_circle_heading_delta_deg', 0.0)):.0f}deg (orange), "
-                f"grace idle/circle={idle_grace}/{circle_grace} steps"
-            )
-            legend = self.reward_overlay_font.render(legend_text, True, (20, 20, 20))
-            self.screen.blit(legend, (12, 10))
-
         # Flags
         for team in self.agents_of_team:
             team_idx = int(team)
@@ -4294,8 +4291,6 @@ when gps environment bounds are specified in meters"
                     circle_draw_radius = max(idle_draw_radius + 2, base_px + circle_px)
                     if circle_px > 0:
                         draw.circle(self.screen, (255, 140, 0), blit_pos, radius=circle_draw_radius, width=2)
-                    if idle_px > 0:
-                        draw.circle(self.screen, (160, 32, 240), blit_pos, radius=idle_draw_radius, width=2)
 
                 # lidar
                 if self.lidar_obs and self.render_lidar_mode:
