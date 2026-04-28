@@ -471,7 +471,9 @@ def EasyCombinedGen(agent_id, env, *args, **kwargs):
             get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
             actions = []
             for i in range(len(obs_batch)):
-                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.4)
+                actions.append(act)
             return actions, [], {}
 
         def get_weights(self): return {}
@@ -482,7 +484,7 @@ def EasyCombinedGen(agent_id, env, *args, **kwargs):
 
 
 def MediumAttackGen(agent_id, env, *args, **kwargs):
-    """Medium Attack — BaseAttacker medium + speed 0.6 + no randomness."""
+    """Medium Attack — BaseAttacker medium + speed 0.7 + no randomness."""
 
     class MediumAttackPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -498,7 +500,7 @@ def MediumAttackGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.6)
+                act = _remap_discrete_speed(self.policy, act, 0.7)
                 actions.append(act)
             return actions, [], {}
 
@@ -510,7 +512,7 @@ def MediumAttackGen(agent_id, env, *args, **kwargs):
 
 
 def MediumDefendGen(agent_id, env, *args, **kwargs):
-    """Medium Defend — BaseDefender medium + speed 0.6 + no randomness."""
+    """Medium Defend — BaseDefender medium + speed 0.7 + no randomness."""
 
     class MediumDefendPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -526,7 +528,7 @@ def MediumDefendGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 0.6)
+                act = _remap_discrete_speed(self.policy, act, 0.7)
                 actions.append(act)
             return actions, [], {}
 
@@ -553,7 +555,9 @@ def MediumCombinedGen(agent_id, env, *args, **kwargs):
             get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
             actions = []
             for i in range(len(obs_batch)):
-                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.7)
+                actions.append(act)
             return actions, [], {}
 
         def get_weights(self): return {}
@@ -564,7 +568,7 @@ def MediumCombinedGen(agent_id, env, *args, **kwargs):
 
 
 def HardAttackGen(agent_id, env, *args, **kwargs):
-    """Hard Attack — BaseAttacker hard + speed 1.0."""
+    """Hard Attack — BaseAttacker hard + speed 0.9."""
 
     class HardAttackPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -580,7 +584,7 @@ def HardAttackGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 1.0)
+                act = _remap_discrete_speed(self.policy, act, 0.9)
                 actions.append(act)
             return actions, [], {}
 
@@ -592,7 +596,7 @@ def HardAttackGen(agent_id, env, *args, **kwargs):
 
 
 def HardDefendGen(agent_id, env, *args, **kwargs):
-    """Hard Defend — BaseDefender hard + speed 1.0."""
+    """Hard Defend — BaseDefender hard + speed 0.9."""
 
     class HardDefendPolicy(Policy):
         def __init__(self, observation_space, action_space, config):
@@ -608,7 +612,7 @@ def HardDefendGen(agent_id, env, *args, **kwargs):
             actions = []
             for i in range(len(obs_batch)):
                 act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
-                act = _remap_discrete_speed(self.policy, act, 1.0)
+                act = _remap_discrete_speed(self.policy, act, 0.9)
                 actions.append(act)
             return actions, [], {}
 
@@ -635,7 +639,9 @@ def HardCombinedGen(agent_id, env, *args, **kwargs):
             get_info_i, norm_info = _wrap_info_batch_for_policy(self.policy, info_batch)
             actions = []
             for i in range(len(obs_batch)):
-                actions.append(self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i))))
+                act = self.policy.compute_action(obs_batch[i], norm_info(get_info_i(i)))
+                act = _remap_discrete_speed(self.policy, act, 0.9)
+                actions.append(act)
             return actions, [], {}
 
         def get_weights(self): return {}

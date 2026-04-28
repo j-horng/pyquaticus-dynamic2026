@@ -118,7 +118,7 @@ class BaseDefender(BaseAgentPolicy):
 
             # Never pursue across scrimmage; if we drift across, return home-side.
             if not on_own_side:
-                return self.action_from_vector(_to_local(my_flag_home), 0.7)
+                return self.action_from_vector(_to_local(my_flag_home), 0.4)
 
             # Chase nearest untagged opponent if close enough.
             nearest_local = None
@@ -147,10 +147,10 @@ class BaseDefender(BaseAgentPolicy):
                         carrier_on_our_side = True
                         break
                 if carrier_on_our_side:
-                    return self.action_from_vector(self.my_flag_loc, 0.7)
+                    return self.action_from_vector(self.my_flag_loc, 0.4)
             # Priority 2: chase nearest enemy if close
             if nearest_local is not None and nearest_dist <= 35.0:
-                return self.action_from_vector(nearest_local, 0.7)
+                return self.action_from_vector(nearest_local, 0.4)
             # Otherwise patrol
 
             team_hash = int(hashlib.md5(self.id.encode()).hexdigest(), 16)
@@ -200,7 +200,7 @@ class BaseDefender(BaseAgentPolicy):
             if wall_pos:
                 my_action = np.asarray(my_action, dtype=np.float64) + get_avoid_vect(wall_pos, avoid_threshold=8.0)
 
-            return self.action_from_vector(my_action, 0.7)
+            return self.action_from_vector(my_action, 0.4)
 
         if self.mode == "competition_easy":
             assert self.aquaticus_field_points is not None
@@ -293,7 +293,7 @@ class BaseDefender(BaseAgentPolicy):
                     return self.action_from_vector(None, 0)
                 return "CH"
 
-            return self.action_from_vector(ag_vect, 1)
+            return self.action_from_vector(ag_vect, 0.9)
 
         if self.mode == "medium":
             # If opposing team has the flag, chase them (flag pos moves with carrier).
@@ -317,7 +317,7 @@ class BaseDefender(BaseAgentPolicy):
 
             # Never pursue across scrimmage; if we drift across, return home-side.
             if not on_own_side:
-                return self.action_from_vector(_to_local(my_flag_home), 0.9)
+                return self.action_from_vector(_to_local(my_flag_home), 0.7)
 
             if self.opp_team_has_flag:
                 carrier_on_our_side = False
@@ -328,7 +328,7 @@ class BaseDefender(BaseAgentPolicy):
                         carrier_on_our_side = True
                         break
                 if carrier_on_our_side:
-                    return self.action_from_vector(self.my_flag_loc, 1)
+                    return self.action_from_vector(self.my_flag_loc, 0.9)
 
             nearest_local = None
             nearest_dist = float("inf")
@@ -346,7 +346,7 @@ class BaseDefender(BaseAgentPolicy):
                         dist_rel_bearing_to_local_rect(pos[0], pos[1]), dtype=np.float64
                     )
             if nearest_local is not None and nearest_dist <= 60.0:
-                return self.action_from_vector(nearest_local, 0.9)
+                return self.action_from_vector(nearest_local, 0.7)
 
             team_hash = int(hashlib.md5(self.id.encode()).hexdigest(), 16)
             side_sign = 1.0 if team_str == "blue" else -1.0
@@ -394,7 +394,7 @@ class BaseDefender(BaseAgentPolicy):
             if wall_pos:
                 my_action = np.asarray(my_action, dtype=np.float64) + get_avoid_vect(wall_pos, avoid_threshold=8.0)
 
-            return self.action_from_vector(my_action, 0.9)
+            return self.action_from_vector(my_action, 0.7)
 
         # Hard mode: intercept when threatened; otherwise zone patrol on own side.
         team_str = self.team.name.lower().split("_")[0]
@@ -415,7 +415,7 @@ class BaseDefender(BaseAgentPolicy):
 
         # Prevent crossing the scrimmage line: if we drift to enemy side, redirect back to flag.
         if not on_own_side:
-            return self.action_from_vector(np.asarray(self.my_flag_loc, dtype=np.float64), 1)
+            return self.action_from_vector(np.asarray(self.my_flag_loc, dtype=np.float64), 0.9)
 
         wall_pos = []
         if self.wall_distances[0] < 7 and (-90 < self.wall_bearings[0] < 90):
@@ -565,7 +565,7 @@ class BaseDefender(BaseAgentPolicy):
                 self.my_team_pos, avoid_threshold=24.0
             )
 
-        return self.action_from_vector(ag_vect, 1)
+        return self.action_from_vector(ag_vect, 0.9)
 
     def action_from_vector(self, vector, desired_speed_normalized):
         if desired_speed_normalized == 0 or vector is None:

@@ -101,11 +101,11 @@ class BaseAttacker(BaseAgentPolicy):
                 goal_vect = rel_bearing_to_local_unit_rect(self.home_bearing)
                 avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=20.0)
                 my_action = goal_vect + 0.5 * avoid_vect
-                return self.action_from_vector(my_action, 0.7)
+                return self.action_from_vector(my_action, 0.4)
             goal_vect = rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
             avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=15.0)
             my_action = goal_vect + 0.4 * avoid_vect
-            return self.action_from_vector(my_action, 0.7)
+            return self.action_from_vector(my_action, 0.4)
 
         if self.mode == "competition_easy":
             # Keep competition behavior unchanged (MOOS/Aquaticus waypoint logic).
@@ -172,7 +172,7 @@ class BaseAttacker(BaseAgentPolicy):
                 goal_vect = 2.0 * rel_bearing_to_local_unit_rect(self.opp_flag_bearing + spread_angle)
                 avoid_vect = get_avoid_vect(self.opp_team_pos, avoid_threshold=25.0)
                 my_action = goal_vect + 0.8 * avoid_vect
-            return self.action_from_vector(my_action, 0.9)
+            return self.action_from_vector(my_action, 0.7)
 
         if self.mode == "competition_medium":
             # Keep competition behavior unchanged (classic wall-as-obstacle logic).
@@ -239,7 +239,7 @@ class BaseAttacker(BaseAgentPolicy):
                 else:
                     my_action = 1.25 * goal_vect + avoid_vect
 
-            return self.action_from_vector(my_action, 1)
+            return self.action_from_vector(my_action, 0.9)
 
         # Hard (and any other remaining modes): classic wall + opponent avoidance.
         # Add nearby walls as obstacles.
@@ -284,7 +284,7 @@ class BaseAttacker(BaseAgentPolicy):
             else:
                 my_action = np.multiply(1.25, goal_vect) + avoid_vect
 
-        return self.action_from_vector(my_action, 1)
+        return self.action_from_vector(my_action, 0.9)
 
     def action_from_vector(self, vector, desired_speed_normalized):
         if desired_speed_normalized == 0 or vector is None:

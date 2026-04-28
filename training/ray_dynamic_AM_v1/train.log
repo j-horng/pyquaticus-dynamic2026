@@ -380,3 +380,8 @@ Iter 755: return_mean=-1.39, entropy=3.2177, policy_loss=-0.0088, time=90.0s/ite
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_755
 Iter 760: return_mean=-2.20, entropy=3.2214, policy_loss=-0.0049, time=89.9s/iter (est. ~4494s per 50 iters)
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_760
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: easy_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_595 (next iteration 596)
+Blue weights restored from resume checkpoint.
+Red opponent: easy_random (current args). Blue weights restored from checkpoint.

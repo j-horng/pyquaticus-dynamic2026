@@ -94,9 +94,10 @@ class BaseAgentPolicy:
             return int(no_op)
 
         # If the action map only contains a single nonzero speed (e.g. NRL: full-speed only),
-        # approximate "slower" speeds by emitting no-op at a *controlled cadence*.
-        # This preserves the requested difficulty spread even when discrete speed control is absent,
-        # without making the policy look randomly indecisive.
+        # approximate "slower" speeds by alternating move/no-op.
+        #
+        # This is Option 1: it halves effective speed (very visible) without touching
+        # the action map (NRL has only full-speed moves + no-op).
         try:
             speeds = {float(s) for (s, _h) in ACTION_MAP[:-1]}
         except Exception:
@@ -104,13 +105,10 @@ class BaseAgentPolicy:
         if len(speeds) == 1:
             only_spd = next(iter(speeds))
             if only_spd > 0.0 and desired_speed_frac < only_spd:
-                p_move = max(0.0, min(1.0, float(desired_speed_frac) / only_spd))
-                # Accumulator: add p_move each step; move whenever it crosses 1.0.
-                # Example: p_move=0.5 => move every other step; p_move=0.75 => move 3 of 4 steps.
-                self._discrete_move_accum = float(self._discrete_move_accum) + float(p_move)
-                if self._discrete_move_accum < 1.0:
+                # Toggle every call: no-op, move, no-op, move...
+                self._discrete_move_accum = 0.0 if float(self._discrete_move_accum) > 0.0 else 1.0
+                if float(self._discrete_move_accum) <= 0.0:
                     return int(no_op)
-                self._discrete_move_accum -= 1.0
 
         target_h = self._wrap_angle180(rel_bearing_deg)
         best_i = 0

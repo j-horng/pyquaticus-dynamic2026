@@ -207,12 +207,9 @@ class Heuristic_CTF_Agent(BaseAgentPolicy):
         if not self.on_sides:
             goal_vec = goal_vec + get_avoid_vect(self.opp_team_pos, avoid_threshold=15)
 
-        if self.mode == "hard":
-            return self.action_from_vector(goal_vec, 1)
-        else:
-            # Match requested speed scale: easy=0.8, medium=0.9.
-            spd = 0.8 if self.mode == "easy" else 0.9
-            return self.action_from_vector(goal_vec, spd)
+        # Match requested speed scale across difficulty: easy=0.4, medium=0.7, hard=0.9.
+        spd = 0.4 if self.mode == "easy" else (0.7 if self.mode == "medium" else 0.9)
+        return self.action_from_vector(goal_vec, spd)
 
     def get_team_density(self, friendly_positions, enemy_positions):
         """This function returns the center of mass and varience of all the agents in the team."""

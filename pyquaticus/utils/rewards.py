@@ -167,10 +167,10 @@ from pyquaticus.utils.utils import *
 # Set to True to print reward events to console during deployment/rendering
 REWARD_DEBUG = False
 TAGGED_PENALTY = -0.75
-IDLE_STEP_PENALTY = -0.002
+IDLE_STEP_PENALTY = -0.05
 IDLE_DIST_THRESH = 0.15
-# With default tau=0.1s and sim_speedup_factor=1, 20 steps ~= 2 seconds.
-IDLE_GRACE_STEPS = 20
+# With default tau=0.1s and sim_speedup_factor=1, 10 steps ~= 1 second.
+IDLE_GRACE_STEPS = 10
 
 _IDLE_STREAK_STEPS = {}
 _DEEP_HOLD_REWARDED = {}
@@ -311,7 +311,7 @@ def caps_and_grabs(
 
         # TEAM: enemy grabbed our flag
         if our_flag_taken_now and not our_flag_taken_prev:
-            reward += -1.0
+            reward += -0.5
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK enemy grab team: -1.00")
 
         # TEAM: enemy scored
