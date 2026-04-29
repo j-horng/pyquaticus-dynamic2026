@@ -169,6 +169,9 @@ REWARD_DEBUG = False
 
 _IDLE_STREAK_STEPS = {}
 _DEEP_PUSH_REWARDED = {}
+_DEEP_FLEE_75_REWARDED = {}
+_DEEP_FLEE_625_REWARDED = {}
+_ENEMY_DEEP_PENALIZED = {}
 
 ### Example Reward Funtion ###
 def example_reward(
@@ -207,22 +210,26 @@ def caps_and_grabs(
     R_TAG_ENEMY       =  1.0    # tagged any enemy
     R_TAG_CARRIER     =  3.0    # tagged the enemy flag carrier (stacks with R_TAG_ENEMY)
     R_GRAB_INDIVIDUAL =  2.0    # this agent grabbed the enemy flag
-    R_GRAB_TEAM       =  1.0    # any ally grabbed the enemy flag
+    R_GRAB_TEAM       =  0.3    # any ally grabbed the enemy flag (reduced)
     R_CAP_INDIVIDUAL  =  5.0    # this agent scored
     R_CAP_TEAM        =  1.0    # any ally scored
     R_DEEP_PUSH_BASE  =  0.5    # one-time reward for crossing 75% field depth on cooldown
     R_DEEP_PUSH_BONUS =  0.5    # extra bonus scaled by remaining cooldown fraction
+    R_DEEP_FLEE_75    =  1.0    # one-time reward for flag carrier crossing back past 3/4 depth
+    R_DEEP_FLEE_625   =  0.6    # one-time reward for flag carrier crossing back past 5/8 depth
+    P_ENEMY_DEEP      = -1.0    # penalty when any enemy crosses past 1/4 depth into our side
 
     P_ENEMY_GRAB      = -1.0    # enemy grabbed our flag
     P_ENEMY_CAP       = -3.0    # enemy scored
     P_SELF_TAGGED     = -1.0    # this agent was newly tagged (individual penalty)
+    P_CLOSE_ENEMY     = -0.05   # per-step penalty when too close to any enemy
     P_OOB             = -3.0    # agent went out of bounds
     P_IDLE_BASE       = -0.02   # idle penalty at first step past grace
     P_IDLE_SLOPE      = -0.01   # additional penalty per extra idle step past grace
-    P_IDLE_CAP        = -0.25   # maximum idle penalty per step (most negative)
 
     IDLE_DIST_THRESH  =  0.15   # min distance per step to not count as idle
-    IDLE_GRACE_STEPS  =  20     # steps before idle penalty kicks in
+    IDLE_GRACE_STEPS  =  10     # steps before idle penalty kicks in
+    CLOSE_ENEMY_MULT  =  1.5    # penalize when within this multiple of catch_radius
     # ──────────────────────────────────────────────────────────────────────
 
     reward = 0.0
@@ -252,6 +259,70 @@ def caps_and_grabs(
     our_flag_now = bool(state["flag_taken"][int(team)])
     our_flag_prev = bool(prev_state["flag_taken"][int(team)])
 
+    # If we're tagged, don't apply any shaping/penalties while returning.
+    # Only apply the one-time "got tagged" penalty on the transition into tagged.
+    prev_is_tagged = bool(np.asarray(prev_state["agent_is_tagged"][agent_index]).item())
+    if is_tagged:
+        if (not prev_is_tagged):
+            reward += P_SELF_TAGGED
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} got tagged: {P_SELF_TAGGED:+.3f}")
+        return reward
+
+    # ── Close to enemy penalty (1.5x tag radius) ───────────────────────────
+    # Only apply this when we're in enemy territory; if we're safely on our own side,
+    # don't punish defenders just because enemies are near the scrimmage line.
+    try:
+        agent_on_own_side = bool(np.asarray(state["agent_on_sides"][agent_index]).item())
+    except Exception:
+        agent_on_own_side = True
+    if not agent_on_own_side:
+        enemy_team_enum = Team.RED_TEAM if int(team) == int(Team.BLUE_TEAM) else Team.BLUE_TEAM
+        enemy_inds = agent_inds_of_team.get(enemy_team_enum, []) if isinstance(agent_inds_of_team, dict) else []
+        if isinstance(enemy_inds, np.ndarray):
+            enemy_inds = enemy_inds.reshape(-1).tolist()
+        if len(enemy_inds) > 0:
+            disabled_all = state.get("disabled_agents")
+            thresh2 = (float(CLOSE_ENEMY_MULT) * float(catch_radius)) ** 2
+            for e_i in enemy_inds:
+                ei = int(e_i)
+                if disabled_all is not None and ei < len(disabled_all) and bool(disabled_all[ei]):
+                    continue
+
+                # Do not penalize proximity to tagged enemies.
+                try:
+                    e_tagged = bool(np.asarray(state["agent_is_tagged"][ei]).item())
+                except Exception:
+                    e_tagged = True
+                if e_tagged:
+                    continue
+
+                # Do not penalize proximity to enemies whose tagging is on cooldown.
+                try:
+                    e_cd = float(np.asarray(state["agent_tagging_cooldown"][ei]).item())
+                except Exception:
+                    # Safe default: if we can't read cooldown, assume enemy can't tag.
+                    e_cd = 0.0
+                if e_cd < tagging_cooldown:
+                    continue
+
+                # Do not penalize proximity to enemies that are already on Blue's side.
+                # `agent_on_sides` is defined relative to each agent's own team:
+                # - For Red agents: False => they are on Blue side.
+                try:
+                    enemy_on_own_side = bool(np.asarray(state["agent_on_sides"][ei]).item())
+                except Exception:
+                    enemy_on_own_side = True
+                if not enemy_on_own_side:
+                    continue
+
+                epos = np.asarray(state["agent_position"][ei], dtype=np.float64)
+                if float(np.sum((pos - epos) ** 2)) < thresh2:
+                    reward += P_CLOSE_ENEMY
+                    if REWARD_DEBUG:
+                        print(f"[REWARD] {agent_id} close enemy (<{CLOSE_ENEMY_MULT:.1f}x): {P_CLOSE_ENEMY:+.2f}")
+                    break
+
     # ── Out of Bounds ──────────────────────────────────────────────────────
     if state["agent_oob"][agent_index] > prev_state["agent_oob"][agent_index]:
         reward += P_OOB
@@ -264,9 +335,9 @@ def caps_and_grabs(
     _IDLE_STREAK_STEPS[agent_id] = streak
     if streak >= IDLE_GRACE_STEPS:
         extra = int(streak - IDLE_GRACE_STEPS)
-        idle_p = max(P_IDLE_CAP, P_IDLE_BASE + P_IDLE_SLOPE * float(extra))
+        idle_p = P_IDLE_BASE + P_IDLE_SLOPE * float(extra)
         reward += idle_p
-        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
+        # if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
 
     # ── Tagging ────────────────────────────────────────────────────────────
     if tagged_idx is not None:
@@ -277,19 +348,11 @@ def caps_and_grabs(
             reward += R_TAG_CARRIER
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged carrier: +{R_TAG_CARRIER}")
 
-    # ── Self got tagged (individual penalty) ───────────────────────────────
-    prev_is_tagged = bool(np.asarray(prev_state["agent_is_tagged"][agent_index]).item())
-    if (not prev_is_tagged) and is_tagged:
-        reward += P_SELF_TAGGED
-        if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} got tagged: {P_SELF_TAGGED:+.3f}")
-
     # ── Flag Grab ──────────────────────────────────────────────────────────
     if has_flag and not had_flag:
         reward += R_GRAB_INDIVIDUAL
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} grabbed flag: +{R_GRAB_INDIVIDUAL}")
-
-    if grabs_up:
+    elif grabs_up:
         reward += R_GRAB_TEAM
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} ally grabbed flag: +{R_GRAB_TEAM}")
 
@@ -309,6 +372,75 @@ def caps_and_grabs(
     if enemy_caps_up:
         reward += P_ENEMY_CAP
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy captured: {P_ENEMY_CAP}")
+
+    # ── Enemy Deep Penetration Penalty ─────────────────────────────────────
+    # Penalize once per enemy agent per incursion past 1/4 depth into our side.
+    # Reset only if the enemy is tagged OR retreats all the way back past midfield (2/4).
+    global _ENEMY_DEEP_PENALIZED
+    field_w = float(env_size[0])
+    enemy_team_enum = Team.RED_TEAM if int(team) == int(Team.BLUE_TEAM) else Team.BLUE_TEAM
+    enemy_inds = (
+        agent_inds_of_team.get(enemy_team_enum, [])
+        if isinstance(agent_inds_of_team, dict)
+        else []
+    )
+    for e_idx in enemy_inds:
+        ei = int(e_idx)
+        if ei < 0 or ei >= len(agents):
+            continue
+        e_id = agents[ei]
+        e_pos = np.asarray(state["agent_position"][ei], dtype=np.float64)
+        e_prev_pos = np.asarray(prev_state["agent_position"][ei], dtype=np.float64)
+        e_tagged = bool(np.asarray(state["agent_is_tagged"][ei]).item())
+        if e_tagged:
+            _ENEMY_DEEP_PENALIZED[e_id] = False
+            continue
+
+        if int(team) == 0:
+            # Blue on left; enemy (red) pushes left past 1/4 field width
+            crossed = float(e_prev_pos[0]) > 0.25 * field_w >= float(e_pos[0])
+        else:
+            # Blue on right; enemy pushes right past 3/4 field width
+            crossed = float(e_prev_pos[0]) < 0.75 * field_w <= float(e_pos[0])
+
+        if crossed and not _ENEMY_DEEP_PENALIZED.get(e_id, False):
+            reward += P_ENEMY_DEEP
+            _ENEMY_DEEP_PENALIZED[e_id] = True
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy {e_id} crossed deep: {P_ENEMY_DEEP}")
+
+        if _ENEMY_DEEP_PENALIZED.get(e_id, False):
+            # Reset once enemy retreats back to their own side past midfield (2/4).
+            if int(team) == 0:
+                retreated = float(e_pos[0]) > 0.5 * field_w
+            else:
+                retreated = float(e_pos[0]) < 0.5 * field_w
+            if retreated:
+                _ENEMY_DEEP_PENALIZED[e_id] = False
+
+    # ── Deep Flee (one-time per carry, flag carrier retreating toward home) ─
+    global _DEEP_FLEE_75_REWARDED, _DEEP_FLEE_625_REWARDED
+    if has_flag:
+        field_w = float(env_size[0])
+        if int(team) == 0:
+            # Blue on left; "fleeing back" means decreasing x
+            crossed_75  = float(prev_pos[0]) > 0.75 * field_w >= float(pos[0])
+            crossed_625 = float(prev_pos[0]) > 0.625 * field_w >= float(pos[0])
+        else:
+            crossed_75  = float(prev_pos[0]) < 0.25 * field_w <= float(pos[0])
+            crossed_625 = float(prev_pos[0]) < 0.375 * field_w <= float(pos[0])
+
+        if crossed_75 and not _DEEP_FLEE_75_REWARDED.get(agent_id, False):
+            reward += R_DEEP_FLEE_75
+            _DEEP_FLEE_75_REWARDED[agent_id] = True
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep flee 3/4: +{R_DEEP_FLEE_75}")
+        if crossed_625 and not _DEEP_FLEE_625_REWARDED.get(agent_id, False):
+            reward += R_DEEP_FLEE_625
+            _DEEP_FLEE_625_REWARDED[agent_id] = True
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep flee 5/8: +{R_DEEP_FLEE_625}")
+    else:
+        # Reset flee flags when agent no longer has flag (captured or tagged)
+        _DEEP_FLEE_75_REWARDED[agent_id] = False
+        _DEEP_FLEE_625_REWARDED[agent_id] = False
 
     # ── Deep Push (one-time per cooldown window, while on tag cooldown) ────
     cd = float(state["agent_tagging_cooldown"][agent_index])

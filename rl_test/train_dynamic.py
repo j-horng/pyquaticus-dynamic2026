@@ -607,6 +607,7 @@ def _run_watch(args):
 
     dynamic_env = _get_dynamic_pyquaticus(env)
     dynamic_env.render_reward_thresholds = True
+    dynamic_env.render_catch_radius_indicator = bool(getattr(args, "watch_catch_radius", False))
     dynamic_env.render_idle_dist_thresh_m = float(getattr(rew, "IDLE_DIST_THRESH", 0.0))
     dynamic_env.render_circle_dist_thresh_m = float(getattr(rew, "CIRCLE_DIST_THRESH", 0.0))
     dynamic_env.render_circle_heading_delta_deg = float(getattr(rew, "CIRCLE_HEADING_DELTA_DEG", 0.0))
@@ -1230,6 +1231,11 @@ def main():
     parser.add_argument("--resume", type=str, default=None, metavar="PATH", help="Resume from checkpoint (e.g. ./training/iter_1250)")
     parser.add_argument("--watch", action="store_true", help="Render instead of training")
     parser.add_argument("--reward-debug", action="store_true", help="With --watch: print per-event reward lines ([REWARD] ...) to console")
+    parser.add_argument(
+        "--watch-catch-radius",
+        action="store_true",
+        help="With --watch: draw catch radius and 2x catch radius circles around agents.",
+    )
     parser.add_argument("--no-log-file", action="store_true", help="Disable writing progress to out_dir/train.log")
     parser.add_argument("--red-heuristic", action="store_true", help="Use built-in heuristic (combined CTF) for Red instead of random")
     parser.add_argument("--red-heuristic-mode", type=str, default="easy", choices=["easy", "medium", "hard"], help="Heuristic difficulty when --red-heuristic (default: easy)")
