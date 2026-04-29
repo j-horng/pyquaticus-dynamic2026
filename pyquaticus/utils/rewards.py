@@ -166,14 +166,8 @@ from pyquaticus.utils.utils import *
 
 # Set to True to print reward events to console during deployment/rendering
 REWARD_DEBUG = False
-TAGGED_PENALTY = -0.75
-IDLE_STEP_PENALTY = -0.05
-IDLE_DIST_THRESH = 0.15
-# With default tau=0.1s and sim_speedup_factor=1, 10 steps ~= 1 second.
-IDLE_GRACE_STEPS = 10
 
 _IDLE_STREAK_STEPS = {}
-_DEEP_HOLD_REWARDED = {}
 _TERMINAL_REWARDED = {}
 
 ### Example Reward Funtion ###
@@ -207,209 +201,129 @@ def caps_and_grabs(
     max_speeds: list,
     tagging_cooldown: float
 ):
-    global _IDLE_STREAK_STEPS, _DEEP_HOLD_REWARDED, _TERMINAL_REWARDED
+    global _IDLE_STREAK_STEPS, _TERMINAL_REWARDED
+
+    # ── Reward Values ──────────────────────────────────────────────────────
+    R_TAG_ENEMY       =  1.0    # tagged any enemy
+    R_TAG_CARRIER     =  3.0    # tagged the enemy flag carrier (stacks with R_TAG_ENEMY)
+    R_GRAB_INDIVIDUAL =  2.0    # this agent grabbed the enemy flag
+    R_GRAB_TEAM       =  1.0    # any ally grabbed the enemy flag
+    R_CAP_INDIVIDUAL  =  5.0    # this agent scored
+    R_CAP_TEAM        =  1.0    # any ally scored
+    R_DEEP_PUSH_BASE  =  0.5    # one-time reward for crossing 75% field depth on cooldown
+    R_DEEP_PUSH_BONUS =  0.5    # extra bonus scaled by remaining cooldown fraction
+
+    P_ENEMY_GRAB      = -1.0    # enemy grabbed our flag
+    P_ENEMY_CAP       = -3.0    # enemy scored
+    P_OOB             = -3.0    # agent went out of bounds
+    P_IDLE            = -0.05   # per step while idle (after grace period)
+
+    IDLE_DIST_THRESH  =  0.15   # min distance per step to not count as idle
+    IDLE_GRACE_STEPS  =  10     # steps before idle penalty kicks in
+    # ──────────────────────────────────────────────────────────────────────
+
     reward = 0.0
-    
-    #----------
     agent_index = agents.index(agent_id)
 
-    # Inactive/disabled agents must not receive shaping or team-event credit (e.g. red_dummy 3v0).
+    # Skip disabled agents
     disabled = state.get("disabled_agents")
     if disabled is not None and len(disabled) > agent_index and bool(disabled[agent_index]):
         return 0.0
 
-    # Only Blue team (team 0) gets trained — Red agents always return 0.0.
+    # Only train Blue team
     if int(team) != int(Team.BLUE_TEAM):
         return 0.0
 
-    prev_num_oob = prev_state["agent_oob"][agent_index]
-    num_oob = state["agent_oob"][agent_index]
-    if num_oob > prev_num_oob:
-        reward += -3.0
-        if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} OOB: -3.00")
-
-    pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
-    prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
-    step_dist = float(np.linalg.norm(pos - prev_pos))
-    idle_streak = _IDLE_STREAK_STEPS.get(agent_id, 0)
-    if step_dist < IDLE_DIST_THRESH:
-        idle_streak += 1
-        _IDLE_STREAK_STEPS[agent_id] = idle_streak
-    else:
-        _IDLE_STREAK_STEPS[agent_id] = 0
-    if idle_streak >= IDLE_GRACE_STEPS:
-        reward += IDLE_STEP_PENALTY
-        if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} idle step: {IDLE_STEP_PENALTY:+.4f} (streak={idle_streak})")
-
-    prev_is_tagged = bool(np.asarray(prev_state["agent_is_tagged"][agent_index]).item())
-    is_tagged = bool(np.asarray(state["agent_is_tagged"][agent_index]).item())
-
-    prev_has_flag = prev_state["agent_has_flag"][agent_index]
-    has_flag = state["agent_has_flag"][agent_index]
-    had_flag_before = bool(np.asarray(prev_has_flag).item())
-    has_flag_now = bool(np.asarray(has_flag).item())
-
-    tagged_idx = state["agent_made_tag"][agent_index]
-    tagged_had_flag = (
-        tagged_idx is not None and
-        bool(np.asarray(prev_state["agent_has_flag"][tagged_idx]).item())
-    )
-
-    blue_caps = state["captures"][int(Team.BLUE_TEAM)]
-    red_caps = state["captures"][int(Team.RED_TEAM)]
-    score_diff = blue_caps - red_caps
-    is_tied = score_diff == 0
-    is_behind = score_diff < 0
-    is_ahead = score_diff > 0
     enemy_team = 1 - int(team)
 
+    # ── Commonly Reused State ──────────────────────────────────────────────
+    pos            = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
+    prev_pos       = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
+    had_flag       = bool(np.asarray(prev_state["agent_has_flag"][agent_index]).item())
+    has_flag       = bool(np.asarray(state["agent_has_flag"][agent_index]).item())
+    is_tagged      = bool(np.asarray(state["agent_is_tagged"][agent_index]).item())
+    tagged_idx     = state["agent_made_tag"][agent_index]
     team_caps_up = state["captures"][int(team)] > prev_state["captures"][int(team)]
     enemy_caps_up = state["captures"][enemy_team] > prev_state["captures"][enemy_team]
-    our_flag_taken_now = bool(state["flag_taken"][int(team)])
-    our_flag_taken_prev = bool(prev_state["flag_taken"][int(team)])
+    grabs_up = state["grabs"][int(team)] > prev_state["grabs"][int(team)]
+    our_flag_now = bool(state["flag_taken"][int(team)])
+    our_flag_prev = bool(prev_state["flag_taken"][int(team)])
 
-    # ── Attack Phase ──────────────────────────────────────────────────────
-    if is_tied or is_behind:
+    # ── Out of Bounds ──────────────────────────────────────────────────────
+    if state["agent_oob"][agent_index] > prev_state["agent_oob"][agent_index]:
+        reward += P_OOB
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} OOB: {P_OOB}")
 
-        # INDIVIDUAL: grabbed the flag
-        if has_flag_now and not had_flag_before:
-            reward += 2.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK grab individual: +2.00")
+    # ── Idle Penalty ───────────────────────────────────────────────────────
+    step_dist = float(np.linalg.norm(pos - prev_pos))
+    streak = _IDLE_STREAK_STEPS.get(agent_id, 0)
+    streak = streak + 1 if step_dist < IDLE_DIST_THRESH else 0
+    _IDLE_STREAK_STEPS[agent_id] = streak
+    if streak >= IDLE_GRACE_STEPS:
+        reward += P_IDLE
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {P_IDLE} (streak={streak})")
 
-        # TEAM: someone grabbed the flag (includes the grabber)
-        blue_grabs_up = state["grabs"][int(team)] > prev_state["grabs"][int(team)]
-        if blue_grabs_up:
-            reward += 1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK grab team: +1.00")
+    # ── Tagging ────────────────────────────────────────────────────────────
+    if tagged_idx is not None:
+        reward += R_TAG_ENEMY
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged enemy: +{R_TAG_ENEMY}")
 
-        # INDIVIDUAL: I was the carrier who scored
-        if team_caps_up and had_flag_before:
-            reward += 5.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK capture individual: +5.00")
+        if bool(np.asarray(prev_state["agent_has_flag"][tagged_idx]).item()):
+            reward += R_TAG_CARRIER
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged carrier: +{R_TAG_CARRIER}")
 
-        # TEAM: a capture happened (includes carrier)
-        if team_caps_up:
-            reward += 1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK capture team: +1.00")
+    # ── Flag Grab ──────────────────────────────────────────────────────────
+    if has_flag and not had_flag:
+        reward += R_GRAB_INDIVIDUAL
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} grabbed flag: +{R_GRAB_INDIVIDUAL}")
 
-        # INDIVIDUAL: tagged someone
-        if tagged_idx is not None:
-            reward += 0.25
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK tagged opponent: +0.25")
+    if grabs_up:
+        reward += R_GRAB_TEAM
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} ally grabbed flag: +{R_GRAB_TEAM}")
 
-        # INDIVIDUAL: got tagged empty-handed
-        if (not prev_is_tagged) and is_tagged and not had_flag_before:
-            reward += -0.25
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK got tagged empty: -0.25")
+    # ── Capture ────────────────────────────────────────────────────────────
+    if team_caps_up:
+        reward += R_CAP_TEAM
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} team capture: +{R_CAP_TEAM}")
+        if had_flag:
+            reward += R_CAP_INDIVIDUAL
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} individual capture: +{R_CAP_INDIVIDUAL}")
 
-        # INDIVIDUAL: lost the flag without scoring
-        if had_flag_before and not has_flag_now and not team_caps_up:
-            reward += -1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK lost flag: -1.00")
+    # ── Enemy Events ───────────────────────────────────────────────────────
+    if our_flag_now and not our_flag_prev:
+        reward += P_ENEMY_GRAB
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy grabbed flag: {P_ENEMY_GRAB}")
 
-        # TEAM: enemy grabbed our flag
-        if our_flag_taken_now and not our_flag_taken_prev:
-            reward += -0.5
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK enemy grab team: -1.00")
+    if enemy_caps_up:
+        reward += P_ENEMY_CAP
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy captured: {P_ENEMY_CAP}")
 
-        # TEAM: enemy scored
-        if enemy_caps_up:
-            reward += -2.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK enemy scored team: -2.00")
+    # ── Deep Push (one-time per cooldown window, while on tag cooldown) ────
+    cd = float(state["agent_tagging_cooldown"][agent_index])
+    on_cooldown = cd < tagging_cooldown
+    cooldown_progress = float(np.clip(cd / tagging_cooldown, 0.0, 1.0)) if tagging_cooldown > 0 else 1.0
 
-        # DEEP PUSH: only during attack phase, only while on cooldown from being tagged
-        cd = float(state["agent_tagging_cooldown"][agent_index])
-        on_cooldown = cd < tagging_cooldown
-        not_carrying = state["agent_has_flag"][agent_index] == 0
-        not_tagged = state["agent_is_tagged"][agent_index] == 0
-        if tagging_cooldown > 0:
-            cooldown_progress = float(np.clip(cd / tagging_cooldown, 0.0, 1.0))
-        else:
-            cooldown_progress = 1.0
+    if on_cooldown and not has_flag and not is_tagged:
+        field_w   = float(env_size[0])
+        threshold = 0.75 * field_w
+        crossed   = (float(prev_pos[0]) < threshold <= float(pos[0])) if int(team) == 0 \
+                else (float(prev_pos[0]) > (field_w - threshold) >= float(pos[0]))
+        if crossed:
+            deep_reward = R_DEEP_PUSH_BASE + R_DEEP_PUSH_BONUS * (1.0 - cooldown_progress)
+            reward += deep_reward
+            if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep push: +{deep_reward:.3f}")
 
-        if on_cooldown and not_carrying and not_tagged:
-            field_w = float(env_size[0])
-            pos_x = float(pos[0])
-            prev_pos_x = float(prev_pos[0])
-            threshold_x = 0.75 * field_w
+    # ── Terminal ───────────────────────────────────────────────────────────
+    max_score      = int(state.get("max_score", config_dict_std.get("max_score", 20)))
+    game_over_now  = bool(state.get("game_done", np.any(np.asarray(state["captures"]) >= max_score)))
+    game_over_prev = bool(prev_state.get("game_done", np.any(np.asarray(prev_state["captures"]) >= max_score)))
 
-            if int(team) == 0:
-                crossed = prev_pos_x < threshold_x <= pos_x
-            else:
-                crossed = prev_pos_x > (field_w - threshold_x) >= pos_x
-
-            already_rewarded = _DEEP_HOLD_REWARDED.get(agent_id, False)
-
-            if crossed and not already_rewarded:
-                depth_reward = 0.5 + 0.5 * (1.0 - cooldown_progress)
-                reward += depth_reward
-                _DEEP_HOLD_REWARDED[agent_id] = True
-                if REWARD_DEBUG: print(f"[REWARD] {agent_id} ATTACK deep push (cd={cooldown_progress:.2f}): +{depth_reward:.4f}")
-
-        if not on_cooldown:
-            _DEEP_HOLD_REWARDED[agent_id] = False
-
-    # ── Defense Phase ─────────────────────────────────────────────────────
-    if is_ahead:
-
-        # INDIVIDUAL: tagged the flag carrier specifically
-        if tagged_had_flag:
-            reward += 3.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND tagged carrier: +3.00")
-
-        # INDIVIDUAL: tagged anyone
-        if tagged_idx is not None:
-            reward += 1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND tagged opponent: +1.00")
-
-        # INDIVIDUAL: I extended the lead as the carrier
-        if team_caps_up and had_flag_before:
-            reward += 2.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND extend lead individual: +2.00")
-
-        # TEAM: capture happened (includes carrier)
-        if team_caps_up:
-            reward += 1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND extend lead team: +1.00")
-
-        # TEAM: enemy grabbed our flag
-        if our_flag_taken_now and not our_flag_taken_prev:
-            reward += -2.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND enemy grab team: -2.00")
-
-        # TEAM: our flag returned safely
-        if our_flag_taken_prev and not our_flag_taken_now and not enemy_caps_up:
-            reward += 2.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND flag recovered team: +2.00")
-
-        # TEAM: enemy scored, lead eroded
-        if enemy_caps_up:
-            reward += -4.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND enemy scored team: -4.00")
-
-        # INDIVIDUAL: got tagged recklessly
-        if (not prev_is_tagged) and is_tagged and not had_flag_before:
-            reward += -1.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} DEFEND reckless tag: -1.00")
-
-    # ── Terminal (end-of-game) ─────────────────────────────────────────────
-    max_score = int(state.get("max_score", config_dict_std.get("max_score", 20)))
-    prev_game_over = bool(prev_state.get("game_done", np.any(np.asarray(prev_state["captures"]) >= max_score)))
-    game_over_now = bool(state.get("game_done", np.any(np.asarray(state["captures"]) >= max_score)))
-
-    if game_over_now and not prev_game_over and not _TERMINAL_REWARDED.get(agent_id, False):
-        if is_ahead:
-            reward += 10.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} TERMINAL win: +10.00")
-        elif is_tied:
-            reward += -6.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} TERMINAL tie: -6.00")
-        else:
-            reward += -10.0
-            if REWARD_DEBUG: print(f"[REWARD] {agent_id} TERMINAL loss: -10.00")
+    if game_over_now and not game_over_prev and not _TERMINAL_REWARDED.get(agent_id, False):
+        score_diff = state["captures"][int(team)] - state["captures"][enemy_team]
+        terminal_r = 10.0 if score_diff > 0 else (-6.0 if score_diff == 0 else -10.0)
+        reward += terminal_r
         _TERMINAL_REWARDED[agent_id] = True
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} terminal: {terminal_r:+.2f}")
 
     if not game_over_now:
         _TERMINAL_REWARDED[agent_id] = False

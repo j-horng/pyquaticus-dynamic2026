@@ -199,6 +199,7 @@ def make_env(
     stationary_red_midfield_spawn=False,
     stationary_red_block_anchor=None,
     stationary_red_block_anchor_random=False,
+    stationary_red_attack_easy_slot0=False,
 ):
     if _ACTION_MAP_MODE == "nrl":
         apply_nrl_action_map()
@@ -232,6 +233,8 @@ def make_env(
         cfg["stationary_red_block_anchor"] = str(stationary_red_block_anchor).lower()
     elif stationary_red_midfield_spawn:
         cfg["stationary_red_block_anchor"] = "midfield"
+    if stationary_red_attack_easy_slot0:
+        cfg["stationary_red_attack_easy_slot0"] = True
     if red_attack_hard:
         # One hard attacker on Red, other Red slots disabled by forcing 1 active.
         cfg["force_num_red_active"] = 1
@@ -566,6 +569,7 @@ def _run_watch(args):
                 or args.red_attack_hard
                 or args.red_all_attack
                 or args.red_all_defend
+                or getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
                 or getattr(args, "red_easy_attack", False)
                 or getattr(args, "red_easy_defend", False)
                 or getattr(args, "red_easy_combined", False)
@@ -596,6 +600,7 @@ def _run_watch(args):
             stationary_red_random_max=args.stationary_red_random_max,
             stationary_red_block_anchor=getattr(args, "red_stationary_block_anchor", None),
             stationary_red_block_anchor_random=getattr(args, "red_stationary_block_anchor_random", False),
+            stationary_red_attack_easy_slot0=getattr(args, "red_stationary_block_anchor_random_attack_easy", False),
         )
     except Exception:
         ray.shutdown()
@@ -889,6 +894,8 @@ def _run_watch(args):
         red_heuristics = {aid: BaseAttacker(aid, dynamic_env, mode="hard") for aid in red_ids}
         print("Watch: Red attack-hard (one active Red; BaseAttacker hard on each slot).")
     elif args.red_dummy or args.red_stationary:
+        if getattr(args, "red_stationary_block_anchor_random_attack_easy", False) and red_ids:
+            red_heuristics = {red_ids[0]: BaseAttacker(red_ids[0], dynamic_env, mode="easy")}
         if args.red_stationary:
             if getattr(args, "stationary_red_active_random", False):
                 _rn = getattr(args, "stationary_red_random_min", None)
@@ -904,10 +911,16 @@ def _run_watch(args):
             else:
                 _nw = int(args.stationary_red_active) if args.stationary_red_active is not None else 2
                 if getattr(args, "red_stationary_block_anchor_random", False):
-                    print(
-                        f"Watch: Red stationary block-random (no-op), target {_nw} active Red agents; "
-                        f"each episode picks center / upper / lower spawn-row pair uniformly."
-                    )
+                    if getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
+                        print(
+                            f"Watch: Red stationary block-random + 1 easy attacker, target {_nw} active Red agents; "
+                            f"each episode picks center / upper / lower spawn-row pair uniformly."
+                        )
+                    else:
+                        print(
+                            f"Watch: Red stationary block-random (no-op), target {_nw} active Red agents; "
+                            f"each episode picks center / upper / lower spawn-row pair uniformly."
+                        )
                 else:
                     _ba = getattr(args, "red_stationary_block_anchor", None)
                     if _ba == "midfield":
@@ -1290,6 +1303,14 @@ def main():
             "center / upper / lower (midfield, topfield, bottomfield). Not combinable with --red-stationary or fixed block flags."
         ),
     )
+    parser.add_argument(
+        "--red-stationary-block-random-attack-easy",
+        action="store_true",
+        dest="red_stationary_block_anchor_random_attack_easy",
+        help=(
+            "Like --red-stationary-block-random, but always 3 active Red agents: 1 easy attacker + 2 stationary no-op."
+        ),
+    )
     parser.add_argument("--red-attack-hard", action="store_true", help="Red uses 1 hard attacker-only heuristic (other red slots disabled)")
     parser.add_argument("--red-all-attack", action="store_true", help="All red agents use AttackGen hard heuristic")
     parser.add_argument("--red-all-defend", action="store_true", help="All red agents use DefendGen hard heuristic")
@@ -1388,9 +1409,17 @@ def main():
         )
     args.red_stationary_block_anchor = _block_modes[0] if len(_block_modes) == 1 else None
     args.red_stationary_block_anchor_random = bool(getattr(args, "red_stationary_block_anchor_random", False))
+    args.red_stationary_block_anchor_random_attack_easy = bool(
+        getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
+    )
+    if args.red_stationary_block_anchor_random_attack_easy:
+        args.red_stationary_block_anchor_random = True
+        # Fixed composition for this mode: exactly 3 active Red (1 easy attacker + 2 stationary).
+        args.stationary_red_active = 3
+        args.stationary_red_active_random = False
     if args.red_stationary_block_anchor_random and len(_block_modes) > 0:
         raise SystemExit(
-            "Do not combine --red-stationary-block-random with --red-stationary-midfield, "
+            "Do not combine --red-stationary-block-random/--red-stationary-block-random-attack-easy with --red-stationary-midfield, "
             "--red-stationary-topfield, or --red-stationary-bottomfield (or their --stationary-red-* aliases)."
         )
     if args.red_stationary_block_anchor:
@@ -1403,7 +1432,7 @@ def main():
     elif args.red_stationary_block_anchor_random:
         if args.red_stationary:
             raise SystemExit(
-                "Use either --red-stationary / --stationary-red or --red-stationary-block-random, not both."
+                "Use either --red-stationary / --stationary-red or --red-stationary-block-random / --red-stationary-block-random-attack-easy, not both."
             )
         args.red_stationary = True
     if getattr(args, "red_stationary_center", False):
@@ -1479,6 +1508,7 @@ def main():
         raise SystemExit(
             "Use only one of: --red-heuristic, --red-dummy, --red-stationary, --red-stationary-midfield, "
             "--red-stationary-topfield, --red-stationary-bottomfield, --red-stationary-block-random, "
+            "--red-stationary-block-random-attack-easy, "
             "--red-attack-hard, --red-all-attack, --red-all-defend, --red-from-checkpoint, "
             "--red-easy-attack/--red-easy-defend/--red-easy-combined, "
             "--red-medium-attack/--red-medium-defend/--red-medium-combined, "
@@ -1541,6 +1571,7 @@ def main():
                 or args.red_attack_hard
                 or args.red_all_attack
                 or args.red_all_defend
+                or getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
                 or getattr(args, "red_easy_attack", False)
                 or getattr(args, "red_easy_defend", False)
                 or getattr(args, "red_easy_combined", False)
@@ -1571,6 +1602,7 @@ def main():
             stationary_red_random_max=args.stationary_red_random_max,
             stationary_red_block_anchor=getattr(args, "red_stationary_block_anchor", None),
             stationary_red_block_anchor_random=getattr(args, "red_stationary_block_anchor_random", False),
+            stationary_red_attack_easy_slot0=getattr(args, "red_stationary_block_anchor_random_attack_easy", False),
         )
 
     register_env("dynamic_pyquaticus", env_creator)
@@ -1582,6 +1614,7 @@ def main():
             or args.red_attack_hard
             or args.red_all_attack
             or args.red_all_defend
+            or getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
             or getattr(args, "red_easy_attack", False)
             or getattr(args, "red_easy_defend", False)
             or getattr(args, "red_easy_combined", False)
@@ -1612,6 +1645,7 @@ def main():
         stationary_red_random_max=args.stationary_red_random_max,
         stationary_red_block_anchor=getattr(args, "red_stationary_block_anchor", None),
         stationary_red_block_anchor_random=getattr(args, "red_stationary_block_anchor_random", False),
+        stationary_red_attack_easy_slot0=getattr(args, "red_stationary_block_anchor_random_attack_easy", False),
     )
     # Reset to ensure agents are initialized
     obs, info = env.reset()
@@ -1651,6 +1685,7 @@ def main():
             or args.red_attack_hard
             or args.red_all_attack
             or args.red_all_defend
+            or getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
             or getattr(args, "red_easy_attack", False)
             or getattr(args, "red_easy_defend", False)
             or getattr(args, "red_easy_combined", False)
@@ -1749,6 +1784,10 @@ def main():
             if agent_id in RED_AGENT_IDS:
                 slot = _red_slot_id(agent_id)
                 return f"red_attack_{slot}"
+        if getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
+            if agent_id in RED_AGENT_IDS:
+                slot = _red_slot_id(agent_id)
+                return "red_attack_easy_policy" if slot == 0 else "red_dummy_policy"
         if args.red_dummy or args.red_stationary:
             return "red_dummy_policy"
         if args.red_from_checkpoint:
@@ -1888,6 +1927,15 @@ def main():
             "blue_policy": (None, obs_space_blue, act_space, {}),
             "red_dummy_policy": (DoNothingPolicy, obs_space_blue, act_space, {}),
         }
+        if getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
+            from pyquaticus.base_policies.base_policy_wrappers import EasyAttackGen
+
+            attack_aid = RED_AGENT_IDS[0] if RED_AGENT_IDS else f"agent_{team_max}"
+            atk_easy = EasyAttackGen(attack_aid, base_env)
+            atk_easy.__name__ = "RedStationaryBlockRandomAttackEasy"
+            if POLICIES is not None:
+                POLICIES["RedStationaryBlockRandomAttackEasy"] = atk_easy
+            policies["red_attack_easy_policy"] = (atk_easy, obs_space_red, act_space, {})
         if getattr(args, "stationary_red_active_random", False):
             _rn = getattr(args, "stationary_red_random_min", None)
             _rx = getattr(args, "stationary_red_random_max", None)
@@ -1902,10 +1950,16 @@ def main():
         else:
             _n = int(args.stationary_red_active) if args.stationary_red_active is not None else 2
             if getattr(args, "red_stationary_block_anchor_random", False):
-                log(
-                    f"Red team stationary block-random (do-nothing): {_n} active Red agents; "
-                    f"each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active)."
-                )
+                if getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
+                    log(
+                        f"Red team stationary block-random with one easy attacker: {_n} active Red agents; "
+                        f"each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active)."
+                    )
+                else:
+                    log(
+                        f"Red team stationary block-random (do-nothing): {_n} active Red agents; "
+                        f"each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active)."
+                    )
             else:
                 _ba = getattr(args, "red_stationary_block_anchor", None)
                 if _ba == "midfield":
@@ -2087,6 +2141,8 @@ def main():
                 mode_str = "heuristic_custom"
         elif args.red_dummy:
             mode_str = "dummy"
+        elif getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
+            mode_str = "stationary_block_random_attack_easy"
         elif getattr(args, "red_stationary_block_anchor_random", False):
             mode_str = "stationary_block_random"
         elif getattr(args, "red_stationary_block_anchor", None):
