@@ -168,7 +168,7 @@ from pyquaticus.utils.utils import *
 REWARD_DEBUG = False
 
 _IDLE_STREAK_STEPS = {}
-_TERMINAL_REWARDED = {}
+_DEEP_PUSH_REWARDED = {}
 
 ### Example Reward Funtion ###
 def example_reward(
@@ -201,7 +201,7 @@ def caps_and_grabs(
     max_speeds: list,
     tagging_cooldown: float
 ):
-    global _IDLE_STREAK_STEPS, _TERMINAL_REWARDED
+    global _IDLE_STREAK_STEPS, _DEEP_PUSH_REWARDED
 
     # ── Reward Values ──────────────────────────────────────────────────────
     R_TAG_ENEMY       =  1.0    # tagged any enemy
@@ -215,11 +215,14 @@ def caps_and_grabs(
 
     P_ENEMY_GRAB      = -1.0    # enemy grabbed our flag
     P_ENEMY_CAP       = -3.0    # enemy scored
+    P_SELF_TAGGED     = -1.0    # this agent was newly tagged (individual penalty)
     P_OOB             = -3.0    # agent went out of bounds
-    P_IDLE            = -0.05   # per step while idle (after grace period)
+    P_IDLE_BASE       = -0.02   # idle penalty at first step past grace
+    P_IDLE_SLOPE      = -0.01   # additional penalty per extra idle step past grace
+    P_IDLE_CAP        = -0.25   # maximum idle penalty per step (most negative)
 
     IDLE_DIST_THRESH  =  0.15   # min distance per step to not count as idle
-    IDLE_GRACE_STEPS  =  10     # steps before idle penalty kicks in
+    IDLE_GRACE_STEPS  =  20     # steps before idle penalty kicks in
     # ──────────────────────────────────────────────────────────────────────
 
     reward = 0.0
@@ -260,8 +263,10 @@ def caps_and_grabs(
     streak = streak + 1 if step_dist < IDLE_DIST_THRESH else 0
     _IDLE_STREAK_STEPS[agent_id] = streak
     if streak >= IDLE_GRACE_STEPS:
-        reward += P_IDLE
-        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {P_IDLE} (streak={streak})")
+        extra = int(streak - IDLE_GRACE_STEPS)
+        idle_p = max(P_IDLE_CAP, P_IDLE_BASE + P_IDLE_SLOPE * float(extra))
+        reward += idle_p
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
 
     # ── Tagging ────────────────────────────────────────────────────────────
     if tagged_idx is not None:
@@ -271,6 +276,13 @@ def caps_and_grabs(
         if bool(np.asarray(prev_state["agent_has_flag"][tagged_idx]).item()):
             reward += R_TAG_CARRIER
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged carrier: +{R_TAG_CARRIER}")
+
+    # ── Self got tagged (individual penalty) ───────────────────────────────
+    prev_is_tagged = bool(np.asarray(prev_state["agent_is_tagged"][agent_index]).item())
+    if (not prev_is_tagged) and is_tagged:
+        reward += P_SELF_TAGGED
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} got tagged: {P_SELF_TAGGED:+.3f}")
 
     # ── Flag Grab ──────────────────────────────────────────────────────────
     if has_flag and not had_flag:
@@ -308,25 +320,13 @@ def caps_and_grabs(
         threshold = 0.75 * field_w
         crossed   = (float(prev_pos[0]) < threshold <= float(pos[0])) if int(team) == 0 \
                 else (float(prev_pos[0]) > (field_w - threshold) >= float(pos[0]))
-        if crossed:
+        if crossed and not _DEEP_PUSH_REWARDED.get(agent_id, False):
             deep_reward = R_DEEP_PUSH_BASE + R_DEEP_PUSH_BONUS * (1.0 - cooldown_progress)
             reward += deep_reward
+            _DEEP_PUSH_REWARDED[agent_id] = True
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep push: +{deep_reward:.3f}")
-
-    # ── Terminal ───────────────────────────────────────────────────────────
-    max_score      = int(state.get("max_score", config_dict_std.get("max_score", 20)))
-    game_over_now  = bool(state.get("game_done", np.any(np.asarray(state["captures"]) >= max_score)))
-    game_over_prev = bool(prev_state.get("game_done", np.any(np.asarray(prev_state["captures"]) >= max_score)))
-
-    if game_over_now and not game_over_prev and not _TERMINAL_REWARDED.get(agent_id, False):
-        score_diff = state["captures"][int(team)] - state["captures"][enemy_team]
-        terminal_r = 10.0 if score_diff > 0 else (-6.0 if score_diff == 0 else -10.0)
-        reward += terminal_r
-        _TERMINAL_REWARDED[agent_id] = True
-        if REWARD_DEBUG: print(f"[REWARD] {agent_id} terminal: {terminal_r:+.2f}")
-
-    if not game_over_now:
-        _TERMINAL_REWARDED[agent_id] = False
+    if not on_cooldown:
+        _DEEP_PUSH_REWARDED[agent_id] = False
 
     return reward
 

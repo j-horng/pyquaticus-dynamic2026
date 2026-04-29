@@ -233,8 +233,6 @@ def make_env(
         cfg["stationary_red_block_anchor"] = str(stationary_red_block_anchor).lower()
     elif stationary_red_midfield_spawn:
         cfg["stationary_red_block_anchor"] = "midfield"
-    if stationary_red_attack_easy_slot0:
-        cfg["stationary_red_attack_easy_slot0"] = True
     if red_attack_hard:
         # One hard attacker on Red, other Red slots disabled by forcing 1 active.
         cfg["force_num_red_active"] = 1
@@ -251,6 +249,7 @@ def make_env(
         tag_removes_agent=tag_removes_agent,
         reinforcement_interval=reinforcement_interval,
         reinforcement_prob=reinforcement_prob,
+        stationary_red_attack_easy_slot0=bool(stationary_red_attack_easy_slot0),
         config_dict=cfg,
         reward_config=reward_config,
         render_mode=render_mode,
@@ -1923,9 +1922,14 @@ def main():
         }
         log("Red team using do-nothing policy (always no-op actions).")
     elif args.red_stationary:
+        red_stationary_obs_space = (
+            obs_space_red
+            if getattr(args, "red_stationary_block_anchor_random_attack_easy", False)
+            else obs_space_blue
+        )
         policies = {
             "blue_policy": (None, obs_space_blue, act_space, {}),
-            "red_dummy_policy": (DoNothingPolicy, obs_space_blue, act_space, {}),
+            "red_dummy_policy": (DoNothingPolicy, red_stationary_obs_space, act_space, {}),
         }
         if getattr(args, "red_stationary_block_anchor_random_attack_easy", False):
             from pyquaticus.base_policies.base_policy_wrappers import EasyAttackGen

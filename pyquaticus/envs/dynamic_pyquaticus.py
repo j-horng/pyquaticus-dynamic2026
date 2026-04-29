@@ -39,6 +39,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         tag_removes_agent: bool = False,
         reinforcement_interval: int = 0,
         reinforcement_prob: float = 0.5,
+        stationary_red_attack_easy_slot0: bool = False,
         action_space: Union[str, list[str], dict[str, str]] = "discrete",
         reward_config: dict = None,
         config_dict=None,
@@ -63,7 +64,10 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self._step_count = 0
         self.red_dummy_mode = _cfg.get("red_dummy_mode", False)
         self.stationary_red_mode = _cfg.get("stationary_red_mode", False)
-        self.stationary_red_attack_easy_slot0 = bool(_cfg.get("stationary_red_attack_easy_slot0", False))
+        # Prefer explicit ctor arg; keep config fallback for compatibility.
+        self.stationary_red_attack_easy_slot0 = bool(
+            stationary_red_attack_easy_slot0 or _cfg.get("stationary_red_attack_easy_slot0", False)
+        )
         # Optional: force a fixed number of Red agents active at reset (others disabled).
         self.force_num_red_active = _cfg.get("force_num_red_active", None)
         # When stationary_red_mode: how many Red slots are active (stationary); remainder disabled.
