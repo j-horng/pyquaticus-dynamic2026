@@ -191,6 +191,10 @@ def make_env(
     tag_removes_agent=False,
     reinforcement_interval=0,
     reinforcement_prob=0.5,
+    dynamic_toggle_on=False,
+    dynamic_toggle_interval=200,
+    dynamic_toggle_remove_prob=0.5,
+    dynamic_toggle_add_prob=0.5,
     fixed_spawn=True,
     stationary_red_active=None,
     stationary_red_active_random=False,
@@ -248,6 +252,10 @@ def make_env(
         tag_removes_agent=tag_removes_agent,
         reinforcement_interval=reinforcement_interval,
         reinforcement_prob=reinforcement_prob,
+        dynamic_toggle_on=dynamic_toggle_on,
+        dynamic_toggle_interval=dynamic_toggle_interval,
+        dynamic_toggle_remove_prob=dynamic_toggle_remove_prob,
+        dynamic_toggle_add_prob=dynamic_toggle_add_prob,
         config_dict=cfg,
         reward_config=reward_config,
         render_mode=render_mode,
@@ -553,6 +561,9 @@ def _run_watch(args):
     SPEEDUP = max(1, int(args.speedup))
     reinf_interval = max(0, int(args.reinforcement_interval))
     reinf_prob = max(0.0, min(1.0, float(args.reinforcement_prob)))
+    dt_interval = max(0, int(getattr(args, "dynamic_toggle_interval", 200)))
+    dt_rm = max(0.0, min(1.0, float(getattr(args, "dynamic_toggle_remove_prob", 0.5))))
+    dt_add = max(0.0, min(1.0, float(getattr(args, "dynamic_toggle_add_prob", 0.5))))
 
     env = None
     try:
@@ -589,6 +600,10 @@ def _run_watch(args):
             tag_removes_agent=args.tag_removes_agent,
             reinforcement_interval=reinf_interval,
             reinforcement_prob=reinf_prob,
+            dynamic_toggle_on=args.dynamic_toggle_on,
+            dynamic_toggle_interval=dt_interval,
+            dynamic_toggle_remove_prob=dt_rm,
+            dynamic_toggle_add_prob=dt_add,
             fixed_spawn=args.fixed_spawn,
             stationary_red_active=args.stationary_red_active,
             stationary_red_active_random=args.stationary_red_active_random,
@@ -1348,6 +1363,29 @@ def main():
     parser.add_argument("--reinforcement-interval", type=int, default=0, help="Steps between reinforcement spawn checks (0=off, e.g. 500)")
     parser.add_argument("--reinforcement-prob", type=float, default=0.5, help="Probability of spawning one reinforcement when interval hits (default 0.5)")
     parser.add_argument(
+        "--dynamic-toggle-on",
+        action="store_true",
+        help="Random roster changes on an interval: remove only tagged agents (min 1 active/team); randomly revive disabled agents",
+    )
+    parser.add_argument(
+        "--dynamic-toggle-interval",
+        type=int,
+        default=200,
+        help="Steps between dynamic roster rolls when --dynamic-toggle-on (0=never)",
+    )
+    parser.add_argument(
+        "--dynamic-toggle-remove-prob",
+        type=float,
+        default=0.5,
+        help="Each dynamic tick: probability of attempting one eligible removal (default 0.5)",
+    )
+    parser.add_argument(
+        "--dynamic-toggle-add-prob",
+        type=float,
+        default=0.5,
+        help="Each dynamic tick: probability of attempting one random revival (default 0.5)",
+    )
+    parser.add_argument(
         "--random-spawn",
         action="store_true",
         help="Random positions on own side each episode (default_init=False). Omit for deterministic spawn-line placement (training default).",
@@ -1523,6 +1561,9 @@ def main():
     RED_AGENT_IDS = [f"agent_{i}" for i in range(team_max, 2 * team_max)]
     reinf_interval = max(0, int(args.reinforcement_interval))
     reinf_prob = max(0.0, min(1.0, args.reinforcement_prob))
+    dt_interval = max(0, int(getattr(args, "dynamic_toggle_interval", 200)))
+    dt_rm = max(0.0, min(1.0, float(getattr(args, "dynamic_toggle_remove_prob", 0.5))))
+    dt_add = max(0.0, min(1.0, float(getattr(args, "dynamic_toggle_add_prob", 0.5))))
     train_bs = (
         int(args.train_batch_size)
         if args.train_batch_size > 0
@@ -1564,6 +1605,10 @@ def main():
             tag_removes_agent=args.tag_removes_agent,
             reinforcement_interval=reinf_interval,
             reinforcement_prob=reinf_prob,
+            dynamic_toggle_on=args.dynamic_toggle_on,
+            dynamic_toggle_interval=dt_interval,
+            dynamic_toggle_remove_prob=dt_rm,
+            dynamic_toggle_add_prob=dt_add,
             fixed_spawn=args.fixed_spawn,
             stationary_red_active=args.stationary_red_active,
             stationary_red_active_random=args.stationary_red_active_random,
@@ -1605,6 +1650,10 @@ def main():
         tag_removes_agent=args.tag_removes_agent,
         reinforcement_interval=reinf_interval,
         reinforcement_prob=reinf_prob,
+        dynamic_toggle_on=args.dynamic_toggle_on,
+        dynamic_toggle_interval=dt_interval,
+        dynamic_toggle_remove_prob=dt_rm,
+        dynamic_toggle_add_prob=dt_add,
         fixed_spawn=args.fixed_spawn,
         stationary_red_active=args.stationary_red_active,
         stationary_red_active_random=args.stationary_red_active_random,
@@ -1672,6 +1721,8 @@ def main():
     log(
         f"Dynamic env: team_size={team_min}-{team_max} per team, init={spawn_mode}, "
         f"tag_removes_agent={args.tag_removes_agent}, reinforcement_interval={reinf_interval}, reinforcement_prob={reinf_prob}, "
+        f"dynamic_toggle_on={args.dynamic_toggle_on}, dynamic_toggle_interval={dt_interval}, "
+        f"dynamic_toggle_remove_prob={dt_rm}, dynamic_toggle_add_prob={dt_add}, "
         f"score_ends_episode={not args.no_score_end}, red_stationary={args.red_stationary}, "
         f"red_stationary_block_anchor={getattr(args, 'red_stationary_block_anchor', None)}, "
         f"red_stationary_block_anchor_random={getattr(args, 'red_stationary_block_anchor_random', False)}"

@@ -163,6 +163,10 @@ python rl_test/train_dynamic.py \
 | `--tag-removes-agent` | off | Tagged agents are disabled until reinforcement |
 | `--reinforcement-interval N` | 0 | Steps between reinforcement checks (0 = off) |
 | `--reinforcement-prob F` | 0.5 | Probability of spawning reinforcement at each check |
+| `--dynamic-toggle-on` | off | Periodic random roster rolls: remove only **tagged** agents (min 1 active per team); randomly revive **disabled** agents |
+| `--dynamic-toggle-interval N` | 200 | Env steps between each roll when `--dynamic-toggle-on` (use a smaller value, e.g. 40, to see changes more often in `--watch`) |
+| `--dynamic-toggle-remove-prob F` | 0.5 | Each roll: probability of **attempting** one eligible removal (still requires a tagged agent and a spare teammate) |
+| `--dynamic-toggle-add-prob F` | 0.5 | Each roll: probability of **attempting** one random revival (requires at least one disabled agent) |
 | `--no-log-file` | off | Skip writing to `train.log` |
 
 > **Save on demand:** `touch training/SAVE_NOW` (Unix) or create `SAVE_NOW` in `out_dir` (Windows) — next completed iteration saves a checkpoint.
@@ -219,18 +223,54 @@ python rl_test/train_dynamic.py --tag-removes-agent --reinforcement-interval 500
 
 ---
 
-## 9. Metrics
+## 9. Random roster toggle (`--dynamic-toggle-on`)
+
+`train_dynamic.py` sets `tag_on_oob: True` in the env config, so agents who go **out of bounds** are **tagged**. The dynamic toggle treats **tagged** agents as eligible for **random removal** (only if their team would still have at least one active agent). **Random add** revives a random disabled agent (e.g. left inactive by variable team size, or after a removal).
+
+**Defaults:** every **200** env steps, with **50%** chance to run the removal attempt and **50%** chance to run the add attempt (independent rolls each tick). A successful removal/add still needs the right game state (tagged / disabled pool).
+
+**Train or resume with the toggle:**
+
+```bash
+python rl_test/train_dynamic.py --dynamic-toggle-on
+python rl_test/train_dynamic.py --resume ./training/iter_500 --dynamic-toggle-on
+```
+
+**Watch a checkpoint with the toggle** (add `--render` if you want the pygame window):
+
+```bash
+python rl_test/train_dynamic.py --watch --resume ./training/ray_dynamic_v7_new_MAP/iter_20 --dynamic-toggle-on
+python rl_test/train_dynamic.py --watch --render --resume ./training/iter_500 --dynamic-toggle-on
+```
+
+**See remove/add more often during a game** (shorter interval, higher attempt rates; use at least 2 agents per team so removals stay legal):
+
+```bash
+python rl_test/train_dynamic.py --watch --render \
+  --resume ./training/iter_500 \
+  --dynamic-toggle-on \
+  --dynamic-toggle-interval 40 \
+  --dynamic-toggle-remove-prob 0.8 \
+  --dynamic-toggle-add-prob 0.8 \
+  --team-size-min 2 --team-size-max 6
+```
+
+**Interaction with `--tag-removes-agent`:** If both are on, tags still **immediately** disable the agent when `--tag-removes-agent` is set; the toggle adds separate periodic random remove/add rolls. For **only** random removals (tags stay in play until a tick removes someone), use `--dynamic-toggle-on` **without** `--tag-removes-agent`.
+
+---
+
+## 10. Metrics
 
 Per-matchup stats are emitted via `DynamicPyQuaticusCallbacks` (`episode.custom_metrics` keys like `{Nb}v{Nr}/win`, `.../ep_len`, `.../blue_caps`, etc.). After each training iteration, a **`matchup_distribution`** line is printed (episode counts per `NvM` since the last iter). TensorBoard / aggregated metrics may show these with a `_mean` suffix depending on RLlib version.
 
 ---
 
-## 10. File reference
+## 11. File reference
 
 | File | Purpose |
 |------|---------|
 | `rl_test/train_dynamic.py` | Training, `--watch`, all CLI flags |
-| `pyquaticus/envs/dynamic_pyquaticus.py` | Dynamic env — variable teams, OOB tracking, reinforcements |
+| `pyquaticus/envs/dynamic_pyquaticus.py` | Dynamic env — variable teams, OOB tracking, reinforcements, `--dynamic-toggle-on` roster rolls |
 | `pyquaticus/envs/graph_obs_wrapper.py` | Graph observation wrapper (`MAX_TEAM_SIZE` knob for 4/5/6v6) |
 | `pyquaticus/models/gnn_model.py` | GNN policy — message passing, self-node embedding |
 | `pyquaticus/utils/rewards.py` | `caps_and_grabs` reward function |

@@ -28,6 +28,10 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
     - tag_removes_agent: if True, tagged agents are disabled (removed from game)
     - reinforcement_interval: steps between reinforcement spawns (0 = disabled)
     - reinforcement_prob: probability of spawning a reinforcement when interval hits
+    - dynamic_toggle_on: if True, periodically roll random removals (only tagged agents;
+      at least one active per team) and random revivals of disabled agents
+    - dynamic_toggle_interval: env steps between those rolls (0 = off)
+    - dynamic_toggle_remove_prob / dynamic_toggle_add_prob: per-roll probabilities
     - stationary_red_block_anchor: optional "midfield" | "topfield" | "bottomfield" (with stationary_red_mode)
       to place active stationary Reds on two slots of the default-init forward spawn row (not arena center).
     - stationary_red_block_anchor_random: if True, each reset uniformly picks one of those three row pairs.
@@ -39,6 +43,10 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         tag_removes_agent: bool = False,
         reinforcement_interval: int = 0,
         reinforcement_prob: float = 0.5,
+        dynamic_toggle_on: bool = False,
+        dynamic_toggle_interval: int = 200,
+        dynamic_toggle_remove_prob: float = 0.5,
+        dynamic_toggle_add_prob: float = 0.5,
         action_space: Union[str, list[str], dict[str, str]] = "discrete",
         reward_config: dict = None,
         config_dict=None,
@@ -58,6 +66,12 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self.tag_removes_agent = tag_removes_agent
         self.reinforcement_interval = reinforcement_interval
         self.reinforcement_prob = reinforcement_prob
+        self.dynamic_toggle_on = bool(dynamic_toggle_on)
+        self.dynamic_toggle_interval = max(0, int(dynamic_toggle_interval))
+        self.dynamic_toggle_remove_prob = float(
+            max(0.0, min(1.0, dynamic_toggle_remove_prob))
+        )
+        self.dynamic_toggle_add_prob = float(max(0.0, min(1.0, dynamic_toggle_add_prob)))
         self.num_blue_active = max_team_size
         self.num_red_active = max_team_size
         self._step_count = 0
@@ -524,6 +538,14 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             if self._step_count > 0 and random.random() < self.reinforcement_prob:
                 self._spawn_reinforcement()
 
+        if (
+            self.dynamic_toggle_on
+            and self.dynamic_toggle_interval > 0
+            and self._step_count % self.dynamic_toggle_interval == 0
+            and self._step_count > 0
+        ):
+            self._dynamic_toggle_random_roster_tick()
+
         disabled_agents = self.state.get("disabled_agents", np.zeros(self.num_agents, dtype=bool))
         num_blue_active = int(np.sum(~disabled_agents[: self.num_blue]))
         num_red_active = int(np.sum(~disabled_agents[self.num_blue : self.num_agents]))
@@ -594,31 +616,86 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
                         self.state["agent_tagging_cooldown"][player.idx] = 0.0
                         break
 
-    def _spawn_reinforcement(self):
-        """Re-enable one disabled agent per team."""
+    @staticmethod
+    def _player_eliminated_on_field(player) -> bool:
+        """Tagged agents are treated as eliminated on the field (can be roster-removed)."""
+        return bool(getattr(player, "is_tagged", False))
+
+    def _try_random_remove_eliminated(self) -> None:
+        """Disable one random tagged, non-disabled agent if the team would still have >=1 active."""
         disabled = self.state["disabled_agents"]
+        teams = [Team.BLUE_TEAM, Team.RED_TEAM]
+        random.shuffle(teams)
+        for team in teams:
+            if self.red_dummy_mode and team == Team.RED_TEAM:
+                continue
+            inds = self.agent_inds_of_team[team]
+            active = [i for i in inds if not disabled[i]]
+            if len(active) <= 1:
+                continue
+            eliminated = [
+                i for i in active if self._player_eliminated_on_field(self.players[self.agents[i]])
+            ]
+            if not eliminated:
+                continue
+            idx = random.choice(eliminated)
+            self.state["disabled_agents"][idx] = True
+            self.players[self.agents[idx]].is_disabled = True
+            if idx < self.num_blue:
+                self.num_blue_active = max(0, self.num_blue_active - 1)
+            else:
+                self.num_red_active = max(0, self.num_red_active - 1)
+            self.state["num_blue_active"] = self.num_blue_active
+            self.state["num_red_active"] = self.num_red_active
+            return
+
+    def _revive_one_random_from_team(self, team: Team) -> bool:
+        """Re-enable one random disabled agent on ``team``. Returns True if an agent was revived."""
+        if self.red_dummy_mode and team == Team.RED_TEAM:
+            return False
+        disabled = self.state["disabled_agents"]
+        inds = self.agent_inds_of_team[team]
+        disabled_team = [i for i in inds if disabled[i]]
+        if not disabled_team:
+            return False
+        idx = random.choice(disabled_team)
+        self.state["disabled_agents"][idx] = False
+        self.players[self.agents[idx]].is_disabled = False
+        flag_home = np.array(self.flags[int(team)].home)
+        offset = np.array([random.uniform(-10, 10), random.uniform(-10, 10)])
+        new_pos = np.clip(flag_home + offset, [0, 0], self.env_size).astype(np.float64)
+        self.state["agent_position"][idx] = new_pos
+        p = self.players[self.agents[idx]]
+        p.pos = np.array(new_pos, dtype=np.float64)
+        p.prev_pos = p.pos.copy()
+        p.is_tagged = False
+        self.state["agent_is_tagged"][idx] = 0
+        if team == Team.BLUE_TEAM:
+            self.num_blue_active = min(self.num_blue, self.num_blue_active + 1)
+        else:
+            self.num_red_active = min(self.num_red, self.num_red_active + 1)
+        self.state["num_blue_active"] = self.num_blue_active
+        self.state["num_red_active"] = self.num_red_active
+        return True
+
+    def _dynamic_toggle_random_roster_tick(self) -> None:
+        """Random removal (eliminated only, min one per team) and/or random revival."""
+        if random.random() < self.dynamic_toggle_remove_prob:
+            self._try_random_remove_eliminated()
+        if random.random() < self.dynamic_toggle_add_prob:
+            teams = [Team.BLUE_TEAM, Team.RED_TEAM]
+            random.shuffle(teams)
+            for team in teams:
+                if self._revive_one_random_from_team(team):
+                    break
+
+    def _spawn_reinforcement(self):
+        """Re-enable one disabled agent on the first team (Blue then Red) that passes a prob check."""
         for team in [Team.BLUE_TEAM, Team.RED_TEAM]:
             if self.red_dummy_mode and team == Team.RED_TEAM:
-                continue  # Never re-enable Red in dummy mode
+                continue
             inds = self.agent_inds_of_team[team]
-            disabled_team = [i for i in inds if disabled[i]]
+            disabled_team = [i for i in inds if self.state["disabled_agents"][i]]
             if disabled_team and random.random() < self.reinforcement_prob:
-                idx = random.choice(disabled_team)
-                self.state["disabled_agents"][idx] = False
-                self.players[self.agents[idx]].is_disabled = False
-                flag_home = np.array(self.flags[int(team)].home)
-                offset = np.array([random.uniform(-10, 10), random.uniform(-10, 10)])
-                new_pos = np.clip(flag_home + offset, [0, 0], self.env_size).astype(np.float64)
-                self.state["agent_position"][idx] = new_pos
-                p = self.players[self.agents[idx]]
-                p.pos = np.array(new_pos, dtype=np.float64)
-                p.prev_pos = p.pos.copy()
-                p.is_tagged = False
-                self.state["agent_is_tagged"][idx] = False
-                if team == Team.BLUE_TEAM:
-                    self.num_blue_active = min(self.num_blue, self.num_blue_active + 1)
-                else:
-                    self.num_red_active = min(self.num_red, self.num_red_active + 1)
-                self.state["num_blue_active"] = self.num_blue_active
-                self.state["num_red_active"] = self.num_red_active
+                self._revive_one_random_from_team(team)
                 break
