@@ -420,6 +420,53 @@ class DynamicPyQuaticusCallbacks(DefaultCallbacks):
     def __init__(self):
         super().__init__()
 
+    def on_episode_start(self, *, episode, **kwargs):
+        try:
+            ud = getattr(episode, "user_data", None)
+            if ud is None:
+                episode.user_data = {}
+                ud = episode.user_data
+            if isinstance(ud, dict):
+                ud["reward_parts_sum"] = {}
+        except Exception:
+            pass
+
+    def on_episode_step(self, *, episode, **kwargs):
+        """Accumulate per-step reward component breakdown (if env provides info['reward_parts'])."""
+        try:
+            ud = getattr(episode, "user_data", None)
+            if not isinstance(ud, dict):
+                return
+            acc = ud.get("reward_parts_sum")
+            if not isinstance(acc, dict):
+                acc = {}
+                ud["reward_parts_sum"] = acc
+
+            # Enumerate agents present in this episode.
+            agents = []
+            if hasattr(episode, "get_agents"):
+                agents = list(episode.get_agents())
+            elif hasattr(episode, "agent_rewards"):
+                agents = list({a for (a, _p) in getattr(episode, "agent_rewards", {}).keys()})
+
+            for aid in agents:
+                try:
+                    info = episode.last_info_for(aid) if hasattr(episode, "last_info_for") else None
+                except Exception:
+                    info = None
+                if not isinstance(info, dict):
+                    continue
+                rp = info.get("reward_parts")
+                if not isinstance(rp, dict):
+                    continue
+                for k, v in rp.items():
+                    try:
+                        acc[k] = float(acc.get(k, 0.0)) + float(v)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
     def on_episode_end(self, *, episode, env=None, base_env=None, env_index=0, **kwargs):
         dynamic = None
         if base_env is not None:
@@ -472,6 +519,17 @@ class DynamicPyQuaticusCallbacks(DefaultCallbacks):
         cm[f"{key}/red_tags"] = float(tags_r)
         cm[f"{key}/blue_oob"] = blue_oob
         cm[f"{key}/red_oob"] = red_oob
+
+        # Reward component breakdown (if enabled via --reward-parts).
+        try:
+            ud = getattr(episode, "user_data", None)
+            if isinstance(ud, dict):
+                acc = ud.get("reward_parts_sum")
+                if isinstance(acc, dict) and acc:
+                    for k_part, v_part in acc.items():
+                        cm[f"{key}/rew_{k_part}_sum"] = float(v_part)
+        except Exception:
+            pass
 
         # If using random Red opponent modes (easy/medium/hard random), policy_mapping_fn stores
         # the chosen variant in episode.user_data["red_variant"]. Surface it as custom_metrics so
@@ -548,6 +606,13 @@ def _run_watch(args):
 
     if getattr(args, "reward_debug", False):
         rew.REWARD_DEBUG = True
+        print(
+            f"[reward-debug] using rewards module: {getattr(rew, '__file__', '<unknown>')}",
+            file=sys.stderr,
+            flush=True,
+        )
+    if getattr(args, "reward_parts", False):
+        setattr(rew, "REWARD_PARTS_DEBUG", True)
 
     team_max = int(args.team_size_max)
     team_min = int(args.team_size_min)
@@ -1232,6 +1297,14 @@ def main():
     parser.add_argument("--watch", action="store_true", help="Render instead of training")
     parser.add_argument("--reward-debug", action="store_true", help="With --watch: print per-event reward lines ([REWARD] ...) to console")
     parser.add_argument(
+        "--reward-parts",
+        action="store_true",
+        help=(
+            "Record per-step reward component breakdown into info and RLlib custom_metrics "
+            "(helps explain why return_mean is positive/negative)."
+        ),
+    )
+    parser.add_argument(
         "--watch-catch-radius",
         action="store_true",
         help="With --watch: draw catch radius and 2x catch radius circles around agents.",
@@ -1379,6 +1452,8 @@ def main():
         help="Random positions on own side each episode (default_init=False). Omit for deterministic spawn-line placement (training default).",
     )
     args = parser.parse_args()
+    if getattr(args, "reward_parts", False):
+        setattr(rew, "REWARD_PARTS_DEBUG", True)
     global _ACTION_MAP_MODE
     _ACTION_MAP_MODE = args.action_map
     if args.action_map == "nrl":

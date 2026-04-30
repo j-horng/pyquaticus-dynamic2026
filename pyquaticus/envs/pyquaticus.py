@@ -1232,12 +1232,21 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         # Rewards
         disabled = self.state.get("disabled_agents")
         rewards = {}
+        reward_parts = {}
         for agent_id, player in self.players.items():
             idx = self.agents.index(agent_id)
             if disabled is not None and len(disabled) > idx and bool(disabled[idx]):
                 rewards[agent_id] = 0.0
             else:
+                fn = self.reward_config.get(agent_id, None)
                 rewards[agent_id] = self.compute_rewards(agent_id, player.team)
+                try:
+                    if fn is not None and hasattr(fn, "_last_parts"):
+                        rp = fn._last_parts.get(agent_id)
+                        if isinstance(rp, dict):
+                            reward_parts[agent_id] = rp
+                except Exception:
+                    pass
 
         # Dones
         terminated = False
@@ -1259,6 +1268,8 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         for agent_id in self.agents:
             #global state
             info[agent_id]["global_state"] = global_state
+            if agent_id in reward_parts:
+                info[agent_id]["reward_parts"] = reward_parts[agent_id]
 
             #unnormalized obs
             if self.normalize_obs:

@@ -166,6 +166,8 @@ from pyquaticus.utils.utils import *
 
 # Set to True to print reward events to console during deployment/rendering
 REWARD_DEBUG = False
+# If True, record per-step reward component breakdown for analysis.
+REWARD_PARTS_DEBUG = False
 
 _IDLE_STREAK_STEPS = {}
 _DEEP_PUSH_REWARDED = {}
@@ -205,6 +207,29 @@ def caps_and_grabs(
     tagging_cooldown: float
 ):
     global _IDLE_STREAK_STEPS, _DEEP_PUSH_REWARDED
+    parts = None
+    if REWARD_PARTS_DEBUG:
+        parts = {
+            "self_tagged": 0.0,
+            "close_enemy": 0.0,
+            "oob": 0.0,
+            "idle": 0.0,
+            "tag_enemy": 0.0,
+            "tag_carrier": 0.0,
+            "grab_individual": 0.0,
+            "grab_team": 0.0,
+            "cap_individual": 0.0,
+            "cap_team": 0.0,
+            "enemy_grab": 0.0,
+            "enemy_cap": 0.0,
+            "enemy_deep": 0.0,
+            "deep_flee_75": 0.0,
+            "deep_flee_625": 0.0,
+            "deep_push": 0.0,
+        }
+
+        def _add_part(k: str, v: float):
+            parts[k] = float(parts.get(k, 0.0)) + float(v)
 
     # ── Reward Values ──────────────────────────────────────────────────────
     R_TAG_ENEMY       =  1.0    # tagged any enemy
@@ -224,11 +249,11 @@ def caps_and_grabs(
     P_SELF_TAGGED     = -1.0    # this agent was newly tagged (individual penalty)
     P_CLOSE_ENEMY     = -0.05   # per-step penalty when too close to any enemy
     P_OOB             = -3.0    # agent went out of bounds
-    P_IDLE_BASE       = -0.02   # idle penalty at first step past grace
-    P_IDLE_SLOPE      = -0.01   # additional penalty per extra idle step past grace
+    P_IDLE_BASE       = -0.10   # idle penalty at first step past grace
+    P_IDLE_SLOPE      =  0.0    # additional penalty per extra idle step past grace
 
     IDLE_DIST_THRESH  =  0.15   # min distance per step to not count as idle
-    IDLE_GRACE_STEPS  =  10     # steps before idle penalty kicks in
+    IDLE_GRACE_STEPS  =  2      # steps before idle penalty kicks in
     CLOSE_ENEMY_MULT  =  1.5    # penalize when within this multiple of catch_radius
     # ──────────────────────────────────────────────────────────────────────
 
@@ -265,8 +290,13 @@ def caps_and_grabs(
     if is_tagged:
         if (not prev_is_tagged):
             reward += P_SELF_TAGGED
+            if parts is not None:
+                _add_part("self_tagged", P_SELF_TAGGED)
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} got tagged: {P_SELF_TAGGED:+.3f}")
+        if parts is not None:
+            setattr(caps_and_grabs, "_last_parts", getattr(caps_and_grabs, "_last_parts", {}))
+            caps_and_grabs._last_parts[agent_id] = parts
         return reward
 
     # ── Close to enemy penalty (1.5x tag radius) ───────────────────────────
@@ -319,6 +349,8 @@ def caps_and_grabs(
                 epos = np.asarray(state["agent_position"][ei], dtype=np.float64)
                 if float(np.sum((pos - epos) ** 2)) < thresh2:
                     reward += P_CLOSE_ENEMY
+                    if parts is not None:
+                        _add_part("close_enemy", P_CLOSE_ENEMY)
                     if REWARD_DEBUG:
                         print(f"[REWARD] {agent_id} close enemy (<{CLOSE_ENEMY_MULT:.1f}x): {P_CLOSE_ENEMY:+.2f}")
                     break
@@ -326,6 +358,8 @@ def caps_and_grabs(
     # ── Out of Bounds ──────────────────────────────────────────────────────
     if state["agent_oob"][agent_index] > prev_state["agent_oob"][agent_index]:
         reward += P_OOB
+        if parts is not None:
+            _add_part("oob", P_OOB)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} OOB: {P_OOB}")
 
     # ── Idle Penalty ───────────────────────────────────────────────────────
@@ -337,40 +371,58 @@ def caps_and_grabs(
         extra = int(streak - IDLE_GRACE_STEPS)
         idle_p = P_IDLE_BASE + P_IDLE_SLOPE * float(extra)
         reward += idle_p
+        if parts is not None:
+            _add_part("idle", idle_p)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
 
     # ── Tagging ────────────────────────────────────────────────────────────
     if tagged_idx is not None:
         reward += R_TAG_ENEMY
+        if parts is not None:
+            _add_part("tag_enemy", R_TAG_ENEMY)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged enemy: +{R_TAG_ENEMY}")
 
         if bool(np.asarray(prev_state["agent_has_flag"][tagged_idx]).item()):
             reward += R_TAG_CARRIER
+            if parts is not None:
+                _add_part("tag_carrier", R_TAG_CARRIER)
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} tagged carrier: +{R_TAG_CARRIER}")
 
     # ── Flag Grab ──────────────────────────────────────────────────────────
     if has_flag and not had_flag:
         reward += R_GRAB_INDIVIDUAL
+        if parts is not None:
+            _add_part("grab_individual", R_GRAB_INDIVIDUAL)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} grabbed flag: +{R_GRAB_INDIVIDUAL}")
     elif grabs_up:
         reward += R_GRAB_TEAM
+        if parts is not None:
+            _add_part("grab_team", R_GRAB_TEAM)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} ally grabbed flag: +{R_GRAB_TEAM}")
 
     # ── Capture ────────────────────────────────────────────────────────────
     if team_caps_up:
         reward += R_CAP_TEAM
+        if parts is not None:
+            _add_part("cap_team", R_CAP_TEAM)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} team capture: +{R_CAP_TEAM}")
         if had_flag:
             reward += R_CAP_INDIVIDUAL
+            if parts is not None:
+                _add_part("cap_individual", R_CAP_INDIVIDUAL)
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} individual capture: +{R_CAP_INDIVIDUAL}")
 
     # ── Enemy Events ───────────────────────────────────────────────────────
     if our_flag_now and not our_flag_prev:
         reward += P_ENEMY_GRAB
+        if parts is not None:
+            _add_part("enemy_grab", P_ENEMY_GRAB)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy grabbed flag: {P_ENEMY_GRAB}")
 
     if enemy_caps_up:
         reward += P_ENEMY_CAP
+        if parts is not None:
+            _add_part("enemy_cap", P_ENEMY_CAP)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy captured: {P_ENEMY_CAP}")
 
     # ── Enemy Deep Penetration Penalty ─────────────────────────────────────
@@ -405,6 +457,8 @@ def caps_and_grabs(
 
         if crossed and not _ENEMY_DEEP_PENALIZED.get(e_id, False):
             reward += P_ENEMY_DEEP
+            if parts is not None:
+                _add_part("enemy_deep", P_ENEMY_DEEP)
             _ENEMY_DEEP_PENALIZED[e_id] = True
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} enemy {e_id} crossed deep: {P_ENEMY_DEEP}")
 
@@ -431,10 +485,14 @@ def caps_and_grabs(
 
         if crossed_75 and not _DEEP_FLEE_75_REWARDED.get(agent_id, False):
             reward += R_DEEP_FLEE_75
+            if parts is not None:
+                _add_part("deep_flee_75", R_DEEP_FLEE_75)
             _DEEP_FLEE_75_REWARDED[agent_id] = True
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep flee 3/4: +{R_DEEP_FLEE_75}")
         if crossed_625 and not _DEEP_FLEE_625_REWARDED.get(agent_id, False):
             reward += R_DEEP_FLEE_625
+            if parts is not None:
+                _add_part("deep_flee_625", R_DEEP_FLEE_625)
             _DEEP_FLEE_625_REWARDED[agent_id] = True
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep flee 5/8: +{R_DEEP_FLEE_625}")
     else:
@@ -455,11 +513,16 @@ def caps_and_grabs(
         if crossed and not _DEEP_PUSH_REWARDED.get(agent_id, False):
             deep_reward = R_DEEP_PUSH_BASE + R_DEEP_PUSH_BONUS * (1.0 - cooldown_progress)
             reward += deep_reward
+            if parts is not None:
+                _add_part("deep_push", deep_reward)
             _DEEP_PUSH_REWARDED[agent_id] = True
             if REWARD_DEBUG: print(f"[REWARD] {agent_id} deep push: +{deep_reward:.3f}")
     if not on_cooldown:
         _DEEP_PUSH_REWARDED[agent_id] = False
 
+    if parts is not None:
+        setattr(caps_and_grabs, "_last_parts", getattr(caps_and_grabs, "_last_parts", {}))
+        caps_and_grabs._last_parts[agent_id] = parts
     return reward
 
 
