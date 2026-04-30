@@ -337,7 +337,7 @@ def caps_and_grabs(
         extra = int(streak - IDLE_GRACE_STEPS)
         idle_p = P_IDLE_BASE + P_IDLE_SLOPE * float(extra)
         reward += idle_p
-        # if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
+        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
 
     # ── Tagging ────────────────────────────────────────────────────────────
     if tagged_idx is not None:
