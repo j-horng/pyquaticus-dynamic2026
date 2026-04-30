@@ -67,7 +67,7 @@ def test_dynamic_env(max_team_size: int):
         env.close()
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 6])
+@_parametrize("n", [1, 2, 3, 4, 5, 6])
 def test_fixed_team_size(n: int):
     cfg = _base_cfg()
     reward_config = _reward_config(n)
@@ -153,6 +153,54 @@ def test_heuristic_disabled_filter():
     env.close()
 
 
+def test_dynamic_toggle_remove_eliminated_only_and_min_one():
+    """Removal only targets tagged agents; at least one Blue remains active."""
+    cfg = _base_cfg()
+    n = 2
+    reward_config = _reward_config(n)
+    env = DynamicPyQuaticusEnv(
+        team_size_range=(n, n),
+        tag_removes_agent=False,
+        dynamic_toggle_on=True,
+        dynamic_toggle_interval=999,
+        dynamic_toggle_remove_prob=1.0,
+        dynamic_toggle_add_prob=0.0,
+        config_dict=cfg,
+        reward_config=reward_config,
+    )
+    try:
+        env.reset(seed=0)
+        env.players["agent_0"].is_tagged = True
+        env.state["agent_is_tagged"][0] = 1
+        env._try_random_remove_eliminated()
+        assert bool(env.state["disabled_agents"][0])
+        assert int(np.sum(~env.state["disabled_agents"][: env.num_blue])) == 1
+        env._try_random_remove_eliminated()
+        assert int(np.sum(~env.state["disabled_agents"][: env.num_blue])) == 1
+    finally:
+        env.close()
+
+
+def test_dynamic_toggle_no_remove_if_not_eliminated():
+    cfg = _base_cfg()
+    n = 2
+    reward_config = _reward_config(n)
+    env = DynamicPyQuaticusEnv(
+        team_size_range=(n, n),
+        tag_removes_agent=False,
+        dynamic_toggle_on=True,
+        config_dict=cfg,
+        reward_config=reward_config,
+    )
+    try:
+        env.reset(seed=0)
+        assert int(np.sum(~env.state["disabled_agents"][: env.num_blue])) == n
+        env._try_random_remove_eliminated()
+        assert int(np.sum(~env.state["disabled_agents"][: env.num_blue])) == n
+    finally:
+        env.close()
+
+
 def _run_cli(single_size: int | None):
     sizes = [single_size] if single_size is not None else [1, 2, 3, 4, 5, 6]
     for n in sizes:
@@ -160,6 +208,8 @@ def _run_cli(single_size: int | None):
         test_fixed_team_size(n)
         test_graph_wrapper(n)
     test_heuristic_disabled_filter()
+    test_dynamic_toggle_remove_eliminated_only_and_min_one()
+    test_dynamic_toggle_no_remove_if_not_eliminated()
     print(f"All tests passed (sizes={sizes}).")
 
 
