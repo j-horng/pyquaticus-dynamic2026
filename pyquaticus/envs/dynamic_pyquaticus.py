@@ -47,6 +47,7 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         dynamic_toggle_interval: int = 200,
         dynamic_toggle_remove_prob: float = 0.5,
         dynamic_toggle_add_prob: float = 0.5,
+        stationary_red_attack_easy_slot0: bool = False,
         action_space: Union[str, list[str], dict[str, str]] = "discrete",
         reward_config: dict = None,
         config_dict=None,
@@ -77,6 +78,10 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self._step_count = 0
         self.red_dummy_mode = _cfg.get("red_dummy_mode", False)
         self.stationary_red_mode = _cfg.get("stationary_red_mode", False)
+        # Prefer explicit ctor arg; keep config fallback for compatibility.
+        self.stationary_red_attack_easy_slot0 = bool(
+            stationary_red_attack_easy_slot0 or _cfg.get("stationary_red_attack_easy_slot0", False)
+        )
         # Optional: force a fixed number of Red agents active at reset (others disabled).
         self.force_num_red_active = _cfg.get("force_num_red_active", None)
         # When stationary_red_mode: how many Red slots are active (stationary); remainder disabled.
@@ -107,17 +112,26 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         self.stationary_red_block_anchor_random = bool(_cfg.get("stationary_red_block_anchor_random", False))
         if self.stationary_red_block_anchor_random:
             self.stationary_red_block_anchor = None
+        if self.stationary_red_attack_easy_slot0:
+            # Fixed composition for mixed mode: 1 easy attacker + 2 stationary.
+            self.stationary_red_active = min(3, max_team_size)
+            self.stationary_red_active_random = False
+            self.stationary_red_random_range = None
         # Spawn-row block (mid/top/bottom or random among them) only supports two stationary slots.
         self._stationary_red_spawn_row_block = self.stationary_red_block_anchor_random or (
             self.stationary_red_block_anchor is not None
         )
         if self._stationary_red_spawn_row_block:
-            self.stationary_red_active = min(self.stationary_red_active, 2)
+            block_cap = 3 if self.stationary_red_attack_easy_slot0 else 2
+            self.stationary_red_active = min(self.stationary_red_active, block_cap)
             if self.stationary_red_random_range is not None:
                 a, b = self.stationary_red_random_range
-                b = min(b, 2)
+                b = min(b, block_cap)
                 a = max(1, min(a, b))
                 self.stationary_red_random_range = (a, b)
+        if self.stationary_red_attack_easy_slot0 and self.stationary_red_active <= 0:
+            # Ensure the designated attacker slot can be active.
+            self.stationary_red_active = 1
 
         for player in self.players.values():
             if not hasattr(player, "is_disabled"):
@@ -412,7 +426,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
 
         if self.stationary_red_mode:
             red_inds = list(range(self.num_blue, self.num_agents))
-            if self.stationary_red_active_random:
+            if self.stationary_red_attack_easy_slot0:
+                k = min(3, len(red_inds))
+            elif self.stationary_red_active_random:
                 if self.stationary_red_random_range is not None:
                     lo = max(1, min(self.stationary_red_random_range[0], len(red_inds)))
                     hi = min(self.stationary_red_random_range[1], len(red_inds))
@@ -423,13 +439,22 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             else:
                 k = max(0, min(self.stationary_red_active, len(red_inds)))
             if self._stationary_red_spawn_row_block:
-                k = min(k, 2, len(red_inds))
+                block_cap = 3 if self.stationary_red_attack_easy_slot0 else 2
+                k = min(k, block_cap, len(red_inds))
             if k <= 0:
                 active_red = []
             elif k >= len(red_inds):
                 active_red = red_inds
             else:
-                active_red = random.sample(red_inds, k=k)
+                if self.stationary_red_attack_easy_slot0 and k > 0 and len(red_inds) > 0:
+                    # Force slot-0 red (agent_{num_blue}) into active set so mixed stationary+attacker mode is guaranteed.
+                    anchor = int(red_inds[0])
+                    remaining_pool = [idx for idx in red_inds if idx != anchor]
+                    active_red = [anchor]
+                    if k > 1:
+                        active_red.extend(random.sample(remaining_pool, k=k - 1))
+                else:
+                    active_red = random.sample(red_inds, k=k)
             self._set_initial_disabled(active_blue_inds, active_red)
             self.state["num_blue_active"] = int(len(active_blue_inds))
             self.state["num_red_active"] = int(len(active_red))
@@ -496,6 +521,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
             # Force Red to no-op so they stay in place (even if "active").
             for player in self.players.values():
                 if int(player.team) != int(Team.RED_TEAM):
+                    continue
+                if self.stationary_red_attack_easy_slot0 and int(player.idx) == int(self.num_blue):
+                    # Allow one designated Red attacker policy to act.
                     continue
                 if self.act_space_str.get(player.id, "discrete") == "continuous":
                     patched[player.id] = np.array([0.0, 0.0], dtype=np.float32)

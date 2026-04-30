@@ -1,0 +1,145 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random with one easy attacker: 3 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random_attack_easy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random with one easy attacker: 3 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random_attack_easy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random with one easy attacker: 3 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_335 (next iteration 336)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random_attack_easy (current args). Blue weights restored from checkpoint.
+Iter 340: return_mean=-79.90, entropy=3.2232, policy_loss=-0.0056, time=115.1s/iter (est. ~5754s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_340
+Iter 345: return_mean=-64.90, entropy=3.1899, policy_loss=-0.0079, time=115.0s/iter (est. ~5751s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_345
+Iter 350: return_mean=-59.02, entropy=3.2042, policy_loss=-0.0044, time=116.1s/iter (est. ~5805s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_350
+Iter 355: return_mean=-54.04, entropy=3.2092, policy_loss=-0.0038, time=115.4s/iter (est. ~5771s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_355
+Iter 360: return_mean=-43.69, entropy=3.1978, policy_loss=-0.0046, time=115.1s/iter (est. ~5753s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_360
+Iter 365: return_mean=-44.84, entropy=3.1965, policy_loss=-0.0026, time=115.4s/iter (est. ~5771s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_365
+Iter 370: return_mean=-44.31, entropy=3.2015, policy_loss=-0.0050, time=114.1s/iter (est. ~5705s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_370
+Iter 375: return_mean=-47.48, entropy=3.2088, policy_loss=-0.0035, time=115.2s/iter (est. ~5760s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_375
+Iter 380: return_mean=-44.96, entropy=3.1757, policy_loss=-0.0054, time=115.6s/iter (est. ~5778s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_380
+Iter 385: return_mean=-42.43, entropy=3.1923, policy_loss=-0.0036, time=115.5s/iter (est. ~5777s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_385
+Iter 390: return_mean=-39.18, entropy=3.1550, policy_loss=-0.0027, time=114.2s/iter (est. ~5708s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_390
+Iter 395: return_mean=-37.14, entropy=3.1845, policy_loss=-0.0052, time=114.0s/iter (est. ~5700s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_395
+Iter 400: return_mean=-40.52, entropy=3.1700, policy_loss=-0.0029, time=115.9s/iter (est. ~5797s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_400
+Iter 405: return_mean=-40.11, entropy=3.1532, policy_loss=-0.0038, time=115.0s/iter (est. ~5750s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_405
+Iter 410: return_mean=-41.81, entropy=3.1886, policy_loss=-0.0023, time=114.2s/iter (est. ~5711s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_410
+Iter 415: return_mean=-40.72, entropy=3.1806, policy_loss=-0.0052, time=114.8s/iter (est. ~5739s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_415
+Iter 420: return_mean=-40.31, entropy=3.1635, policy_loss=-0.0037, time=114.1s/iter (est. ~5707s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_420
+Iter 425: return_mean=-38.54, entropy=3.1945, policy_loss=-0.0029, time=115.7s/iter (est. ~5784s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_425
+Iter 430: return_mean=-36.73, entropy=3.1935, policy_loss=-0.0029, time=114.4s/iter (est. ~5720s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_430
+Iter 435: return_mean=-33.91, entropy=3.2138, policy_loss=-0.0064, time=114.6s/iter (est. ~5732s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_435
+Iter 440: return_mean=-33.68, entropy=3.1934, policy_loss=-0.0028, time=114.4s/iter (est. ~5720s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_440
+Iter 445: return_mean=-32.98, entropy=3.1708, policy_loss=-0.0042, time=114.4s/iter (est. ~5722s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_445
+Iter 450: return_mean=-31.62, entropy=3.1781, policy_loss=-0.0026, time=114.6s/iter (est. ~5729s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_450
+Iter 455: return_mean=-27.60, entropy=3.1823, policy_loss=-0.0045, time=115.5s/iter (est. ~5773s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_455
+Iter 460: return_mean=-26.12, entropy=3.1419, policy_loss=-0.0038, time=115.0s/iter (est. ~5751s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_460
+Iter 465: return_mean=-26.01, entropy=3.1398, policy_loss=-0.0034, time=115.5s/iter (est. ~5777s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_465
+Iter 470: return_mean=-28.11, entropy=3.1846, policy_loss=-0.0077, time=114.5s/iter (est. ~5723s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_470
+Iter 475: return_mean=-25.86, entropy=3.1757, policy_loss=-0.0028, time=115.0s/iter (est. ~5748s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_475
+Iter 480: return_mean=-28.00, entropy=3.2012, policy_loss=-0.0035, time=114.0s/iter (est. ~5700s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_480
+Iter 485: return_mean=-27.28, entropy=3.2007, policy_loss=-0.0043, time=115.7s/iter (est. ~5785s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_485
+Iter 490: return_mean=-27.49, entropy=3.1880, policy_loss=-0.0045, time=114.8s/iter (est. ~5739s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_490
+Iter 495: return_mean=-29.50, entropy=3.1820, policy_loss=-0.0036, time=114.7s/iter (est. ~5735s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_495
+Iter 500: return_mean=-26.81, entropy=3.1974, policy_loss=-0.0047, time=114.2s/iter (est. ~5712s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_500
+Iter 505: return_mean=-25.68, entropy=3.2116, policy_loss=-0.0035, time=114.4s/iter (est. ~5721s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_505
+Iter 510: return_mean=-28.82, entropy=3.1508, policy_loss=-0.0060, time=114.4s/iter (est. ~5719s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_510
+Iter 515: return_mean=-31.59, entropy=3.2218, policy_loss=-0.0045, time=114.6s/iter (est. ~5728s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_515
+Iter 520: return_mean=-34.72, entropy=3.1568, policy_loss=-0.0039, time=115.4s/iter (est. ~5771s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_520
+Iter 525: return_mean=-36.04, entropy=3.1366, policy_loss=-0.0046, time=115.0s/iter (est. ~5748s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_525
+Iter 530: return_mean=-36.38, entropy=3.1719, policy_loss=-0.0065, time=114.3s/iter (est. ~5715s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_530
+Iter 535: return_mean=-37.14, entropy=3.2027, policy_loss=-0.0028, time=115.9s/iter (est. ~5793s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_535
+Iter 540: return_mean=-36.20, entropy=3.1913, policy_loss=-0.0042, time=115.4s/iter (est. ~5769s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_540
+Iter 545: return_mean=-31.62, entropy=3.1784, policy_loss=-0.0030, time=115.0s/iter (est. ~5750s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_545
+Iter 550: return_mean=-28.99, entropy=3.1718, policy_loss=-0.0033, time=114.8s/iter (est. ~5738s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_550
+Iter 555: return_mean=-26.57, entropy=3.1958, policy_loss=-0.0055, time=115.6s/iter (est. ~5778s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_555
+Iter 560: return_mean=-32.08, entropy=3.1835, policy_loss=-0.0046, time=114.7s/iter (est. ~5733s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_560
+Iter 565: return_mean=-32.97, entropy=3.2008, policy_loss=-0.0060, time=114.2s/iter (est. ~5712s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_565
+Iter 570: return_mean=-29.09, entropy=3.1906, policy_loss=-0.0044, time=114.4s/iter (est. ~5721s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_570
+Iter 575: return_mean=-22.46, entropy=3.1709, policy_loss=-0.0037, time=114.8s/iter (est. ~5738s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_575
+Iter 580: return_mean=-20.52, entropy=3.1780, policy_loss=-0.0056, time=115.0s/iter (est. ~5748s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_580
+Iter 585: return_mean=-22.11, entropy=3.1841, policy_loss=-0.0037, time=114.7s/iter (est. ~5734s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_585
+Iter 590: return_mean=-23.02, entropy=3.1668, policy_loss=-0.0050, time=114.4s/iter (est. ~5719s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_590
+Iter 595: return_mean=-24.24, entropy=3.1793, policy_loss=-0.0066, time=114.6s/iter (est. ~5728s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_595
+Iter 600: return_mean=-23.51, entropy=3.1853, policy_loss=-0.0048, time=114.8s/iter (est. ~5741s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_600
+Iter 605: return_mean=-22.06, entropy=3.1680, policy_loss=-0.0066, time=115.5s/iter (est. ~5775s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_605
+Iter 610: return_mean=-23.70, entropy=3.1669, policy_loss=-0.0026, time=115.5s/iter (est. ~5776s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_610
+Iter 615: return_mean=-25.90, entropy=3.1857, policy_loss=-0.0035, time=114.5s/iter (est. ~5723s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_615
+Iter 620: return_mean=-28.30, entropy=3.1951, policy_loss=-0.0045, time=114.8s/iter (est. ~5742s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_620
+Iter 625: return_mean=-28.01, entropy=3.1849, policy_loss=-0.0071, time=114.7s/iter (est. ~5734s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_625
+Iter 630: return_mean=-28.19, entropy=3.1812, policy_loss=-0.0065, time=114.6s/iter (est. ~5728s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_630
+Iter 635: return_mean=-26.18, entropy=3.1743, policy_loss=-0.0047, time=115.1s/iter (est. ~5755s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_635
+Iter 640: return_mean=-23.47, entropy=3.1937, policy_loss=-0.0036, time=114.7s/iter (est. ~5736s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_640
+Iter 645: return_mean=-24.60, entropy=3.1851, policy_loss=-0.0036, time=115.2s/iter (est. ~5760s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_645
+Iter 650: return_mean=-24.57, entropy=3.1777, policy_loss=-0.0033, time=115.4s/iter (est. ~5771s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_650
+Iter 655: return_mean=-25.92, entropy=3.1874, policy_loss=-0.0042, time=116.2s/iter (est. ~5811s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_655
+Iter 660: return_mean=-28.41, entropy=3.1808, policy_loss=-0.0025, time=115.3s/iter (est. ~5766s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v4\iter_660

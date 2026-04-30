@@ -1,0 +1,11 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random with one easy attacker: 3 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v6\iter_395 (next iteration 396)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random_attack_easy (current args). Blue weights restored from checkpoint.
+Iter 400: return_mean=-946.06, entropy=3.2493, policy_loss=-0.0010, time=126.1s/iter (est. ~6306s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v7\iter_400
+Iter 405: return_mean=-926.33, entropy=3.2491, policy_loss=-0.0021, time=140.8s/iter (est. ~7038s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v7\iter_405
+Iter 410: return_mean=-876.18, entropy=3.2467, policy_loss=-0.0011, time=126.4s/iter (est. ~6319s per 50 iters)
+Saved checkpoint to .\training\ray_dynamic_AM_v7\iter_410

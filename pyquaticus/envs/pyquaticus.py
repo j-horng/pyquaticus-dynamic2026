@@ -1232,12 +1232,21 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         # Rewards
         disabled = self.state.get("disabled_agents")
         rewards = {}
+        reward_parts = {}
         for agent_id, player in self.players.items():
             idx = self.agents.index(agent_id)
             if disabled is not None and len(disabled) > idx and bool(disabled[idx]):
                 rewards[agent_id] = 0.0
             else:
+                fn = self.reward_config.get(agent_id, None)
                 rewards[agent_id] = self.compute_rewards(agent_id, player.team)
+                try:
+                    if fn is not None and hasattr(fn, "_last_parts"):
+                        rp = fn._last_parts.get(agent_id)
+                        if isinstance(rp, dict):
+                            reward_parts[agent_id] = rp
+                except Exception:
+                    pass
 
         # Dones
         terminated = False
@@ -1259,6 +1268,8 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
         for agent_id in self.agents:
             #global state
             info[agent_id]["global_state"] = global_state
+            if agent_id in reward_parts:
+                info[agent_id]["reward_parts"] = reward_parts[agent_id]
 
             #unnormalized obs
             if self.normalize_obs:
@@ -2313,6 +2324,32 @@ class PyQuaticusEnv(PyQuaticusEnvBase):
             self.env_to_screen(self.scrimmage_coords[1]),
             width=self.boundary_width,
         )
+
+        # ── Deep Flee / Deep Push visual markers ──────────────────────────────
+        # These markers correspond to reward thresholds (fractions of field width).
+        if self.render_mode == "human":
+            field_w = float(self.env_size[0])
+            y0 = float(self.env_ll[1])
+            y1 = float(self.env_ul[1])
+
+            orange = (255, 165, 0)
+            yellow = (255, 220, 50)
+            font = pygame.font.SysFont(None, 18)
+
+            def _vline(xw: float, color, label: str):
+                p0 = self.env_to_screen(np.array([xw, y0], dtype=np.float64))
+                p1 = self.env_to_screen(np.array([xw, y1], dtype=np.float64))
+                draw.line(self.pygame_background_img, color, p0, p1, width=1)
+                pt = self.env_to_screen(np.array([xw, y1], dtype=np.float64))
+                self.pygame_background_img.blit(font.render(label, True, color), (pt[0] + 2, pt[1] + 2))
+
+            # Blue side thresholds (used for deep flee when carrying)
+            _vline(self.env_ll[0] + 0.75 * field_w, orange, "3/4")
+            _vline(self.env_ll[0] + 0.625 * field_w, yellow, "5/8")
+
+            # Mirror thresholds on Red side (for reference / symmetry)
+            _vline(self.env_ll[0] + 0.25 * field_w, orange, "1/4")
+            _vline(self.env_ll[0] + 0.375 * field_w, yellow, "3/8")
 
         # Obstacles
         for obstacle_type, geoms in self.obstacle_geoms.items():
@@ -4291,6 +4328,35 @@ when gps environment bounds are specified in meters"
                     circle_draw_radius = max(idle_draw_radius + 2, base_px + circle_px)
                     if circle_px > 0:
                         draw.circle(self.screen, (255, 140, 0), blit_pos, radius=circle_draw_radius, width=2)
+
+                # ── Tagging radius visual (watch-only) ────────────────────────
+                # Show catch/tag range as a thin outline. We gate this on
+                # render_reward_thresholds since `rl_test/train_dynamic.py --watch`
+                # enables it explicitly.
+                if getattr(self, "render_catch_radius_indicator", False) and not getattr(player, "is_disabled", False):
+                    tag_radius_px = int(round(float(self.catch_radius) * float(self.pixel_size)))
+                    if tag_radius_px > 0:
+                        if team == Team.BLUE_TEAM:
+                            tag_color = (100, 180, 255)  # light blue
+                        else:
+                            tag_color = (255, 100, 100)  # light red
+                        alpha = 90
+                        r = max(1, int(tag_radius_px) + 2)
+                        overlay = pygame.Surface((2 * r, 2 * r), SRCALPHA)
+                        draw.circle(overlay, (*tag_color, alpha), (r, r), radius=int(tag_radius_px), width=1)
+                        self.screen.blit(overlay, (blit_pos[0] - r, blit_pos[1] - r))
+                    # Outer proximity radius used by the green connector lines (<= 1.5 * catch_radius)
+                    prox_radius_px = int(round(1.5 * float(self.catch_radius) * float(self.pixel_size)))
+                    if prox_radius_px > 0:
+                        if team == Team.BLUE_TEAM:
+                            prox_color = (70, 140, 220)  # dimmer blue
+                        else:
+                            prox_color = (220, 70, 70)   # dimmer red
+                        alpha = 60
+                        r = max(1, int(prox_radius_px) + 2)
+                        overlay = pygame.Surface((2 * r, 2 * r), SRCALPHA)
+                        draw.circle(overlay, (*prox_color, alpha), (r, r), radius=int(prox_radius_px), width=1)
+                        self.screen.blit(overlay, (blit_pos[0] - r, blit_pos[1] - r))
 
                 # lidar
                 if self.lidar_obs and self.render_lidar_mode:
