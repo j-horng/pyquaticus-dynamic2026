@@ -169,7 +169,6 @@ REWARD_DEBUG = False
 # If True, record per-step reward component breakdown for analysis.
 REWARD_PARTS_DEBUG = False
 
-_IDLE_STREAK_STEPS = {}
 _DEEP_PUSH_REWARDED = {}
 _DEEP_FLEE_75_REWARDED = {}
 _DEEP_FLEE_625_REWARDED = {}
@@ -206,14 +205,13 @@ def caps_and_grabs(
     max_speeds: list,
     tagging_cooldown: float
 ):
-    global _IDLE_STREAK_STEPS, _DEEP_PUSH_REWARDED
+    global _DEEP_PUSH_REWARDED
     parts = None
     if REWARD_PARTS_DEBUG:
         parts = {
             "self_tagged": 0.0,
             "close_enemy": 0.0,
             "oob": 0.0,
-            "idle": 0.0,
             "tag_enemy": 0.0,
             "tag_carrier": 0.0,
             "grab_individual": 0.0,
@@ -249,11 +247,6 @@ def caps_and_grabs(
     P_SELF_TAGGED     = -1.0    # this agent was newly tagged (individual penalty)
     P_CLOSE_ENEMY     = -0.05   # per-step penalty when too close to any enemy
     P_OOB             = -3.0    # agent went out of bounds
-    P_IDLE_BASE       = -0.10   # idle penalty at first step past grace
-    P_IDLE_SLOPE      =  0.0    # additional penalty per extra idle step past grace
-
-    IDLE_DIST_THRESH  =  0.15   # min distance per step to not count as idle
-    IDLE_GRACE_STEPS  =  2      # steps before idle penalty kicks in
     CLOSE_ENEMY_MULT  =  1.5    # penalize when within this multiple of catch_radius
     # ──────────────────────────────────────────────────────────────────────
 
@@ -361,19 +354,6 @@ def caps_and_grabs(
         if parts is not None:
             _add_part("oob", P_OOB)
         if REWARD_DEBUG: print(f"[REWARD] {agent_id} OOB: {P_OOB}")
-
-    # ── Idle Penalty ───────────────────────────────────────────────────────
-    step_dist = float(np.linalg.norm(pos - prev_pos))
-    streak = _IDLE_STREAK_STEPS.get(agent_id, 0)
-    streak = streak + 1 if step_dist < IDLE_DIST_THRESH else 0
-    _IDLE_STREAK_STEPS[agent_id] = streak
-    if streak >= IDLE_GRACE_STEPS:
-        extra = int(streak - IDLE_GRACE_STEPS)
-        idle_p = P_IDLE_BASE + P_IDLE_SLOPE * float(extra)
-        reward += idle_p
-        if parts is not None:
-            _add_part("idle", idle_p)
-        if REWARD_DEBUG: print(f"[REWARD] {agent_id} idle: {idle_p:+.4f} (streak={streak})")
 
     # ── Tagging ────────────────────────────────────────────────────────────
     if tagged_idx is not None:
