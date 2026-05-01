@@ -392,3 +392,169 @@ Iter 675: return_mean=-74.64, entropy=3.2265, policy_loss=-0.0011, time=93.6s/it
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_675
 Iter 680: return_mean=-67.52, entropy=3.1893, policy_loss=-0.0022, time=93.0s/iter (est. ~4648s per 50 iters)
 Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_680
+Iter 685: return_mean=-64.55, entropy=3.2004, policy_loss=-0.0045, time=95.2s/iter (est. ~4761s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_685
+Iter 690: return_mean=-51.21, entropy=3.2142, policy_loss=-0.0106, time=93.3s/iter (est. ~4663s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_690
+Iter 695: return_mean=-43.67, entropy=3.2199, policy_loss=-0.0043, time=93.8s/iter (est. ~4689s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_695
+Iter 700: return_mean=-38.63, entropy=3.2212, policy_loss=-0.0025, time=93.5s/iter (est. ~4676s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_700
+Iter 705: return_mean=-33.62, entropy=3.2186, policy_loss=-0.0066, time=93.8s/iter (est. ~4690s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_705
+Iter 710: return_mean=-32.57, entropy=3.2033, policy_loss=-0.0084, time=93.9s/iter (est. ~4696s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_710
+Iter 715: return_mean=-27.23, entropy=3.2083, policy_loss=-0.0067, time=93.7s/iter (est. ~4684s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_715
+Iter 720: return_mean=-25.94, entropy=3.1926, policy_loss=-0.0062, time=94.1s/iter (est. ~4706s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_720
+Iter 725: return_mean=-18.47, entropy=3.1596, policy_loss=-0.0037, time=93.3s/iter (est. ~4665s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_725
+Iter 730: return_mean=-16.61, entropy=3.2041, policy_loss=-0.0097, time=94.0s/iter (est. ~4702s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_730
+Iter 735: return_mean=-15.66, entropy=3.1803, policy_loss=-0.0043, time=94.3s/iter (est. ~4716s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_735
+Iter 740: return_mean=-15.14, entropy=3.1947, policy_loss=-0.0107, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_740
+Iter 745: return_mean=-13.31, entropy=3.1981, policy_loss=-0.0058, time=94.4s/iter (est. ~4720s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_745
+Iter 750: return_mean=-15.48, entropy=3.2076, policy_loss=-0.0052, time=94.0s/iter (est. ~4702s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_750
+Iter 755: return_mean=-17.77, entropy=3.1908, policy_loss=-0.0052, time=94.4s/iter (est. ~4721s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_755
+Iter 760: return_mean=-18.14, entropy=3.2024, policy_loss=-0.0052, time=94.2s/iter (est. ~4712s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_760
+Iter 765: return_mean=-20.55, entropy=3.1684, policy_loss=-0.0047, time=94.1s/iter (est. ~4704s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_765
+Iter 770: return_mean=-14.94, entropy=3.1990, policy_loss=-0.0051, time=93.9s/iter (est. ~4696s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_770
+Iter 775: return_mean=-17.16, entropy=3.2206, policy_loss=-0.0070, time=94.0s/iter (est. ~4701s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_775
+Iter 780: return_mean=-20.51, entropy=3.2288, policy_loss=-0.0060, time=93.8s/iter (est. ~4690s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_780
+Iter 785: return_mean=-23.96, entropy=3.2197, policy_loss=-0.0058, time=93.7s/iter (est. ~4683s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_785
+Iter 790: return_mean=-24.87, entropy=3.1944, policy_loss=-0.0069, time=94.0s/iter (est. ~4699s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_790
+Iter 795: return_mean=-20.73, entropy=3.1974, policy_loss=-0.0073, time=94.0s/iter (est. ~4701s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_795
+Iter 800: return_mean=-16.98, entropy=3.1787, policy_loss=-0.0066, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_800
+Iter 805: return_mean=-13.56, entropy=3.2143, policy_loss=-0.0074, time=94.2s/iter (est. ~4710s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_805
+Iter 810: return_mean=-16.65, entropy=3.1985, policy_loss=-0.0030, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_810
+Iter 815: return_mean=-17.56, entropy=3.1866, policy_loss=-0.0064, time=94.4s/iter (est. ~4718s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_815
+Iter 820: return_mean=-18.54, entropy=3.1986, policy_loss=-0.0059, time=94.1s/iter (est. ~4704s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_820
+Iter 825: return_mean=-14.54, entropy=3.1889, policy_loss=-0.0067, time=94.2s/iter (est. ~4709s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_825
+Iter 830: return_mean=-15.23, entropy=3.2086, policy_loss=-0.0042, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_830
+Iter 835: return_mean=-12.66, entropy=3.1942, policy_loss=-0.0075, time=94.0s/iter (est. ~4702s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_835
+Iter 840: return_mean=-13.34, entropy=3.1894, policy_loss=0.0008, time=94.0s/iter (est. ~4701s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_840
+Iter 845: return_mean=-16.36, entropy=3.1524, policy_loss=-0.0078, time=94.0s/iter (est. ~4701s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_845
+Iter 850: return_mean=-13.90, entropy=3.1988, policy_loss=-0.0054, time=94.1s/iter (est. ~4707s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_850
+Iter 855: return_mean=-15.57, entropy=3.1960, policy_loss=-0.0099, time=94.1s/iter (est. ~4706s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_855
+Iter 860: return_mean=-14.32, entropy=3.1805, policy_loss=-0.0075, time=94.2s/iter (est. ~4712s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_860
+Iter 865: return_mean=-13.38, entropy=3.1613, policy_loss=-0.0024, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_865
+Iter 870: return_mean=-12.55, entropy=3.1969, policy_loss=-0.0046, time=94.2s/iter (est. ~4710s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_870
+Iter 875: return_mean=-12.13, entropy=3.1731, policy_loss=-0.0067, time=93.9s/iter (est. ~4695s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_875
+Iter 880: return_mean=-12.09, entropy=3.1821, policy_loss=-0.0061, time=94.1s/iter (est. ~4705s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_880
+Iter 885: return_mean=-15.42, entropy=3.1731, policy_loss=-0.0046, time=94.0s/iter (est. ~4702s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_885
+Iter 890: return_mean=-13.07, entropy=3.1619, policy_loss=-0.0044, time=93.9s/iter (est. ~4697s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_890
+Iter 895: return_mean=-13.35, entropy=3.1664, policy_loss=-0.0064, time=94.3s/iter (est. ~4713s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_895
+Iter 900: return_mean=-10.86, entropy=3.1753, policy_loss=-0.0042, time=94.0s/iter (est. ~4699s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_900
+Iter 905: return_mean=-11.46, entropy=3.1882, policy_loss=-0.0056, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_905
+Iter 910: return_mean=-12.14, entropy=3.1868, policy_loss=-0.0037, time=94.6s/iter (est. ~4731s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_910
+Iter 915: return_mean=-13.00, entropy=3.1706, policy_loss=-0.0029, time=94.1s/iter (est. ~4703s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_915
+Iter 920: return_mean=-14.68, entropy=3.1716, policy_loss=-0.0042, time=94.3s/iter (est. ~4714s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_920
+Iter 925: return_mean=-12.35, entropy=3.0784, policy_loss=-0.0027, time=94.5s/iter (est. ~4725s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_925
+Dynamic env: team_size=1-1 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_925 (next iteration 926)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Iter 930: return_mean=-7.18, entropy=3.2000, policy_loss=-0.0062, time=15.4s/iter (est. ~768s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_930
+Iter 935: return_mean=-3.26, entropy=3.1850, policy_loss=-0.0069, time=15.3s/iter (est. ~767s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_935
+Iter 940: return_mean=-1.13, entropy=3.1128, policy_loss=-0.0086, time=15.1s/iter (est. ~756s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_940
+Iter 945: return_mean=0.95, entropy=3.0528, policy_loss=-0.0107, time=15.3s/iter (est. ~765s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_945
+Iter 950: return_mean=6.59, entropy=3.0158, policy_loss=-0.0087, time=15.3s/iter (est. ~765s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_950
+Iter 955: return_mean=9.22, entropy=2.9930, policy_loss=-0.0135, time=15.2s/iter (est. ~760s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_955
+Iter 960: return_mean=11.12, entropy=3.0514, policy_loss=-0.0125, time=15.1s/iter (est. ~754s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_960
+Iter 965: return_mean=11.84, entropy=3.0375, policy_loss=-0.0094, time=15.5s/iter (est. ~774s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_965
+Iter 970: return_mean=12.47, entropy=3.0150, policy_loss=-0.0112, time=15.6s/iter (est. ~778s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_970
+Iter 975: return_mean=12.90, entropy=2.9834, policy_loss=-0.0125, time=15.1s/iter (est. ~755s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_975
+Iter 980: return_mean=13.78, entropy=2.9114, policy_loss=-0.0106, time=15.3s/iter (est. ~766s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_980
+Iter 985: return_mean=14.59, entropy=2.9235, policy_loss=-0.0105, time=15.3s/iter (est. ~764s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_985
+Iter 990: return_mean=15.27, entropy=2.9409, policy_loss=-0.0063, time=15.3s/iter (est. ~763s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_990
+Iter 995: return_mean=16.23, entropy=2.9970, policy_loss=-0.0080, time=15.3s/iter (est. ~767s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_995
+Iter 1000: return_mean=16.63, entropy=2.9777, policy_loss=-0.0086, time=15.1s/iter (est. ~756s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1000
+Iter 1005: return_mean=16.81, entropy=2.9883, policy_loss=-0.0094, time=15.3s/iter (est. ~764s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1005
+Iter 1010: return_mean=16.97, entropy=3.0198, policy_loss=-0.0085, time=15.6s/iter (est. ~779s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1010
+Iter 1015: return_mean=16.86, entropy=2.9844, policy_loss=-0.0071, time=16.0s/iter (est. ~799s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1015
+Iter 1020: return_mean=17.08, entropy=2.9934, policy_loss=-0.0093, time=16.7s/iter (est. ~833s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1020
+Dynamic env: team_size=1-2 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1020 (next iteration 1021)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Iter 1025: return_mean=-13.76, entropy=3.2048, policy_loss=-0.0046, time=30.7s/iter (est. ~1535s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1025
+Iter 1030: return_mean=-6.47, entropy=3.1639, policy_loss=-0.0066, time=30.6s/iter (est. ~1532s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1030
+Iter 1035: return_mean=-2.70, entropy=3.1607, policy_loss=-0.0087, time=31.5s/iter (est. ~1574s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1035
+Iter 1040: return_mean=-0.81, entropy=3.1247, policy_loss=-0.0055, time=31.3s/iter (est. ~1567s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1040
+Iter 1045: return_mean=5.28, entropy=3.1406, policy_loss=-0.0095, time=32.6s/iter (est. ~1628s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1045
+Iter 1050: return_mean=6.13, entropy=3.1253, policy_loss=-0.0122, time=33.2s/iter (est. ~1660s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1050
+Iter 1055: return_mean=7.44, entropy=3.0839, policy_loss=-0.0109, time=32.3s/iter (est. ~1617s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1055
+Iter 1060: return_mean=10.36, entropy=3.0557, policy_loss=-0.0089, time=31.6s/iter (est. ~1580s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1060
+Iter 1065: return_mean=11.28, entropy=3.0894, policy_loss=-0.0091, time=31.9s/iter (est. ~1594s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1065
+Iter 1070: return_mean=12.56, entropy=3.0849, policy_loss=-0.0064, time=30.7s/iter (est. ~1534s per 50 iters)
+Saved checkpoint to C:\Users\robin\Documents\CS491\pyquaticus-dynamic2026\training\ray_dynamic_AM_v1\iter_1070
