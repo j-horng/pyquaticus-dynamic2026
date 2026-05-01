@@ -327,7 +327,9 @@ class DynamicPyQuaticusEnv(PyQuaticusEnv):
         ex, ey = float(self.env_size[0]), float(self.env_size[1])
         for j, idx in enumerate(sorted_idx):
             if n <= 1:
-                pos = pair_pts[0].copy()
+                # For a single active stationary Red, place exactly at anchor center
+                # (midfield/topfield/bottomfield centroid) instead of an offset pair endpoint.
+                pos = c.copy()
             else:
                 t = j / float(n - 1)
                 pos = (1.0 - t) * pair_pts[0] + t * pair_pts[1]
