@@ -1,0 +1,72 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=54.2s/iter (est. ~2711s per 50 iters)
+Iter 5: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.0s/iter (est. ~102s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_5
+Iter 10: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.0s/iter (est. ~101s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_10
+Iter 15: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=1.0s/iter (est. ~51s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_15
+Iter 20: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=1.0s/iter (est. ~51s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_20
+Iter 25: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.1s/iter (est. ~103s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_25
+Iter 30: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.0s/iter (est. ~101s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_30
+Iter 35: return_mean=n/a (no completed episodes yet), entropy=n/a, policy_loss=n/a, time=2.0s/iter (est. ~102s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_35
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2516, policy_loss=-0.0066, time=116.4s/iter (est. ~5818s per 50 iters)
+Iter 5: return_mean=-38.47, entropy=3.2042, policy_loss=-0.0116, time=132.2s/iter (est. ~6612s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_5
+Iter 10: return_mean=-27.31, entropy=3.1551, policy_loss=-0.0128, time=134.6s/iter (est. ~6731s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_10
+Iter 15: return_mean=-19.20, entropy=3.1244, policy_loss=-0.0155, time=137.9s/iter (est. ~6895s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_15
+Iter 20: return_mean=-10.09, entropy=3.1184, policy_loss=-0.0152, time=135.0s/iter (est. ~6749s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_20
+Iter 25: return_mean=-1.30, entropy=3.1274, policy_loss=-0.0189, time=134.1s/iter (est. ~6703s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_25
+Iter 30: return_mean=4.37, entropy=3.1290, policy_loss=-0.0156, time=134.4s/iter (est. ~6718s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_30
+Iter 35: return_mean=5.63, entropy=3.1170, policy_loss=-0.0198, time=134.0s/iter (est. ~6700s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_35
+Iter 40: return_mean=7.72, entropy=3.0688, policy_loss=-0.0199, time=505.5s/iter (est. ~25275s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_40
+Iter 45: return_mean=10.04, entropy=3.0925, policy_loss=-0.0178, time=2987.8s/iter (est. ~149390s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_45
+Iter 50: return_mean=10.99, entropy=3.1014, policy_loss=-0.0189, time=132.0s/iter (est. ~6601s per 50 iters)
+Saved checkpoint to .\final_training_laptop\iter_50
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_50 (next iteration 51)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_random (current args). Blue weights restored from checkpoint.
+Iter 55: return_mean=-26.36, entropy=3.1833, policy_loss=-0.0156, time=108.9s/iter (est. ~5447s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_55
+Iter 60: return_mean=-12.15, entropy=3.1914, policy_loss=-0.0158, time=110.1s/iter (est. ~5506s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_60
+Iter 65: return_mean=-8.20, entropy=3.1227, policy_loss=-0.0173, time=108.9s/iter (est. ~5444s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_65
+Iter 70: return_mean=-1.65, entropy=3.1662, policy_loss=-0.0192, time=105.4s/iter (est. ~5269s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_70
+Iter 75: return_mean=1.89, entropy=3.1473, policy_loss=-0.0204, time=109.2s/iter (est. ~5458s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_75
+Iter 80: return_mean=3.69, entropy=3.1649, policy_loss=-0.0187, time=607.1s/iter (est. ~30356s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_80
+Iter 85: return_mean=5.46, entropy=3.1416, policy_loss=-0.0201, time=232.0s/iter (est. ~11600s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_85
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_random.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_85 (next iteration 86)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_random (current args). Blue weights restored from checkpoint.
+Iter 90: return_mean=-30.44, entropy=3.1623, policy_loss=-0.0231, time=117.6s/iter (est. ~5881s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_90
+Iter 95: return_mean=-14.04, entropy=3.1378, policy_loss=-0.0287, time=116.8s/iter (est. ~5842s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS-491\pyquaticus-dynamic2026\final_training_laptop\iter_95
