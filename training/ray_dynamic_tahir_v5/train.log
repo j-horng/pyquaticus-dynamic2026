@@ -1,0 +1,878 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2136, policy_loss=-0.0039, time=74.3s/iter (est. ~3716s per 50 iters)
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: train_batch_size=500 (use --train-batch-size to change); window will still freeze briefly each iteration during PPO update.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using do-nothing policy (always no-op actions).
+Rendering enabled: using 0 remote env runners (pygame cannot be pickled for Ray workers).
+Rendering: train_batch_size=512 (use --train-batch-size to change); window will still freeze briefly each iteration during PPO update.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2139, policy_loss=-0.0144, time=60.7s/iter (est. ~3033s per 50 iters)
+Iter 5: return_mean=-6.64, entropy=3.1658, policy_loss=-0.0125, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_5
+Iter 10: return_mean=-10.21, entropy=3.1907, policy_loss=-0.0141, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_10
+Iter 15: return_mean=-10.42, entropy=3.0517, policy_loss=-0.0186, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_15
+Iter 20: return_mean=-13.07, entropy=3.1285, policy_loss=-0.0153, time=60.6s/iter (est. ~3029s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_20
+Iter 25: return_mean=-12.62, entropy=3.0275, policy_loss=-0.0276, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_25
+Iter 30: return_mean=-11.66, entropy=3.0859, policy_loss=-0.0249, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_30
+Iter 35: return_mean=-11.37, entropy=3.1484, policy_loss=-0.0215, time=60.6s/iter (est. ~3028s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_35
+Iter 40: return_mean=-10.95, entropy=2.7477, policy_loss=-0.0331, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_40
+Iter 45: return_mean=-10.41, entropy=2.9228, policy_loss=-0.0315, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_45
+Iter 50: return_mean=-10.17, entropy=2.9594, policy_loss=-0.0384, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_50
+Iter 55: return_mean=-9.92, entropy=2.9799, policy_loss=-0.0283, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_55
+Iter 60: return_mean=-9.70, entropy=2.7204, policy_loss=-0.0272, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_60
+Iter 65: return_mean=-9.36, entropy=2.8917, policy_loss=-0.0238, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_65
+Iter 70: return_mean=-9.14, entropy=2.5652, policy_loss=-0.0296, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_70
+Iter 75: return_mean=-8.83, entropy=2.8461, policy_loss=-0.0375, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_75
+Iter 80: return_mean=-8.61, entropy=2.7311, policy_loss=-0.0293, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_80
+Iter 85: return_mean=-8.37, entropy=2.9136, policy_loss=-0.0392, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_85
+Iter 90: return_mean=-7.99, entropy=2.5197, policy_loss=-0.0283, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_90
+Iter 95: return_mean=-7.80, entropy=2.6441, policy_loss=-0.0409, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_95
+Iter 100: return_mean=-7.57, entropy=3.1201, policy_loss=-0.0234, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_100
+Iter 105: return_mean=-7.27, entropy=2.8000, policy_loss=-0.0317, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_105
+Iter 110: return_mean=-7.11, entropy=2.7675, policy_loss=-0.0354, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_110
+Iter 115: return_mean=-6.91, entropy=2.5740, policy_loss=-0.0196, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_115
+Iter 120: return_mean=-6.80, entropy=2.8732, policy_loss=-0.0358, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_120
+Iter 125: return_mean=-6.57, entropy=2.4651, policy_loss=-0.0386, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_125
+Iter 130: return_mean=-6.59, entropy=2.7305, policy_loss=-0.0313, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_130
+Iter 135: return_mean=-6.48, entropy=3.1852, policy_loss=-0.0198, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_135
+Iter 140: return_mean=-6.34, entropy=2.7657, policy_loss=-0.0223, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_140
+Iter 145: return_mean=-6.28, entropy=2.6742, policy_loss=-0.0448, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_145
+Iter 150: return_mean=-6.27, entropy=2.7156, policy_loss=-0.0374, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_150
+Iter 155: return_mean=-5.88, entropy=2.8913, policy_loss=-0.0425, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_155
+Iter 160: return_mean=-5.76, entropy=2.7848, policy_loss=-0.0351, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_160
+Iter 165: return_mean=-5.05, entropy=3.0121, policy_loss=-0.0333, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_165
+Iter 170: return_mean=-4.85, entropy=2.5823, policy_loss=-0.0362, time=60.8s/iter (est. ~3040s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_170
+Iter 175: return_mean=-4.76, entropy=2.7069, policy_loss=-0.0537, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_175
+Iter 180: return_mean=-4.56, entropy=2.8205, policy_loss=-0.0447, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_180
+Iter 185: return_mean=-4.49, entropy=3.1185, policy_loss=-0.0266, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_185
+Iter 190: return_mean=-4.27, entropy=2.8059, policy_loss=-0.0529, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_190
+Iter 195: return_mean=-4.08, entropy=2.8591, policy_loss=-0.0482, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_195
+Iter 200: return_mean=-3.99, entropy=2.4642, policy_loss=-0.0469, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_200
+Iter 205: return_mean=-3.86, entropy=2.9725, policy_loss=-0.0389, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_205
+Iter 210: return_mean=-3.75, entropy=2.9407, policy_loss=-0.0500, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_210
+Iter 215: return_mean=-3.74, entropy=2.6765, policy_loss=-0.0460, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_215
+Iter 220: return_mean=-3.71, entropy=2.9194, policy_loss=-0.0523, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_220
+Iter 225: return_mean=-3.64, entropy=2.7586, policy_loss=-0.0433, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_225
+Iter 230: return_mean=-3.54, entropy=2.9538, policy_loss=-0.0483, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_230
+Iter 235: return_mean=-3.71, entropy=2.7145, policy_loss=-0.0374, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_235
+Iter 240: return_mean=-3.83, entropy=3.0492, policy_loss=-0.0310, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_240
+Iter 245: return_mean=-3.81, entropy=2.8531, policy_loss=-0.0313, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_245
+Iter 250: return_mean=-4.02, entropy=2.8505, policy_loss=-0.0483, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_250
+Iter 255: return_mean=-4.21, entropy=2.9481, policy_loss=-0.0434, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_255
+Iter 260: return_mean=-4.26, entropy=2.8416, policy_loss=-0.0480, time=60.8s/iter (est. ~3041s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_260
+Iter 265: return_mean=-4.24, entropy=2.9622, policy_loss=-0.0588, time=60.6s/iter (est. ~3029s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_265
+Iter 270: return_mean=-4.37, entropy=2.8257, policy_loss=-0.0479, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_270
+Iter 275: return_mean=-4.27, entropy=2.8218, policy_loss=-0.0403, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_275
+Iter 280: return_mean=-4.39, entropy=2.7668, policy_loss=-0.0455, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_280
+Iter 285: return_mean=-4.34, entropy=2.8766, policy_loss=-0.0567, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_285
+Iter 290: return_mean=-4.22, entropy=2.7918, policy_loss=-0.0426, time=60.7s/iter (est. ~3037s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_290
+Iter 295: return_mean=-4.18, entropy=2.9428, policy_loss=-0.0456, time=60.7s/iter (est. ~3036s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_295
+Iter 300: return_mean=-4.07, entropy=2.7549, policy_loss=-0.0439, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_300
+Iter 305: return_mean=-3.91, entropy=2.9171, policy_loss=-0.0465, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_305
+Iter 310: return_mean=-3.88, entropy=2.8925, policy_loss=-0.0475, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_310
+Iter 315: return_mean=-3.89, entropy=2.8995, policy_loss=-0.0388, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_315
+Iter 320: return_mean=-3.84, entropy=2.8062, policy_loss=-0.0513, time=60.9s/iter (est. ~3045s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_320
+Iter 325: return_mean=-3.37, entropy=2.8067, policy_loss=-0.0475, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_325
+Iter 330: return_mean=-3.32, entropy=2.8125, policy_loss=-0.0465, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_330
+Iter 335: return_mean=-2.84, entropy=2.9832, policy_loss=-0.0492, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_335
+Iter 340: return_mean=-2.82, entropy=3.1180, policy_loss=-0.0393, time=60.1s/iter (est. ~3007s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_340
+Iter 345: return_mean=-2.40, entropy=2.9853, policy_loss=-0.0488, time=60.6s/iter (est. ~3031s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_345
+Iter 350: return_mean=-1.78, entropy=2.8049, policy_loss=-0.0483, time=61.0s/iter (est. ~3051s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_350
+Iter 355: return_mean=-1.44, entropy=2.9880, policy_loss=-0.0498, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_355
+Iter 360: return_mean=-0.80, entropy=2.9711, policy_loss=-0.0591, time=59.5s/iter (est. ~2973s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_360
+Iter 365: return_mean=-0.19, entropy=2.8204, policy_loss=-0.0537, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_365
+Iter 370: return_mean=0.65, entropy=2.8975, policy_loss=-0.0500, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_370
+Iter 375: return_mean=1.43, entropy=3.0966, policy_loss=-0.0413, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_375
+Iter 380: return_mean=1.86, entropy=3.1007, policy_loss=-0.0259, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_380
+Iter 385: return_mean=2.24, entropy=2.9119, policy_loss=-0.0508, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_385
+Iter 390: return_mean=2.64, entropy=3.0041, policy_loss=-0.0377, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_390
+Iter 395: return_mean=3.22, entropy=2.9721, policy_loss=-0.0512, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_395
+Iter 400: return_mean=3.94, entropy=2.7724, policy_loss=-0.0470, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_400
+Iter 405: return_mean=5.25, entropy=2.8050, policy_loss=-0.0360, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_405
+Iter 410: return_mean=6.30, entropy=2.8901, policy_loss=-0.0585, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_410
+Iter 415: return_mean=6.89, entropy=2.9905, policy_loss=-0.0374, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_415
+Iter 420: return_mean=7.85, entropy=2.8672, policy_loss=-0.0468, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_420
+Iter 425: return_mean=8.87, entropy=2.9720, policy_loss=-0.0546, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_425
+Iter 430: return_mean=9.21, entropy=2.9727, policy_loss=-0.0533, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_430
+Iter 435: return_mean=9.80, entropy=2.8623, policy_loss=-0.0504, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_435
+Iter 440: return_mean=10.37, entropy=2.9259, policy_loss=-0.0489, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_440
+Iter 445: return_mean=10.56, entropy=2.9076, policy_loss=-0.0538, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_445
+Iter 450: return_mean=11.49, entropy=2.9634, policy_loss=-0.0630, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_450
+Iter 455: return_mean=11.85, entropy=2.7814, policy_loss=-0.0537, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_455
+Iter 460: return_mean=12.10, entropy=2.9260, policy_loss=-0.0564, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_460
+Iter 465: return_mean=12.78, entropy=2.9110, policy_loss=-0.0585, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_465
+Iter 470: return_mean=12.54, entropy=2.9261, policy_loss=-0.0446, time=60.9s/iter (est. ~3044s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_470
+Iter 475: return_mean=13.13, entropy=3.1566, policy_loss=-0.0246, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_475
+Iter 480: return_mean=13.24, entropy=3.0958, policy_loss=-0.0311, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_480
+Iter 485: return_mean=13.45, entropy=2.6722, policy_loss=-0.0532, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_485
+Iter 490: return_mean=13.08, entropy=2.8231, policy_loss=-0.0478, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_490
+Iter 495: return_mean=13.18, entropy=2.9321, policy_loss=-0.0504, time=60.1s/iter (est. ~3005s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_495
+Iter 500: return_mean=13.88, entropy=2.8857, policy_loss=-0.0477, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_500
+Iter 505: return_mean=14.40, entropy=2.7516, policy_loss=-0.0510, time=60.9s/iter (est. ~3045s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_505
+Iter 510: return_mean=14.27, entropy=2.9939, policy_loss=-0.0454, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_510
+Iter 515: return_mean=14.22, entropy=3.1388, policy_loss=-0.0294, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_515
+Iter 520: return_mean=13.82, entropy=2.9273, policy_loss=-0.0524, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_520
+Iter 525: return_mean=13.38, entropy=3.0800, policy_loss=-0.0336, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_525
+Iter 530: return_mean=13.16, entropy=2.7586, policy_loss=-0.0460, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_530
+Iter 535: return_mean=13.01, entropy=2.9149, policy_loss=-0.0373, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_535
+Iter 540: return_mean=12.71, entropy=2.9975, policy_loss=-0.0408, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_540
+Iter 545: return_mean=12.38, entropy=2.9128, policy_loss=-0.0538, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_545
+Iter 550: return_mean=11.98, entropy=2.9640, policy_loss=-0.0389, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_550
+Iter 555: return_mean=11.93, entropy=2.9536, policy_loss=-0.0376, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_555
+Iter 560: return_mean=11.93, entropy=2.9129, policy_loss=-0.0479, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_560
+Iter 565: return_mean=12.28, entropy=3.1136, policy_loss=-0.0248, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_565
+Iter 570: return_mean=12.02, entropy=3.1057, policy_loss=-0.0232, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_570
+Iter 575: return_mean=11.69, entropy=2.9775, policy_loss=-0.0519, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_575
+Iter 580: return_mean=11.93, entropy=2.9109, policy_loss=-0.0478, time=60.9s/iter (est. ~3045s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_580
+Iter 585: return_mean=11.54, entropy=2.9422, policy_loss=-0.0367, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_585
+Iter 590: return_mean=11.86, entropy=3.1365, policy_loss=-0.0272, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_590
+Iter 595: return_mean=11.52, entropy=2.9603, policy_loss=-0.0564, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_595
+Iter 600: return_mean=11.49, entropy=2.9464, policy_loss=-0.0217, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_600
+Iter 605: return_mean=11.13, entropy=2.9992, policy_loss=-0.0488, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_605
+Iter 610: return_mean=11.26, entropy=3.0941, policy_loss=-0.0198, time=60.1s/iter (est. ~3005s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_610
+Iter 615: return_mean=11.39, entropy=3.1064, policy_loss=-0.0213, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_615
+Iter 620: return_mean=10.88, entropy=3.0192, policy_loss=-0.0480, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_620
+Iter 625: return_mean=10.63, entropy=2.9716, policy_loss=-0.0526, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_625
+Iter 630: return_mean=10.03, entropy=2.9037, policy_loss=-0.0419, time=60.8s/iter (est. ~3038s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_630
+Iter 635: return_mean=10.39, entropy=2.9590, policy_loss=-0.0510, time=60.9s/iter (est. ~3046s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_635
+Iter 640: return_mean=10.43, entropy=2.8788, policy_loss=-0.0542, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_640
+Iter 645: return_mean=10.75, entropy=2.8105, policy_loss=-0.0567, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_645
+Iter 650: return_mean=11.40, entropy=2.6987, policy_loss=-0.0489, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_650
+Iter 655: return_mean=11.92, entropy=2.9405, policy_loss=-0.0428, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_655
+Iter 660: return_mean=12.20, entropy=2.8885, policy_loss=-0.0581, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_660
+Iter 665: return_mean=13.12, entropy=2.7185, policy_loss=-0.0478, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_665
+Iter 670: return_mean=13.88, entropy=2.8831, policy_loss=-0.0522, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_670
+Iter 675: return_mean=14.28, entropy=2.8572, policy_loss=-0.0557, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_675
+Iter 680: return_mean=14.56, entropy=3.1365, policy_loss=-0.0310, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_680
+Iter 685: return_mean=14.24, entropy=3.0570, policy_loss=-0.0425, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_685
+Iter 690: return_mean=14.38, entropy=2.8427, policy_loss=-0.0442, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_690
+Iter 695: return_mean=14.39, entropy=2.8299, policy_loss=-0.0472, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_695
+Iter 700: return_mean=14.34, entropy=2.8732, policy_loss=-0.0523, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_700
+Iter 705: return_mean=14.82, entropy=2.9393, policy_loss=-0.0384, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_705
+Iter 710: return_mean=14.65, entropy=3.0650, policy_loss=-0.0259, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_710
+Iter 715: return_mean=14.92, entropy=2.8957, policy_loss=-0.0502, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_715
+Iter 720: return_mean=15.50, entropy=2.8460, policy_loss=-0.0531, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_720
+Iter 725: return_mean=15.56, entropy=2.8846, policy_loss=-0.0465, time=61.0s/iter (est. ~3052s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_725
+Iter 730: return_mean=15.89, entropy=2.9647, policy_loss=-0.0647, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_730
+Iter 735: return_mean=16.48, entropy=2.9025, policy_loss=-0.0450, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_735
+Iter 740: return_mean=16.40, entropy=2.9933, policy_loss=-0.0493, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_740
+Iter 745: return_mean=16.47, entropy=2.9917, policy_loss=-0.0581, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_745
+Iter 750: return_mean=16.19, entropy=2.8375, policy_loss=-0.0507, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_750
+Iter 755: return_mean=15.86, entropy=2.9149, policy_loss=-0.0438, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_755
+Iter 760: return_mean=15.54, entropy=3.0274, policy_loss=-0.0567, time=60.7s/iter (est. ~3036s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_760
+Iter 765: return_mean=15.33, entropy=3.0604, policy_loss=-0.0476, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_765
+Iter 770: return_mean=15.33, entropy=2.8992, policy_loss=-0.0542, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_770
+Iter 775: return_mean=15.05, entropy=3.0657, policy_loss=-0.0407, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_775
+Iter 780: return_mean=14.54, entropy=3.1614, policy_loss=-0.0296, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_780
+Iter 785: return_mean=14.05, entropy=2.9724, policy_loss=-0.0515, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_785
+Iter 790: return_mean=13.43, entropy=2.9974, policy_loss=-0.0489, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_790
+Iter 795: return_mean=13.76, entropy=2.8486, policy_loss=-0.0495, time=60.6s/iter (est. ~3031s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_795
+Iter 800: return_mean=14.26, entropy=2.9767, policy_loss=-0.0578, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_800
+Iter 805: return_mean=14.20, entropy=2.9577, policy_loss=-0.0512, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_805
+Iter 810: return_mean=14.19, entropy=2.8683, policy_loss=-0.0435, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_810
+Iter 815: return_mean=14.08, entropy=2.8771, policy_loss=-0.0422, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_815
+Iter 820: return_mean=13.88, entropy=3.1056, policy_loss=-0.0267, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_820
+Iter 825: return_mean=13.92, entropy=2.8540, policy_loss=-0.0613, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_825
+Iter 830: return_mean=14.13, entropy=2.8387, policy_loss=-0.0415, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_830
+Iter 835: return_mean=14.17, entropy=2.7624, policy_loss=-0.0466, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_835
+Iter 840: return_mean=14.57, entropy=2.7354, policy_loss=-0.0497, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_840
+Iter 845: return_mean=14.90, entropy=2.8072, policy_loss=-0.0553, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_845
+Iter 850: return_mean=14.71, entropy=2.7627, policy_loss=-0.0549, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_850
+Iter 855: return_mean=15.24, entropy=2.7564, policy_loss=-0.0541, time=61.0s/iter (est. ~3049s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_855
+Iter 860: return_mean=15.73, entropy=2.9408, policy_loss=-0.0702, time=60.6s/iter (est. ~3028s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_860
+Iter 865: return_mean=15.45, entropy=3.0225, policy_loss=-0.0487, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_865
+Iter 870: return_mean=15.58, entropy=2.9046, policy_loss=-0.0525, time=60.6s/iter (est. ~3029s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_870
+Iter 875: return_mean=15.40, entropy=3.0134, policy_loss=-0.0377, time=60.0s/iter (est. ~3001s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_875
+Iter 880: return_mean=15.72, entropy=2.8988, policy_loss=-0.0616, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_880
+Iter 885: return_mean=15.76, entropy=2.7854, policy_loss=-0.0528, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_885
+Iter 890: return_mean=15.89, entropy=2.9011, policy_loss=-0.0367, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_890
+Iter 895: return_mean=16.06, entropy=2.9434, policy_loss=-0.0604, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_895
+Iter 900: return_mean=16.51, entropy=2.8261, policy_loss=-0.0495, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_900
+Iter 905: return_mean=16.26, entropy=3.0105, policy_loss=-0.0384, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_905
+Iter 910: return_mean=15.94, entropy=2.9280, policy_loss=-0.0487, time=60.6s/iter (est. ~3031s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_910
+Iter 915: return_mean=15.98, entropy=3.1267, policy_loss=-0.0206, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_915
+Iter 920: return_mean=15.64, entropy=2.9449, policy_loss=-0.0565, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_920
+Iter 925: return_mean=15.41, entropy=2.6989, policy_loss=-0.0506, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_925
+Iter 930: return_mean=15.80, entropy=2.9419, policy_loss=-0.0437, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_930
+Iter 935: return_mean=15.51, entropy=3.1312, policy_loss=-0.0285, time=60.0s/iter (est. ~3000s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_935
+Iter 940: return_mean=15.16, entropy=2.9665, policy_loss=-0.0621, time=60.2s/iter (est. ~3011s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_940
+Iter 945: return_mean=14.49, entropy=2.6818, policy_loss=-0.0439, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_945
+Iter 950: return_mean=14.27, entropy=2.9303, policy_loss=-0.0565, time=60.1s/iter (est. ~3004s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_950
+Iter 955: return_mean=14.20, entropy=2.9378, policy_loss=-0.0649, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_955
+Iter 960: return_mean=14.14, entropy=3.0756, policy_loss=-0.0230, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_960
+Iter 965: return_mean=13.89, entropy=3.1296, policy_loss=-0.0242, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_965
+Iter 970: return_mean=13.62, entropy=2.9447, policy_loss=-0.0472, time=60.6s/iter (est. ~3029s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_970
+Iter 975: return_mean=14.30, entropy=2.7940, policy_loss=-0.0501, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_975
+Iter 980: return_mean=14.85, entropy=2.9333, policy_loss=-0.0575, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_980
+Iter 985: return_mean=14.95, entropy=2.8428, policy_loss=-0.0580, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_985
+Iter 990: return_mean=14.74, entropy=2.9115, policy_loss=-0.0615, time=60.1s/iter (est. ~3007s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_990
+Iter 995: return_mean=14.29, entropy=2.9078, policy_loss=-0.0448, time=60.1s/iter (est. ~3007s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_995
+Iter 1000: return_mean=14.46, entropy=2.8923, policy_loss=-0.0536, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1000
+Iter 1005: return_mean=15.21, entropy=2.8943, policy_loss=-0.0568, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1005
+Iter 1010: return_mean=15.14, entropy=3.0954, policy_loss=-0.0426, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1010
+Iter 1015: return_mean=14.97, entropy=2.7832, policy_loss=-0.0527, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1015
+Iter 1020: return_mean=15.32, entropy=2.8041, policy_loss=-0.0542, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1020
+Iter 1025: return_mean=15.07, entropy=2.8724, policy_loss=-0.0616, time=60.0s/iter (est. ~2999s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1025
+Iter 1030: return_mean=15.14, entropy=2.6264, policy_loss=-0.0572, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1030
+Iter 1035: return_mean=15.34, entropy=2.8577, policy_loss=-0.0505, time=61.0s/iter (est. ~3052s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1035
+Iter 1040: return_mean=15.66, entropy=3.1064, policy_loss=-0.0314, time=61.0s/iter (est. ~3050s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1040
+Iter 1045: return_mean=15.65, entropy=3.0044, policy_loss=-0.0600, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1045
+Iter 1050: return_mean=15.68, entropy=2.8912, policy_loss=-0.0599, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1050
+Iter 1055: return_mean=15.63, entropy=3.0486, policy_loss=-0.0349, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1055
+Iter 1060: return_mean=15.77, entropy=3.0143, policy_loss=-0.0452, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1060
+Iter 1065: return_mean=15.92, entropy=2.7973, policy_loss=-0.0522, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1065
+Iter 1070: return_mean=15.98, entropy=2.7983, policy_loss=-0.0581, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1070
+Iter 1075: return_mean=15.76, entropy=3.1252, policy_loss=-0.0279, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1075
+Iter 1080: return_mean=15.45, entropy=2.9016, policy_loss=-0.0457, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1080
+Iter 1085: return_mean=15.07, entropy=3.0738, policy_loss=-0.0347, time=60.1s/iter (est. ~3007s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1085
+Iter 1090: return_mean=15.13, entropy=3.1033, policy_loss=-0.0279, time=60.0s/iter (est. ~3000s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1090
+Iter 1095: return_mean=14.35, entropy=2.5959, policy_loss=-0.0304, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1095
+Iter 1100: return_mean=14.00, entropy=2.9902, policy_loss=-0.0387, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1100
+Iter 1105: return_mean=13.54, entropy=2.9199, policy_loss=-0.0474, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1105
+Iter 1110: return_mean=13.32, entropy=2.8462, policy_loss=-0.0495, time=60.4s/iter (est. ~3021s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1110
+Iter 1115: return_mean=12.98, entropy=2.9825, policy_loss=-0.0453, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1115
+Iter 1120: return_mean=13.22, entropy=3.0491, policy_loss=-0.0455, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1120
+Iter 1125: return_mean=13.04, entropy=2.9165, policy_loss=-0.0497, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1125
+Iter 1130: return_mean=13.33, entropy=2.9781, policy_loss=-0.0529, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1130
+Iter 1135: return_mean=13.46, entropy=2.9178, policy_loss=-0.0445, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1135
+Iter 1140: return_mean=13.32, entropy=2.9151, policy_loss=-0.0435, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1140
+Iter 1145: return_mean=13.16, entropy=3.0023, policy_loss=-0.0553, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1145
+Iter 1150: return_mean=13.08, entropy=2.9000, policy_loss=-0.0545, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1150
+Iter 1155: return_mean=13.46, entropy=2.9569, policy_loss=-0.0526, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1155
+Iter 1160: return_mean=13.44, entropy=2.9779, policy_loss=-0.0599, time=60.4s/iter (est. ~3022s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1160
+Iter 1165: return_mean=13.06, entropy=2.7690, policy_loss=-0.0461, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1165
+Iter 1170: return_mean=13.22, entropy=3.0598, policy_loss=-0.0416, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1170
+Iter 1175: return_mean=13.71, entropy=2.9297, policy_loss=-0.0497, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1175
+Iter 1180: return_mean=13.60, entropy=2.8965, policy_loss=-0.0620, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1180
+Iter 1185: return_mean=14.23, entropy=2.7910, policy_loss=-0.0525, time=60.5s/iter (est. ~3024s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1185
+Iter 1190: return_mean=14.21, entropy=3.0490, policy_loss=-0.0309, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1190
+Iter 1195: return_mean=14.48, entropy=2.8958, policy_loss=-0.0594, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1195
+Iter 1200: return_mean=15.66, entropy=2.9461, policy_loss=-0.0600, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1200
+Iter 1205: return_mean=16.06, entropy=2.7902, policy_loss=-0.0475, time=60.3s/iter (est. ~3013s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1205
+Iter 1210: return_mean=16.33, entropy=3.0157, policy_loss=-0.0505, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1210
+Iter 1215: return_mean=15.74, entropy=3.1341, policy_loss=-0.0289, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1215
+Iter 1220: return_mean=15.58, entropy=3.0564, policy_loss=-0.0361, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1220
+Iter 1225: return_mean=15.31, entropy=3.0145, policy_loss=-0.0593, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1225
+Iter 1230: return_mean=15.22, entropy=3.0619, policy_loss=-0.0275, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1230
+Iter 1235: return_mean=15.59, entropy=2.9049, policy_loss=-0.0418, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1235
+Iter 1240: return_mean=15.58, entropy=2.9366, policy_loss=-0.0508, time=60.1s/iter (est. ~3006s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1240
+Iter 1245: return_mean=15.55, entropy=2.9891, policy_loss=-0.0400, time=59.9s/iter (est. ~2995s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1245
+Iter 1250: return_mean=15.91, entropy=3.0593, policy_loss=-0.0288, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1250
+Iter 1255: return_mean=15.79, entropy=2.9087, policy_loss=-0.0559, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1255
+Iter 1260: return_mean=15.95, entropy=2.9182, policy_loss=-0.0475, time=60.2s/iter (est. ~3008s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1260
+Iter 1265: return_mean=15.80, entropy=2.8305, policy_loss=-0.0467, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1265
+Iter 1270: return_mean=15.93, entropy=2.8843, policy_loss=-0.0460, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1270
+Iter 1275: return_mean=15.99, entropy=3.0750, policy_loss=-0.0388, time=60.0s/iter (est. ~2998s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1275
+Iter 1280: return_mean=15.82, entropy=3.0062, policy_loss=-0.0467, time=60.3s/iter (est. ~3014s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1280
+Iter 1285: return_mean=15.77, entropy=2.9073, policy_loss=-0.0445, time=60.7s/iter (est. ~3036s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1285
+Iter 1290: return_mean=15.47, entropy=2.9409, policy_loss=-0.0453, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1290
+Iter 1295: return_mean=15.16, entropy=3.0732, policy_loss=-0.0350, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1295
+Iter 1300: return_mean=15.30, entropy=2.8742, policy_loss=-0.0545, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1300
+Iter 1305: return_mean=15.30, entropy=2.8551, policy_loss=-0.0587, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1305
+Iter 1310: return_mean=15.78, entropy=2.8440, policy_loss=-0.0653, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1310
+Iter 1315: return_mean=16.24, entropy=2.9317, policy_loss=-0.0425, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1315
+Iter 1320: return_mean=17.23, entropy=2.8784, policy_loss=-0.0573, time=60.3s/iter (est. ~3015s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1320
+Iter 1325: return_mean=17.85, entropy=2.9501, policy_loss=-0.0459, time=60.2s/iter (est. ~3012s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1325
+Iter 1330: return_mean=18.17, entropy=2.7973, policy_loss=-0.0420, time=60.8s/iter (est. ~3040s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1330
+Iter 1335: return_mean=18.37, entropy=2.7765, policy_loss=-0.0575, time=60.1s/iter (est. ~3004s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1335
+Iter 1340: return_mean=18.49, entropy=2.8575, policy_loss=-0.0486, time=60.4s/iter (est. ~3018s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1340
+Iter 1345: return_mean=18.38, entropy=2.9410, policy_loss=-0.0544, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1345
+Iter 1350: return_mean=18.67, entropy=2.9516, policy_loss=-0.0474, time=60.2s/iter (est. ~3009s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1350
+Iter 1355: return_mean=18.46, entropy=3.0673, policy_loss=-0.0359, time=60.0s/iter (est. ~3001s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1355
+Iter 1360: return_mean=18.45, entropy=2.9377, policy_loss=-0.0561, time=60.4s/iter (est. ~3020s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1360
+Iter 1365: return_mean=18.24, entropy=2.8103, policy_loss=-0.0537, time=60.1s/iter (est. ~3003s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1365
+Iter 1370: return_mean=18.56, entropy=2.8456, policy_loss=-0.0525, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1370
+Iter 1375: return_mean=18.77, entropy=3.0747, policy_loss=-0.0359, time=60.2s/iter (est. ~3010s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1375
+Iter 1380: return_mean=18.78, entropy=2.8871, policy_loss=-0.0486, time=59.9s/iter (est. ~2997s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1380
+Iter 1385: return_mean=19.12, entropy=3.0460, policy_loss=-0.0289, time=59.9s/iter (est. ~2997s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1385
+Iter 1390: return_mean=19.21, entropy=2.9915, policy_loss=-0.0591, time=60.0s/iter (est. ~3002s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1390
+Iter 1395: return_mean=19.15, entropy=2.8733, policy_loss=-0.0445, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1395
+Iter 1400: return_mean=18.76, entropy=2.8576, policy_loss=-0.0517, time=59.9s/iter (est. ~2995s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1400
+Iter 1405: return_mean=18.63, entropy=2.7925, policy_loss=-0.0533, time=60.5s/iter (est. ~3023s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1405
+Iter 1410: return_mean=18.92, entropy=2.7936, policy_loss=-0.0503, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1410
+Iter 1415: return_mean=19.00, entropy=2.8686, policy_loss=-0.0618, time=60.1s/iter (est. ~3004s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1415
+Iter 1420: return_mean=19.07, entropy=2.7599, policy_loss=-0.0515, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1420
+Iter 1425: return_mean=19.05, entropy=2.9262, policy_loss=-0.0480, time=60.0s/iter (est. ~3001s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1425
+Iter 1430: return_mean=18.94, entropy=2.8900, policy_loss=-0.0552, time=60.3s/iter (est. ~3016s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1430
+Iter 1435: return_mean=18.78, entropy=2.8129, policy_loss=-0.0571, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to training/ray_dynamic_tahir_v5\iter_1435
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1435 (next iteration 1436)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Iter 1440: return_mean=-38.96, entropy=3.1989, policy_loss=-0.0107, time=61.0s/iter (est. ~3052s per 50 iters)
+ERROR at iteration 1440: cannot pickle 'pygame.surface.Surface' object
+Check Ray worker logs for more details (RolloutWorker pid=... or: ray logs)
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1435 (next iteration 1436)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Iter 1440: return_mean=-56.43, entropy=3.1724, policy_loss=-0.0137, time=61.3s/iter (est. ~3064s per 50 iters)
+ERROR at iteration 1440: Can't pickle local object 'main.<locals>.policy_mapping_fn'
+Check Ray worker logs for more details (RolloutWorker pid=... or: ray logs)
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1440 (next iteration 1441)
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1435 (next iteration 1436)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Iter 1440: return_mean=-54.71, entropy=3.1791, policy_loss=-0.0152, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1440
+Iter 1445: return_mean=-57.61, entropy=3.1893, policy_loss=-0.0088, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1445
+Iter 1450: return_mean=-56.21, entropy=3.1208, policy_loss=-0.0163, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1450
+Iter 1455: return_mean=-52.68, entropy=3.0931, policy_loss=-0.0252, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1455
+Iter 1460: return_mean=-53.82, entropy=3.0142, policy_loss=-0.0207, time=61.2s/iter (est. ~3061s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1460
+Iter 1465: return_mean=-49.01, entropy=3.0596, policy_loss=-0.0258, time=61.3s/iter (est. ~3064s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1465
+Iter 1470: return_mean=-48.04, entropy=2.9814, policy_loss=-0.0198, time=60.8s/iter (est. ~3038s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1470
+Iter 1475: return_mean=-48.55, entropy=3.0756, policy_loss=-0.0233, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1475
+Iter 1480: return_mean=-50.04, entropy=3.1094, policy_loss=-0.0275, time=60.8s/iter (est. ~3041s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1480
+Iter 1485: return_mean=-50.18, entropy=3.0354, policy_loss=-0.0311, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1485
+Iter 1490: return_mean=-50.90, entropy=3.0504, policy_loss=-0.0303, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1490
+Iter 1495: return_mean=-50.01, entropy=2.9237, policy_loss=-0.0278, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1495
+Iter 1500: return_mean=-48.07, entropy=3.0862, policy_loss=-0.0341, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1500
+Iter 1505: return_mean=-47.49, entropy=2.9586, policy_loss=-0.0314, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1505
+Iter 1510: return_mean=-45.97, entropy=2.9122, policy_loss=-0.0330, time=61.0s/iter (est. ~3052s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1510
+Iter 1515: return_mean=-45.22, entropy=2.9160, policy_loss=-0.0309, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1515
+Iter 1520: return_mean=-43.97, entropy=3.0362, policy_loss=-0.0341, time=61.0s/iter (est. ~3050s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1520
+Iter 1525: return_mean=-44.32, entropy=2.8347, policy_loss=-0.0293, time=61.2s/iter (est. ~3058s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1525
+Iter 1530: return_mean=-44.28, entropy=2.7346, policy_loss=-0.0264, time=61.2s/iter (est. ~3061s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1530
+Iter 1535: return_mean=-43.80, entropy=3.0984, policy_loss=-0.0407, time=60.8s/iter (est. ~3040s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1535
+Iter 1540: return_mean=-43.93, entropy=2.9443, policy_loss=-0.0295, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1540
+Iter 1545: return_mean=-43.34, entropy=2.7242, policy_loss=-0.0339, time=61.0s/iter (est. ~3051s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1545
+Iter 1550: return_mean=-42.98, entropy=2.8494, policy_loss=-0.0364, time=60.6s/iter (est. ~3028s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1550
+Iter 1555: return_mean=-42.22, entropy=2.8571, policy_loss=-0.0268, time=61.2s/iter (est. ~3062s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1555
+Iter 1560: return_mean=-42.17, entropy=2.9611, policy_loss=-0.0240, time=61.0s/iter (est. ~3052s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1560
+Iter 1565: return_mean=-41.87, entropy=2.9091, policy_loss=-0.0356, time=61.2s/iter (est. ~3062s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1565
+Iter 1570: return_mean=-42.09, entropy=3.0624, policy_loss=-0.0335, time=60.8s/iter (est. ~3041s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1570
+Iter 1575: return_mean=-41.95, entropy=2.7946, policy_loss=-0.0366, time=61.4s/iter (est. ~3068s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1575
+Iter 1580: return_mean=-41.61, entropy=2.8895, policy_loss=-0.0325, time=61.0s/iter (est. ~3051s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1580
+Iter 1585: return_mean=-41.23, entropy=2.9000, policy_loss=-0.0346, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1585
+Iter 1590: return_mean=-40.78, entropy=3.0229, policy_loss=-0.0470, time=60.9s/iter (est. ~3046s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1590
+Iter 1595: return_mean=-40.43, entropy=2.7097, policy_loss=-0.0284, time=61.4s/iter (est. ~3070s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1595
+Iter 1600: return_mean=-40.17, entropy=2.8678, policy_loss=-0.0363, time=61.5s/iter (est. ~3073s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1600
+Iter 1605: return_mean=-39.25, entropy=2.6657, policy_loss=-0.0346, time=61.1s/iter (est. ~3053s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1605
+Iter 1610: return_mean=-39.30, entropy=2.6812, policy_loss=-0.0377, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1610
+Iter 1615: return_mean=-38.53, entropy=3.0809, policy_loss=-0.0343, time=61.0s/iter (est. ~3050s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1615
+Iter 1620: return_mean=-37.88, entropy=2.9735, policy_loss=-0.0418, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1620
+Iter 1625: return_mean=-37.39, entropy=2.7318, policy_loss=-0.0342, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1625
+Iter 1630: return_mean=-36.12, entropy=2.8751, policy_loss=-0.0356, time=61.2s/iter (est. ~3058s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1630
+Iter 1635: return_mean=-35.73, entropy=2.6218, policy_loss=-0.0380, time=61.1s/iter (est. ~3057s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1635
+Iter 1640: return_mean=-35.63, entropy=2.8288, policy_loss=-0.0432, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1640
+Iter 1645: return_mean=-35.48, entropy=2.4634, policy_loss=-0.0431, time=61.1s/iter (est. ~3053s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1645
+Iter 1650: return_mean=-35.67, entropy=2.5174, policy_loss=-0.0394, time=61.2s/iter (est. ~3058s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1650
+Iter 1655: return_mean=-35.99, entropy=2.9436, policy_loss=-0.0293, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1655
+Iter 1660: return_mean=-35.97, entropy=3.0667, policy_loss=-0.0562, time=61.2s/iter (est. ~3062s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1660
+Iter 1665: return_mean=-35.95, entropy=2.6381, policy_loss=-0.0415, time=61.3s/iter (est. ~3067s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1665
+Iter 1670: return_mean=-35.52, entropy=2.9525, policy_loss=-0.0348, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1670
+Iter 1675: return_mean=-34.55, entropy=3.0419, policy_loss=-0.0240, time=60.7s/iter (est. ~3037s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1675
+Iter 1680: return_mean=-34.40, entropy=2.6549, policy_loss=-0.0348, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1680
+Iter 1685: return_mean=-34.31, entropy=2.3637, policy_loss=-0.0356, time=61.1s/iter (est. ~3057s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1685
+Iter 1690: return_mean=-34.21, entropy=2.8696, policy_loss=-0.0417, time=61.2s/iter (est. ~3060s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1690
+Iter 1695: return_mean=-34.83, entropy=2.7708, policy_loss=-0.0368, time=61.3s/iter (est. ~3066s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1695
+Iter 1700: return_mean=-35.15, entropy=3.0665, policy_loss=-0.0307, time=60.8s/iter (est. ~3040s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1700
+Iter 1705: return_mean=-35.48, entropy=2.8513, policy_loss=-0.0506, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1705
+Iter 1710: return_mean=-35.29, entropy=2.6995, policy_loss=-0.0392, time=61.0s/iter (est. ~3050s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1710
+Iter 1715: return_mean=-35.10, entropy=2.6706, policy_loss=-0.0431, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1715
+Iter 1720: return_mean=-35.47, entropy=2.7379, policy_loss=-0.0364, time=60.9s/iter (est. ~3045s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1720
+Iter 1725: return_mean=-35.59, entropy=2.8172, policy_loss=-0.0476, time=61.3s/iter (est. ~3066s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1725
+Iter 1730: return_mean=-35.58, entropy=2.8251, policy_loss=-0.0336, time=61.2s/iter (est. ~3059s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1730
+Iter 1735: return_mean=-35.74, entropy=3.0620, policy_loss=-0.0401, time=60.6s/iter (est. ~3032s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1735
+Iter 1740: return_mean=-35.72, entropy=2.5843, policy_loss=-0.0393, time=61.3s/iter (est. ~3067s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1740
+Iter 1745: return_mean=-35.07, entropy=2.5648, policy_loss=-0.0332, time=60.8s/iter (est. ~3040s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1745
+Iter 1750: return_mean=-35.51, entropy=2.7803, policy_loss=-0.0398, time=61.0s/iter (est. ~3050s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1750
+Iter 1755: return_mean=-34.55, entropy=2.6266, policy_loss=-0.0425, time=61.2s/iter (est. ~3062s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1755
+Iter 1760: return_mean=-35.07, entropy=2.7953, policy_loss=-0.0341, time=61.0s/iter (est. ~3048s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1760
+Iter 1765: return_mean=-34.88, entropy=2.9399, policy_loss=-0.0426, time=60.6s/iter (est. ~3030s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1765
+Iter 1770: return_mean=-34.82, entropy=2.6819, policy_loss=-0.0413, time=60.8s/iter (est. ~3039s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1770
+Iter 1775: return_mean=-34.78, entropy=2.7920, policy_loss=-0.0463, time=60.6s/iter (est. ~3028s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1775
+Iter 1780: return_mean=-34.73, entropy=2.7997, policy_loss=-0.0380, time=60.5s/iter (est. ~3025s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1780
+Iter 1785: return_mean=-33.87, entropy=2.6793, policy_loss=-0.0438, time=60.7s/iter (est. ~3034s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1785
+Iter 1790: return_mean=-34.06, entropy=2.5916, policy_loss=-0.0353, time=61.3s/iter (est. ~3065s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1790
+Iter 1795: return_mean=-34.36, entropy=3.0553, policy_loss=-0.0403, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1795
+Iter 1800: return_mean=-34.28, entropy=2.5892, policy_loss=-0.0337, time=60.9s/iter (est. ~3044s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1800
+Iter 1805: return_mean=-34.17, entropy=2.5063, policy_loss=-0.0364, time=61.4s/iter (est. ~3069s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1805
+Iter 1810: return_mean=-34.55, entropy=2.9853, policy_loss=-0.0335, time=60.6s/iter (est. ~3028s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1810
+Iter 1815: return_mean=-34.76, entropy=2.6919, policy_loss=-0.0322, time=60.9s/iter (est. ~3043s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1815
+Iter 1820: return_mean=-35.34, entropy=2.2641, policy_loss=-0.0425, time=61.3s/iter (est. ~3065s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1820
+Iter 1825: return_mean=-35.80, entropy=2.5490, policy_loss=-0.0369, time=61.2s/iter (est. ~3061s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1825
+Iter 1830: return_mean=-35.53, entropy=2.9885, policy_loss=-0.0427, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1830
+Iter 1835: return_mean=-35.45, entropy=2.6131, policy_loss=-0.0355, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1835
+Iter 1840: return_mean=-35.23, entropy=2.5925, policy_loss=-0.0366, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1840
+Iter 1845: return_mean=-35.51, entropy=3.0465, policy_loss=-0.0466, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1845
+Iter 1850: return_mean=-35.09, entropy=3.0059, policy_loss=-0.0466, time=60.9s/iter (est. ~3045s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1850
+Iter 1855: return_mean=-34.89, entropy=3.0432, policy_loss=-0.0441, time=60.7s/iter (est. ~3037s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1855
+Iter 1860: return_mean=-34.71, entropy=3.0028, policy_loss=-0.0472, time=61.1s/iter (est. ~3057s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1860
+Iter 1865: return_mean=-34.54, entropy=2.7578, policy_loss=-0.0382, time=60.8s/iter (est. ~3041s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1865
+Iter 1870: return_mean=-34.25, entropy=2.9398, policy_loss=-0.0340, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1870
+Iter 1875: return_mean=-33.36, entropy=2.3339, policy_loss=-0.0363, time=60.8s/iter (est. ~3041s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1875
+Iter 1880: return_mean=-33.84, entropy=2.3644, policy_loss=-0.0366, time=61.0s/iter (est. ~3049s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1880
+Iter 1885: return_mean=-33.92, entropy=2.6987, policy_loss=-0.0446, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1885
+Iter 1890: return_mean=-34.19, entropy=2.5405, policy_loss=-0.0455, time=60.7s/iter (est. ~3035s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1890
+Iter 1895: return_mean=-34.48, entropy=2.7860, policy_loss=-0.0405, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1895
+Iter 1900: return_mean=-34.26, entropy=2.8593, policy_loss=-0.0365, time=60.7s/iter (est. ~3037s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1900
+Iter 1905: return_mean=-34.75, entropy=2.6215, policy_loss=-0.0479, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1905
+Iter 1910: return_mean=-35.16, entropy=2.6534, policy_loss=-0.0393, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1910
+Iter 1915: return_mean=-35.30, entropy=2.8555, policy_loss=-0.0399, time=60.9s/iter (est. ~3047s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1915
+Iter 1920: return_mean=-35.97, entropy=2.9730, policy_loss=-0.0436, time=60.8s/iter (est. ~3042s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1920
+Iter 1925: return_mean=-36.28, entropy=2.8919, policy_loss=-0.0447, time=61.0s/iter (est. ~3048s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1925
+Iter 1930: return_mean=-36.00, entropy=2.9494, policy_loss=-0.0348, time=61.2s/iter (est. ~3059s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1930
+Iter 1935: return_mean=-36.45, entropy=2.8946, policy_loss=-0.0399, time=60.5s/iter (est. ~3027s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1935
+Iter 1940: return_mean=-36.74, entropy=2.7775, policy_loss=-0.0401, time=60.7s/iter (est. ~3033s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1940
+Iter 1945: return_mean=-36.22, entropy=2.5855, policy_loss=-0.0420, time=61.0s/iter (est. ~3052s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1945
+Iter 1950: return_mean=-35.94, entropy=2.4650, policy_loss=-0.0460, time=61.8s/iter (est. ~3091s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1950
+Iter 1955: return_mean=-35.75, entropy=2.7308, policy_loss=-0.0506, time=61.1s/iter (est. ~3054s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1955
+Iter 1960: return_mean=-35.35, entropy=2.6409, policy_loss=-0.0492, time=61.2s/iter (est. ~3060s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1960
+Iter 1965: return_mean=-35.27, entropy=2.7746, policy_loss=-0.0479, time=60.5s/iter (est. ~3026s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1965
+Iter 1970: return_mean=-35.20, entropy=2.7150, policy_loss=-0.0449, time=61.2s/iter (est. ~3061s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1970
+Iter 1975: return_mean=-35.41, entropy=2.9460, policy_loss=-0.0400, time=60.4s/iter (est. ~3019s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1975
+Iter 1980: return_mean=-34.94, entropy=2.7265, policy_loss=-0.0494, time=60.8s/iter (est. ~3038s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1980
+Iter 1985: return_mean=-34.85, entropy=2.6379, policy_loss=-0.0459, time=61.1s/iter (est. ~3056s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1985
+Iter 1990: return_mean=-34.10, entropy=3.0604, policy_loss=-0.0382, time=61.3s/iter (est. ~3065s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1990
+Iter 1995: return_mean=-34.37, entropy=2.7108, policy_loss=-0.0504, time=61.3s/iter (est. ~3066s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1995
+Iter 2000: return_mean=-33.64, entropy=3.0681, policy_loss=-0.0333, time=60.3s/iter (est. ~3017s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000
+Training complete.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_1435 (next iteration 1436)
+Blue weights restored from checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000 (next iteration 2001)
+Blue weights restored from checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Training complete.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000 (next iteration 2001)
+Blue weights restored from checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000 (next iteration 2001)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000 (next iteration 2001)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Blue weights restored from checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=2-5 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, score_ends_episode=True, red_stationary=False
+Red team using built-in heuristic (combined CTF, easy mode).
+Resuming from C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2000 (next iteration 2001)
+Rendering with resume: using 0 remote env runners so one game window stays responsive.
+Blue weights restored from checkpoint.
+Red opponent: easy (current args). Blue weights restored from checkpoint.
+Iter 2005: return_mean=-42.97, entropy=2.5725, policy_loss=-0.0439, time=62.6s/iter (est. ~3128s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2005
+Iter 2010: return_mean=-40.81, entropy=2.2959, policy_loss=-0.0471, time=63.0s/iter (est. ~3150s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2010
+Iter 2015: return_mean=-41.95, entropy=2.6370, policy_loss=-0.0594, time=65.0s/iter (est. ~3250s per 50 iters)
+Saved checkpoint to C:\Users\tahir\pyquaticus\pyquaticus-dynamic2026\training\ray_dynamic_tahir_v5\iter_2015

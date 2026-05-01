@@ -198,15 +198,26 @@ def caps_and_grabs(
     tagging_cooldown: float
 ):
     reward = 0.0
-    
-    #----------
-    agent_index = agents.index(agent_id)
 
-    # Inactive/disabled agents must not receive shaping or team-event credit (e.g. red_dummy 3v0).
+    agent_index = agents.index(agent_id)
+    team_i = int(team)
+    opp_team = 1 - team_i
+
     disabled = state.get("disabled_agents")
     if disabled is not None and len(disabled) > agent_index and bool(disabled[agent_index]):
         return 0.0
 
+    def is_disabled(idx):
+        return disabled is not None and len(disabled) > idx and bool(disabled[idx])
+
+    # Resolve own team indices for distinguishing opponents
+    my_indices = set()
+    for k in [team, team_i]:
+        if k in agent_inds_of_team:
+            my_indices = set(agent_inds_of_team[k])
+            break
+
+    # OOB penalty
     prev_num_oob = prev_state["agent_oob"][agent_index]
     num_oob = state["agent_oob"][agent_index]
     if num_oob > prev_num_oob:
@@ -214,84 +225,166 @@ def caps_and_grabs(
         if REWARD_DEBUG:
             print(f"[REWARD] {agent_id} OOB: -1.00")
 
-    # Reward for tagging an opponent
-    if state["agent_made_tag"][agent_index] is not None:
-        reward += 0.25
+    # Tag reward — reduced to discourage farming; skip tagging disabled/inactive agents
+    tagged_idx = state["agent_made_tag"][agent_index]
+    if tagged_idx is not None and not is_disabled(tagged_idx):
+        reward += 0.05
         if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} tagged opponent: +0.25")
+            print(f"[REWARD] {agent_id} tagged opponent: +0.05")
 
-    # Note: we do not separately reward "tagging a flag carrier" to avoid double-counting with
-    # downstream turnover/outcome rewards (grabs/captures) and the "lost flag" penalty.
-
-    #Check if agents lost or gained flag
+    # Flag gain/loss
     prev_has_flag = prev_state['agent_has_flag'][agent_index]
     has_flag = state['agent_has_flag'][agent_index]
-    #Agent lost flag
-    if (prev_has_flag > has_flag):
-        # Don't penalize a successful capture as "lost flag".
-        team_i = int(team)
+    if prev_has_flag > has_flag:
         captured_now = state["captures"][team_i] > prev_state["captures"][team_i]
         if not (captured_now and prev_has_flag == 1):
+            reward += -2.0
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} lost flag: -2.00")
+    if has_flag > prev_has_flag:
+        reward += 1.0
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} grabbed flag: +1.00")
+
+    # Extra penalty for being tagged while carrying (on top of the -2.0 flag-loss above)
+    if prev_has_flag and not has_flag:
+        cap_check = state["captures"][team_i] > prev_state["captures"][team_i]
+        if not cap_check and bool(state["agent_is_tagged"][agent_index]):
             reward += -1.0
             if REWARD_DEBUG:
-                print(f"[REWARD] {agent_id} lost flag: -1.00")
-    # Agent grabbed flag individually
-    if (has_flag > prev_has_flag):
-        reward += 0.5
-        if REWARD_DEBUG:
-            print(f"[REWARD] {agent_id} grabbed flag: +0.50")
+                print(f"[REWARD] {agent_id} tagged while carrying: -1.00")
 
-    # Grabs and captures are of shape [team_0 (BLUE), team_1 (RED)].
-    # Full per-agent credit (no team_size scaling).
-    for t in range(len(state['grabs'])):
-        prev_num_grabs = prev_state['grabs'][t]
-        num_grabs = state['grabs'][t]
-        # Note: grab reward is individual-only (see has_flag delta above). No team grab reward here.
-
+    # Captures — increased to make scoring the dominant incentive
+    for t in range(len(state['captures'])):
         prev_num_caps = prev_state['captures'][t]
         num_caps = state['captures'][t]
         if num_caps > prev_num_caps:
-            # Capture reward: +0.5 team-wide for the capturing team, plus +1 individual
-            # for the agent that was carrying the flag at capture time.
-            r_team = 0.5 if t == int(team) else -0.5
+            r_team = 1.5 if t == team_i else -1.5
             reward += r_team
             if REWARD_DEBUG:
                 print(f"[REWARD] {agent_id} capture team (team {t}): {r_team:+.2f}")
-
-            if t == int(team) and prev_has_flag == 1:
-                reward += 1.0
+            if t == team_i and prev_has_flag == 1:
+                reward += 3.0
                 if REWARD_DEBUG:
-                    print(f"[REWARD] {agent_id} capture individual: +1.00")
+                    print(f"[REWARD] {agent_id} capture individual: +3.00")
 
-    # When recharging tagging (cannot tag until cooldown reaches tagging_cooldown), encourage
-    # moving toward the opponent flag instead of idling. See env: agent can tag iff
-    # agent_tagging_cooldown == tagging_cooldown.
-    cd = float(state["agent_tagging_cooldown"][agent_index])
-    if (
-        cd < tagging_cooldown
-        and state["agent_has_flag"][agent_index] == 0
-        and state["agent_is_tagged"][agent_index] == 0
-    ):
-        opp_team = 1 - int(team)
+    pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
+    prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
+    moved = float(np.linalg.norm(pos - prev_pos))
+    field_diag = float(np.linalg.norm(env_size)) if np.linalg.norm(env_size) > 0 else 1.0
+
+    # Stationary penalty: break the zero-reward equilibrium of doing nothing
+    if moved < 1e-3 and not state["agent_is_tagged"][agent_index]:
+        reward += -0.002
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} stationary: -0.002")
+
+    # Spinning penalty: penalize large heading changes when barely moving
+    curr_heading = float(state["agent_heading"][agent_index])
+    prev_heading = float(prev_state["agent_heading"][agent_index])
+    heading_diff = abs(((curr_heading - prev_heading + 180.0) % 360.0) - 180.0)
+    if heading_diff > 30.0 and moved < catch_radius:
+        r = -0.03 * (heading_diff / 180.0)
+        reward += r
+        if REWARD_DEBUG:
+            print(f"[REWARD] {agent_id} spinning penalty: {r:.4f}")
+
+    on_own_side = bool(state["agent_on_sides"][agent_index])
+
+    # Carrier urgency: penalize lingering on enemy side; reward progress toward own flag home
+    if has_flag:
+        if not on_own_side:
+            reward += -0.01
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} carrier on enemy side: -0.01")
+        own_home = np.asarray(state["flag_home"][team_i], dtype=np.float64)
+        curr_dist_home = float(np.linalg.norm(pos - own_home))
+        prev_dist_home = float(np.linalg.norm(prev_pos - own_home))
+        delta_home = prev_dist_home - curr_dist_home
+        if delta_home > 0 and moved > 1e-3:
+            r = 0.25 * delta_home / field_diag
+            reward += r
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} carrier moving home: +{r:.4f}")
+
+    # Defense: proactive — respond to any enemy invader on our side
+    invaders = [
+        i for i in range(len(agents))
+        if i not in my_indices
+        and not is_disabled(i)
+        and not bool(state["agent_on_sides"][i])  # enemy is NOT on their own side = on our side
+    ]
+
+    if invaders:
+        invader_positions = [np.asarray(state["agent_position"][i], dtype=np.float64) for i in invaders]
+        dists_to_invaders = [float(np.linalg.norm(pos - p)) for p in invader_positions]
+        closest_i = int(np.argmin(dists_to_invaders))
+        closest_dist = dists_to_invaders[closest_i]
+        closest_idx = invaders[closest_i]
+
+        # Penalty for being far from the closest invader when on own side
+        if on_own_side:
+            r = -0.008 * (closest_dist / field_diag)
+            reward += r
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} far from invader: {r:.4f}")
+
+        # Reward for closing distance toward the closest invader
+        prev_opp_pos = np.asarray(prev_state["agent_position"][closest_idx], dtype=np.float64)
+        prev_dist = float(np.linalg.norm(prev_pos - prev_opp_pos))
+        delta = prev_dist - closest_dist
+        if delta > 0 and moved > 1e-3:
+            r = 0.25 * delta / field_diag
+            reward += r
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} intercept invader: +{r:.4f}")
+
+    # Defense: flag already taken — extra step penalty + stronger chase reward for the carrier
+    if state["flag_taken"][team_i]:
+        reward += -0.005
+        for opp_idx in range(len(agents)):
+            if opp_idx not in my_indices and not is_disabled(opp_idx) and state["agent_has_flag"][opp_idx]:
+                opp_pos = np.asarray(state["agent_position"][opp_idx], dtype=np.float64)
+                prev_opp_pos = np.asarray(prev_state["agent_position"][opp_idx], dtype=np.float64)
+                curr_dist = np.linalg.norm(pos - opp_pos)
+                prev_dist = np.linalg.norm(prev_pos - prev_opp_pos)
+                delta = prev_dist - curr_dist
+                if delta > 0 and moved > 1e-3:
+                    r = 0.35 * delta / field_diag
+                    reward += r
+                    if REWARD_DEBUG:
+                        print(f"[REWARD] {agent_id} chase flag carrier: +{r:.4f}")
+
+    # Progress toward enemy flag — always active when not carrying and not tagged
+    if has_flag == 0 and state["agent_is_tagged"][agent_index] == 0:
         opp_flag_curr = np.asarray(state["flag_position"][opp_team], dtype=np.float64)
-        pos = np.asarray(state["agent_position"][agent_index], dtype=np.float64)
-        prev_pos = np.asarray(prev_state["agent_position"][agent_index], dtype=np.float64)
-
-        # Progress shaping should not be "free" when the flag itself moves (e.g. carried).
-        # Measure progress toward a fixed target position (current flag position).
         curr_dist = np.linalg.norm(pos - opp_flag_curr)
         prev_dist = np.linalg.norm(prev_pos - opp_flag_curr)
         delta = prev_dist - curr_dist
-
-        # Require some translation to avoid rewarding pure heading changes / numerical jitter.
-        moved = float(np.linalg.norm(pos - prev_pos))
         if delta > 0 and moved > 1e-3:
-            field_diag = float(np.linalg.norm(env_size))
-            if field_diag > 0:
-                r = 0.3 * delta / field_diag
+            r = 0.15 * delta / field_diag
+            reward += r
+            if REWARD_DEBUG:
+                print(f"[REWARD] {agent_id} progress toward flag: +{r:.4f}")
+
+    # Enemy proximity penalty: discourage attackers from running into enemies
+    # Only fires when on enemy territory (not on own side), not carrying, not tagged.
+    # danger_radius is a multiple of catch_radius so it scales with the game config.
+    danger_radius = catch_radius * 3.0
+    if has_flag == 0 and state["agent_is_tagged"][agent_index] == 0 and not on_own_side:
+        opp_indices = [
+            i for i in range(len(agents))
+            if i not in my_indices and not is_disabled(i)
+        ]
+        for opp_i in opp_indices:
+            opp_pos = np.asarray(state["agent_position"][opp_i], dtype=np.float64)
+            dist_to_opp = float(np.linalg.norm(pos - opp_pos))
+            if dist_to_opp < danger_radius:
+                proximity_ratio = 1.0 - dist_to_opp / danger_radius  # 0 at edge → 1 at contact
+                r = -0.015 * proximity_ratio
                 reward += r
                 if REWARD_DEBUG:
-                    print(f"[REWARD] {agent_id} cooldown aggression: +{r:.4f}")
+                    print(f"[REWARD] {agent_id} near enemy {opp_i}: {r:.4f}")
 
     return reward
 

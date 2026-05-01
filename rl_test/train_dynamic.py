@@ -237,6 +237,31 @@ def make_env(
     return env
 
 
+def _save_render_checkpoint(algo, path):
+    """Save only blue policy weights when --render is active (full algo.save() can't pickle pygame surfaces)."""
+    import pickle as _pkl
+    policy_dir = os.path.join(path, "policies", "blue_policy")
+    os.makedirs(policy_dir, exist_ok=True)
+    with open(os.path.join(policy_dir, "weights_only.pkl"), "wb") as f:
+        _pkl.dump(algo.get_policy("blue_policy").get_weights(), f)
+
+
+def _load_blue_weights_into(algo, blue_path, log_fn):
+    """Load blue policy weights. Handles both full RLlib checkpoints and weights-only saves from render mode."""
+    import pickle as _pkl
+    weights_file = os.path.join(blue_path, "weights_only.pkl")
+    if os.path.isfile(weights_file):
+        with open(weights_file, "rb") as f:
+            weights = _pkl.load(f)
+        algo.get_policy("blue_policy").set_weights(weights)
+        log_fn("Blue weights restored from checkpoint.")
+        return None  # no Policy object available for gnn mismatch check
+    blue_src = Policy.from_checkpoint(blue_path)
+    algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
+    log_fn("Blue weights restored from checkpoint.")
+    return blue_src
+
+
 def _resolve_blue_policy_path(checkpoint_dir):
     p = os.path.abspath(checkpoint_dir)
     if os.path.isdir(p) and not p.endswith("blue_policy"):
@@ -1283,13 +1308,15 @@ def main():
                     log(f"ERROR: Resume checkpoint has no blue_policy at {blue_path}")
                     ray.shutdown()
                     raise SystemExit(1)
-                blue_src = Policy.from_checkpoint(blue_path)
-                _warn_ckpt_gnn_mismatch(blue_src, args, log)
-                algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
-                log("Blue weights restored from resume checkpoint.")
+                blue_src = _load_blue_weights_into(algo, blue_path, log)
+                if blue_src is not None:
+                    _warn_ckpt_gnn_mismatch(blue_src, args, log)
                 _load_red_prev_weights(algo, args.red_from_checkpoint)
             else:
-                if hasattr(algo, "restore_from_path"):
+                blue_path = _resolve_blue_policy_path(resume_path)
+                if os.path.isfile(os.path.join(blue_path, "weights_only.pkl")):
+                    _load_blue_weights_into(algo, blue_path, log)
+                elif hasattr(algo, "restore_from_path"):
                     algo.restore_from_path(resume_path)
                 else:
                     algo.restore(resume_path)
@@ -1328,10 +1355,9 @@ def main():
                 log(f"ERROR: Resume checkpoint has no blue_policy at {blue_path}")
                 ray.shutdown()
                 raise SystemExit(1)
-            blue_src = Policy.from_checkpoint(blue_path)
-            _warn_ckpt_gnn_mismatch(blue_src, args, log)
-            algo.get_policy("blue_policy").set_weights(blue_src.get_weights())
-            log("Blue weights restored from resume checkpoint.")
+            blue_src = _load_blue_weights_into(algo, blue_path, log)
+            if blue_src is not None:
+                _warn_ckpt_gnn_mismatch(blue_src, args, log)
 
             if args.red_from_checkpoint:
                 _load_red_prev_weights(algo, args.red_from_checkpoint)
@@ -1425,12 +1451,18 @@ def main():
                     )
                 if i > 0 and i % args.save_every == 0:
                     path = os.path.join(args.out_dir, f"iter_{i}")
-                    algo.save(path)
+                    if args.render:
+                        _save_render_checkpoint(algo, path)
+                    else:
+                        algo.save(path)
                     log(f"Saved checkpoint to {path}")
                 # "Save now" trigger: create out_dir/SAVE_NOW to save at end of current iter
                 if os.path.isfile(save_now_file):
                     path = os.path.join(args.out_dir, f"iter_{i}")
-                    algo.save(path)
+                    if args.render:
+                        _save_render_checkpoint(algo, path)
+                    else:
+                        algo.save(path)
                     log(f"Saved checkpoint (on request) to {path}")
                     try:
                         os.remove(save_now_file)
