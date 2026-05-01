@@ -269,20 +269,6 @@ def caps_and_grabs(
 
     cd = float(np.asarray(state["agent_tagging_cooldown"][agent_index]).item())
     tc = float(tagging_cooldown)
-    if (cd < tc) and (not has_flag_now) and (not is_tagged):
-        opp_team = 1 - int(team)
-        opp_flag_curr = np.asarray(state["flag_position"][opp_team], dtype=np.float64)
-        curr_dist = float(np.linalg.norm(pos - opp_flag_curr))
-        prev_dist = float(np.linalg.norm(prev_pos - opp_flag_curr))
-        delta = prev_dist - curr_dist
-        moved = float(np.linalg.norm(pos - prev_pos))
-        if delta > 0 and moved > 1e-3:
-            field_diag = float(np.linalg.norm(env_size))
-            if field_diag > 0:
-                r = 0.3 * delta / field_diag
-                reward += r
-                if REWARD_DEBUG:
-                    print(f"[REWARD] {agent_id} cooldown aggression: +{r:.4f}")
 
     # Deep flee: one-time per carry when flag carrier retreats past depth thresholds toward home.
     field_w = float(env_size[0])

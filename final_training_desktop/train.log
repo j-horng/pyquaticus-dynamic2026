@@ -1,0 +1,220 @@
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using do-nothing policy (always no-op actions).
+PPO train_batch_size=4000 (0=auto: 4000 headless, 500 with --render); envs_per_env_runner=1.
+Training started (new run).
+Iter 0: return_mean=n/a (no completed episodes yet), entropy=3.2525, policy_loss=-0.0052, time=130.6s/iter (est. ~6532s per 50 iters)
+Iter 5: return_mean=-33.67, entropy=3.2041, policy_loss=-0.0138, time=125.0s/iter (est. ~6251s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_5
+Iter 10: return_mean=-24.64, entropy=3.1649, policy_loss=-0.0124, time=135.6s/iter (est. ~6782s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_10
+Iter 15: return_mean=-15.43, entropy=3.1707, policy_loss=-0.0180, time=131.7s/iter (est. ~6587s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_15
+Iter 20: return_mean=-5.29, entropy=3.1397, policy_loss=-0.0162, time=145.4s/iter (est. ~7270s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_20
+Iter 25: return_mean=4.72, entropy=3.1160, policy_loss=-0.0191, time=131.6s/iter (est. ~6579s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_25
+Iter 30: return_mean=8.72, entropy=3.1403, policy_loss=-0.0205, time=119.8s/iter (est. ~5990s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_30
+Iter 35: return_mean=9.88, entropy=3.1254, policy_loss=-0.0211, time=117.8s/iter (est. ~5888s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_35
+Iter 40: return_mean=10.79, entropy=3.1306, policy_loss=-0.0209, time=117.2s/iter (est. ~5861s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_40
+Iter 45: return_mean=12.26, entropy=3.1067, policy_loss=-0.0190, time=116.7s/iter (est. ~5837s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_45
+Iter 50: return_mean=12.41, entropy=3.0885, policy_loss=-0.0198, time=113.4s/iter (est. ~5669s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_50
+Iter 55: return_mean=13.38, entropy=3.0001, policy_loss=-0.0163, time=150.0s/iter (est. ~7500s per 50 iters)
+Saved checkpoint to .\final_training_desktop\iter_55
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random (do-nothing): 2 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_50 (next iteration 51)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random (current args). Blue weights restored from checkpoint.
+Iter 55: return_mean=-38.57, entropy=3.1836, policy_loss=-0.0162, time=121.5s/iter (est. ~6073s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_55
+Iter 60: return_mean=-13.59, entropy=3.1333, policy_loss=-0.0194, time=124.0s/iter (est. ~6198s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_60
+Iter 65: return_mean=-6.80, entropy=3.1638, policy_loss=-0.0229, time=127.0s/iter (est. ~6349s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_65
+Iter 70: return_mean=3.57, entropy=3.1370, policy_loss=-0.0210, time=117.1s/iter (est. ~5855s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_70
+Iter 75: return_mean=7.93, entropy=3.1221, policy_loss=-0.0200, time=116.7s/iter (est. ~5837s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_75
+Iter 80: return_mean=8.06, entropy=3.0668, policy_loss=-0.0233, time=125.3s/iter (est. ~6267s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_80
+Iter 85: return_mean=8.30, entropy=3.1071, policy_loss=-0.0212, time=124.9s/iter (est. ~6243s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_85
+Iter 90: return_mean=9.50, entropy=3.1444, policy_loss=-0.0179, time=125.3s/iter (est. ~6267s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_90
+Iter 95: return_mean=9.23, entropy=3.0974, policy_loss=-0.0217, time=121.4s/iter (est. ~6069s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_95
+Iter 100: return_mean=9.52, entropy=3.1249, policy_loss=-0.0226, time=120.5s/iter (est. ~6025s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_100
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random (do-nothing): 2 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_100 (next iteration 101)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random (current args). Blue weights restored from checkpoint.
+Iter 105: return_mean=-29.68, entropy=3.1809, policy_loss=-0.0198, time=120.4s/iter (est. ~6019s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_105
+Iter 110: return_mean=-11.60, entropy=3.1295, policy_loss=-0.0169, time=122.7s/iter (est. ~6137s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_110
+Iter 115: return_mean=-4.40, entropy=3.1062, policy_loss=-0.0197, time=113.5s/iter (est. ~5677s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_115
+Iter 120: return_mean=-0.47, entropy=3.0612, policy_loss=-0.0190, time=123.5s/iter (est. ~6175s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_120
+Iter 125: return_mean=12.50, entropy=3.1132, policy_loss=-0.0262, time=115.0s/iter (est. ~5750s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_125
+Iter 130: return_mean=14.82, entropy=3.0906, policy_loss=-0.0214, time=116.7s/iter (est. ~5835s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_130
+Iter 135: return_mean=16.95, entropy=3.1058, policy_loss=-0.0190, time=130.2s/iter (est. ~6509s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_135
+Iter 140: return_mean=16.22, entropy=3.0385, policy_loss=-0.0185, time=120.5s/iter (est. ~6026s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_140
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=True, red_stationary_block_anchor=None, red_stationary_block_anchor_random=True
+Red team stationary block-random (do-nothing): 2 active Red agents; each episode picks center/upper/lower spawn-row pair uniformly (see --stationary-red-active).
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_140 (next iteration 141)
+Blue weights restored from resume checkpoint.
+Red opponent: stationary_block_random (current args). Blue weights restored from checkpoint.
+Iter 145: return_mean=-10.45, entropy=3.1367, policy_loss=-0.0275, time=56.5s/iter (est. ~2826s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_145
+Iter 150: return_mean=-2.31, entropy=3.0854, policy_loss=-0.0279, time=57.5s/iter (est. ~2876s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_150
+Iter 155: return_mean=2.52, entropy=3.0160, policy_loss=-0.0230, time=58.1s/iter (est. ~2904s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_155
+Iter 160: return_mean=6.63, entropy=3.0964, policy_loss=-0.0235, time=56.5s/iter (est. ~2827s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_160
+Iter 165: return_mean=10.58, entropy=3.0260, policy_loss=-0.0284, time=57.8s/iter (est. ~2888s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_165
+Iter 170: return_mean=12.93, entropy=2.9546, policy_loss=-0.0306, time=55.8s/iter (est. ~2791s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_170
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_170 (next iteration 171)
+Dynamic env: team_size=1-3 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_170 (next iteration 171)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Iter 175: return_mean=-14.68, entropy=3.1667, policy_loss=-0.0259, time=54.0s/iter (est. ~2700s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_175
+Iter 180: return_mean=-4.97, entropy=3.1643, policy_loss=-0.0271, time=53.8s/iter (est. ~2688s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_180
+Iter 185: return_mean=-1.36, entropy=3.1312, policy_loss=-0.0254, time=55.7s/iter (est. ~2783s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_185
+Iter 190: return_mean=0.37, entropy=3.1473, policy_loss=-0.0264, time=57.8s/iter (est. ~2892s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_190
+Iter 195: return_mean=3.85, entropy=3.1415, policy_loss=-0.0256, time=57.1s/iter (est. ~2854s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_195
+Iter 200: return_mean=4.83, entropy=3.0598, policy_loss=-0.0225, time=57.0s/iter (est. ~2850s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_200
+Dynamic env: team_size=1-4 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_170 (next iteration 171)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-4 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_200 (next iteration 201)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Iter 205: return_mean=-18.36, entropy=3.1915, policy_loss=-0.0189, time=71.2s/iter (est. ~3559s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_205
+Iter 210: return_mean=-8.25, entropy=3.1517, policy_loss=-0.0237, time=73.0s/iter (est. ~3648s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_210
+Iter 215: return_mean=-4.84, entropy=3.1945, policy_loss=-0.0154, time=71.3s/iter (est. ~3566s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_215
+Iter 220: return_mean=-3.07, entropy=3.0940, policy_loss=-0.0166, time=71.4s/iter (est. ~3569s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_220
+Iter 225: return_mean=3.10, entropy=3.1271, policy_loss=-0.0217, time=71.5s/iter (est. ~3576s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_225
+Iter 230: return_mean=3.54, entropy=3.1209, policy_loss=-0.0192, time=71.2s/iter (est. ~3559s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_230
+Iter 235: return_mean=4.50, entropy=3.1715, policy_loss=-0.0166, time=71.8s/iter (est. ~3589s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_235
+Iter 240: return_mean=5.18, entropy=3.1116, policy_loss=-0.0237, time=73.1s/iter (est. ~3655s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_240
+Iter 245: return_mean=5.78, entropy=3.1394, policy_loss=-0.0228, time=71.8s/iter (est. ~3588s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_245
+Iter 250: return_mean=6.05, entropy=3.1206, policy_loss=-0.0205, time=71.4s/iter (est. ~3570s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_250
+Iter 255: return_mean=6.39, entropy=3.0982, policy_loss=-0.0193, time=71.6s/iter (est. ~3582s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_255
+Iter 260: return_mean=6.81, entropy=3.1417, policy_loss=-0.0188, time=71.4s/iter (est. ~3572s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_260
+Iter 265: return_mean=7.39, entropy=3.1744, policy_loss=-0.0171, time=71.5s/iter (est. ~3574s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_265
+Iter 270: return_mean=7.00, entropy=3.1125, policy_loss=-0.0207, time=73.0s/iter (est. ~3649s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_270
+Iter 275: return_mean=7.04, entropy=3.0995, policy_loss=-0.0205, time=71.5s/iter (est. ~3577s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_275
+Iter 280: return_mean=6.42, entropy=3.1163, policy_loss=-0.0205, time=71.8s/iter (est. ~3589s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_280
+Iter 285: return_mean=5.97, entropy=3.1761, policy_loss=-0.0131, time=72.0s/iter (est. ~3599s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_285
+Iter 290: return_mean=4.90, entropy=3.0277, policy_loss=-0.0200, time=72.0s/iter (est. ~3600s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_290
+Iter 295: return_mean=5.44, entropy=3.1454, policy_loss=-0.0155, time=72.4s/iter (est. ~3618s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_295
+Iter 300: return_mean=6.63, entropy=3.0673, policy_loss=-0.0217, time=73.4s/iter (est. ~3672s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_300
+Iter 305: return_mean=8.55, entropy=3.0982, policy_loss=-0.0226, time=71.7s/iter (est. ~3587s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_305
+Iter 310: return_mean=8.46, entropy=3.1030, policy_loss=-0.0212, time=72.0s/iter (est. ~3600s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_310
+Iter 315: return_mean=8.90, entropy=3.1095, policy_loss=-0.0186, time=71.7s/iter (est. ~3587s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_315
+Iter 320: return_mean=8.89, entropy=3.1222, policy_loss=-0.0189, time=72.0s/iter (est. ~3599s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_320
+Iter 325: return_mean=8.83, entropy=3.0487, policy_loss=-0.0201, time=71.7s/iter (est. ~3585s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_325
+Iter 330: return_mean=8.62, entropy=3.0149, policy_loss=-0.0212, time=73.1s/iter (est. ~3656s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_330
+Iter 335: return_mean=9.18, entropy=3.0635, policy_loss=-0.0185, time=71.8s/iter (est. ~3590s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_335
+Iter 340: return_mean=9.50, entropy=3.1315, policy_loss=-0.0149, time=71.8s/iter (est. ~3590s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_340
+Iter 345: return_mean=8.89, entropy=3.0770, policy_loss=-0.0200, time=72.0s/iter (est. ~3601s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_345
+Iter 350: return_mean=8.16, entropy=3.1097, policy_loss=-0.0217, time=72.1s/iter (est. ~3606s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_350
+Iter 355: return_mean=9.07, entropy=3.0990, policy_loss=-0.0265, time=72.0s/iter (est. ~3600s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_355
+Iter 360: return_mean=8.36, entropy=3.1604, policy_loss=-0.0158, time=73.2s/iter (est. ~3659s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_360
+Iter 365: return_mean=8.89, entropy=3.1180, policy_loss=-0.0210, time=72.0s/iter (est. ~3598s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_365
+Iter 370: return_mean=8.78, entropy=3.0918, policy_loss=-0.0180, time=72.0s/iter (est. ~3602s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_370
+Iter 375: return_mean=8.28, entropy=3.0709, policy_loss=-0.0253, time=71.7s/iter (est. ~3585s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_375
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_200 (next iteration 201)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Dynamic env: team_size=1-6 per team, init=spawn_line (fixed), tag_removes_agent=False, reinforcement_interval=0, reinforcement_prob=0.5, dynamic_toggle_on=False, dynamic_toggle_interval=200, dynamic_toggle_remove_prob=0.5, dynamic_toggle_add_prob=0.5, score_ends_episode=True, red_stationary=False, red_stationary_block_anchor=None, red_stationary_block_anchor_random=False
+Red team using generator heuristic: medium_attack.
+Resuming from C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_375 (next iteration 376)
+Blue weights restored from resume checkpoint.
+Red opponent: medium_attack (current args). Blue weights restored from checkpoint.
+Iter 380: return_mean=-39.71, entropy=3.1916, policy_loss=-0.0114, time=109.6s/iter (est. ~5481s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_380
+Iter 385: return_mean=-23.05, entropy=3.1803, policy_loss=-0.0126, time=110.0s/iter (est. ~5502s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_385
+Iter 390: return_mean=-15.74, entropy=3.2105, policy_loss=-0.0071, time=110.1s/iter (est. ~5506s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_390
+Iter 395: return_mean=-11.29, entropy=3.2101, policy_loss=-0.0090, time=110.0s/iter (est. ~5501s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_395
+Iter 400: return_mean=0.81, entropy=3.1563, policy_loss=-0.0154, time=111.4s/iter (est. ~5570s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_400
+Iter 405: return_mean=3.71, entropy=3.1063, policy_loss=-0.0122, time=110.5s/iter (est. ~5523s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_405
+Iter 410: return_mean=5.85, entropy=3.1822, policy_loss=-0.0111, time=110.6s/iter (est. ~5531s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_410
+Iter 415: return_mean=6.75, entropy=3.1386, policy_loss=-0.0134, time=110.3s/iter (est. ~5514s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_415
+Iter 420: return_mean=7.56, entropy=3.1105, policy_loss=-0.0151, time=110.8s/iter (est. ~5538s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_420
+Iter 425: return_mean=7.00, entropy=3.2032, policy_loss=-0.0064, time=110.1s/iter (est. ~5504s per 50 iters)
+Saved checkpoint to C:\Users\Joeyt\Documents\GMU\CS_491\pyquaticus-dynamic2026\final_training_desktop\iter_425
